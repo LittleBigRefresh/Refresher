@@ -43,11 +43,11 @@ public class Program
         }
 
         Patcher patcher = new(data);
-        List<VerificationMessage> messages = patcher.Verify().ToList();
+        List<Message> messages = patcher.Verify(options.ServerUrl).ToList();
         
-        foreach (VerificationMessage message in messages)
+        foreach (Message message in messages)
         {
-            Console.WriteLine($"{message.Level}: {message.Message}");
+            Console.WriteLine($"{message.Level}: {message.Content}");
         }
 
         if (messages.Any(m => m.Level == MessageLevel.Error))
