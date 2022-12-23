@@ -83,12 +83,22 @@ public class PatchForm : Form
         if (this._tempFile == null) return;
         
         this._patcher.PatchUrl(this._urlField.Text);
-        
-        //TODO: warn the user if they are overwriting the file
-        File.Move(this._tempFile, this._outputFileField.FilePath, true);
 
-        MessageBox.Show("Successfully patched EBOOT!");
-        
+        // Warn user if file already exists
+        // Technically most file pickers already handle this for us but still
+        DialogResult result = DialogResult.Yes;
+        if (File.Exists(this._outputFileField.FilePath))
+        {
+            result = MessageBox.Show("You are overwriting an existing EBOOT. Are you sure you want to do this?",
+                MessageBoxButtons.YesNo, MessageBoxType.Warning);
+        }
+
+        if (result == DialogResult.Yes)
+        {
+            File.Move(this._tempFile, this._outputFileField.FilePath, true);
+            MessageBox.Show("Successfully patched EBOOT!");
+        }
+
         // Re-initializes patcher so we can patch with the same parameters again
         // Probably slow but prevents crash
         this.FileUpdated(this, EventArgs.Empty);
