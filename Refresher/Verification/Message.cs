@@ -1,6 +1,6 @@
 namespace Refresher.Verification;
 
-public struct Message
+public readonly struct Message
 {
     public readonly MessageLevel Level;
     public readonly string Content;
@@ -9,5 +9,8 @@ public struct Message
     {
         this.Level = level;
         this.Content = content;
+
     }
+
+    public override string ToString() => $"{this.Level}: {this.Content}";
 }
