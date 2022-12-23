@@ -162,6 +162,10 @@ public partial class Patcher
             messages.Add(new Message(MessageLevel.Error,
                 "Could not find any urls in the EBOOT. Nothing can be changed."));
 
+        if (this._targets.Value.Any(x => x.Length < url.Length))
+            messages.Add(new Message(MessageLevel.Error,
+                "The URL is too short to fit in the EBOOT. Please use a shorter URL."));
+        
         return messages;
     }
 
@@ -179,9 +183,6 @@ public partial class Patcher
     {
         foreach (PatchTargetInfo target in targets)
         {
-            if (url.Length > target.Length)
-                throw new ArgumentException("URL is too long to fit in the EBOOT!", nameof(url));
-
             writer.BaseStream.Position = target.Offset;
             writer.Write(url);
 
