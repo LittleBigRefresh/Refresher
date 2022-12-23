@@ -1,54 +1,145 @@
 using System.Diagnostics.Contracts;
 using System.Text;
+using System.Text.RegularExpressions;
 using Refresher.Verification;
 
 namespace Refresher.Patching;
 
-public class Patcher
+public partial class Patcher
 {
-    public byte[] Data { get; }
+    private readonly Lazy<List<PatchTargetInfo>> _targets;
 
-    public Patcher(byte[] data)
+    public Patcher(Stream stream)
     {
-        this.Data = data;
-        string dataStr = Encoding.ASCII.GetString(data);
+        if (!stream.CanRead || !stream.CanSeek || !stream.CanWrite)
+            throw new ArgumentException("Stream must be readable, seekable and writable", nameof(stream));
 
-        this._httpUrlInfo = new Lazy<PatchTargetInfo?>(() => FindUrl(dataStr, HttpUrls));
-        this._httpsUrlInfo = new Lazy<PatchTargetInfo?>(() => FindUrl(dataStr, HttpsUrls));
+        this.Stream = stream;
+
+        this._targets = new Lazy<List<PatchTargetInfo>>(() => FindUrl(stream));
     }
 
-    private static readonly string[] HttpUrls =
-    {
-        "http://littlebigplanetps3.online.scee.com:10060/LITTLEBIGPLANETPS3_XML",
-    };
-    
-    private static readonly string[] HttpsUrls =
-    {
-        "https://littlebigplanetps3.online.scee.com:10061/LITTLEBIGPLANETPS3_XML",
-    };
-    
-    private readonly Lazy<PatchTargetInfo?> _httpUrlInfo;
-    private readonly Lazy<PatchTargetInfo?> _httpsUrlInfo;
+    public Stream Stream { get; }
 
-    private static PatchTargetInfo? FindUrl(string data, IEnumerable<string> list)
+    [GeneratedRegex("^https?[^\\x00]\\/\\/([0-9a-zA-Z.:]*)\\/([0-9a-zA-Z_]*)$", RegexOptions.Compiled)]
+    private static partial Regex UrlMatch();
+
+    private static List<PatchTargetInfo> FindUrl(Stream file)
     {
-        foreach (string url in list)
+        BinaryReader reader = new(file);
+
+        //Get the length of the file (this operation can be costly, so lets cache it)
+        long fileLength = file.Length;
+
+        // Search for all instances of `http` in the binary
+        ReadOnlySpan<byte> http = "http"u8;
+
+        //Found positions of `http` in the binary
+        List<long> foundPositions = new();
+
+        //Get the length of the file (http.length also has a non-trivial cost, so we cache it)
+        long length = fileLength - http.Length;
+
+        //The buffer we read into
+        byte[] buf = new byte[http.Length];
+        long readPos = 0;
+        //While we are not at the end of the file
+        while (readPos < length)
         {
-            int offset = data.IndexOf(url, StringComparison.Ordinal);
-            if(offset < 1) continue;
+            //Set the position of the stream to the next one to check
+            reader.BaseStream.Position = readPos;
 
-            return new PatchTargetInfo
+            //Read into the buffer
+            int read = file.Read(buf);
+            //If we read less than the buffer size, we are at the end of the file
+            if (read < http.Length)
+                break;
+
+            bool equal = true;
+
+            //Check whether the original buffer is equal to the buffer we read
+            //NOTE: theres a slightly faster way of doing this with SIMD, but this is fine for now
+            //      see https://dev.to/antidisestablishmentarianism/c-simd-byte-array-compare-52p6
+            for (int i = 0; i < buf.Length; i++)
             {
-                Offset = offset,
-                Length = url.Length,
-            };
+                if (buf[i] == http[i])
+                    continue;
+
+                equal = false;
+                break;
+            }
+
+            //If they are equal, we found an instance of HTTP
+            if (equal)
+            {
+                //Mark the position of the found instance
+                foundPositions.Add(readPos);
+
+                //Skip the length of the buffer
+                readPos += buf.Length;
+            }
+            else
+            {
+                //Check the next position
+                readPos++;
+            }
         }
 
-        return null;
+        List<PatchTargetInfo> found = new();
+
+        bool tooLong = false;
+        foreach (long foundPosition in foundPositions)
+        {
+            int len = 0;
+
+            file.Position = foundPosition;
+
+            //Find the first null byte
+            while (reader.ReadByte() != 0)
+            {
+                len++;
+
+                if (len > 100)
+                {
+                    tooLong = true;
+                    break;
+                }
+            }
+
+            if (tooLong)
+            {
+                tooLong = false;
+                continue;
+            }
+
+            //Keep reading until we arent at a null byte
+            while (reader.ReadByte() == 0) len++;
+
+            file.Position = foundPosition;
+
+            //`len` at this point is the amount of bytes that are actually available to repurpose
+            //This includes all extra null bytes except for the last one
+
+            byte[] match = new byte[len];
+            if (file.Read(match) < len) continue;
+            string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
+
+            Regex regex = UrlMatch();
+            MatchCollection matches = regex.Matches(str);
+
+            if (matches.Count != 0)
+                found.Add(new PatchTargetInfo
+                {
+                    Length = len,
+                    Offset = foundPosition,
+                });
+        }
+
+        return found;
     }
 
     /// <summary>
-    /// Checks the contents of the EBOOT to verify that it is patchable.
+    ///     Checks the contents of the EBOOT to verify that it is patchable.
     /// </summary>
     /// <returns>A list of issues and notes about the EBOOT.</returns>
     [Pure]
@@ -56,49 +147,47 @@ public class Patcher
     {
         // TODO: check if this is an ELF, correct architecture, if url is correct length, etc.
         List<Message> messages = new();
-        
-        // Check url
-        if(url.EndsWith('/'))
-            messages.Add(new Message(MessageLevel.Error, "URI cannot end with a trailing slash, invalid requests will be sent to the server"));
 
-        if(!Uri.TryCreate(url, UriKind.Absolute, out Uri _))
+        // Check url
+        if (url.EndsWith('/'))
+            messages.Add(new Message(MessageLevel.Error,
+                "URI cannot end with a trailing slash, invalid requests will be sent to the server"));
+
+        //Try to create an absolute URI, if it fails, its not a valid URI
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri _))
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
 
-        // Check if URLs exist in eboot
-        if (!this._httpUrlInfo.Value.HasValue)
-            messages.Add(new Message(MessageLevel.Warning, "Could not find the HTTP url in the EBOOT."));
-        
-        if (!this._httpsUrlInfo.Value.HasValue)
-            messages.Add(new Message(MessageLevel.Warning, "Could not find the HTTPS url in the EBOOT."));
-
-        // Its okay(?) to only be able to patch one URL, but if there are none then it's a problem
-        if (!this._httpUrlInfo.Value.HasValue && !this._httpsUrlInfo.Value.HasValue)
+        // If there are no targets, we cant patch
+        if (this._targets.Value.Count == 0)
             messages.Add(new Message(MessageLevel.Error,
                 "Could not find any urls in the EBOOT. Nothing can be changed."));
 
+        if (this._targets.Value.Any(x => x.Length < url.Length))
+            messages.Add(new Message(MessageLevel.Error,
+                "The URL is too short to fit in the EBOOT. Please use a shorter URL."));
+        
         return messages;
     }
 
     public void PatchUrl(string url)
     {
-        using MemoryStream ms = new(this.Data);
-        using BinaryWriter writer = new(ms);
+        using BinaryWriter writer = new(this.Stream);
 
-        // Using BinaryWriter.Write writes a length-oriented string, get this for null terminated instead
-        byte[] urlAsBytes = Encoding.Default.GetBytes(url);
+        // Get a null-terminated byte sequence of the URL, as BinaryWriter.Write(string) writes a length-prepended string,
+        byte[] urlAsBytes = Encoding.UTF8.GetBytes(url);
 
-        if (this._httpUrlInfo.Value.HasValue) PatchUrlFromInfo(writer, this._httpUrlInfo.Value.Value, urlAsBytes);
-        if (this._httpsUrlInfo.Value.HasValue) PatchUrlFromInfo(writer, this._httpsUrlInfo.Value.Value, urlAsBytes);
+        if (this._targets.Value.Count != 0) PatchUrlFromInfoList(writer, this._targets.Value, urlAsBytes);
     }
 
-    private static void PatchUrlFromInfo(BinaryWriter writer, PatchTargetInfo info, byte[] url)
+    private static void PatchUrlFromInfoList(BinaryWriter writer, List<PatchTargetInfo> targets, byte[] url)
     {
-        writer.BaseStream.Position = info.Offset;
-        writer.Write(url);
-        
-        for (int i = 0; i < info.Length - url.Length; i++)
+        foreach (PatchTargetInfo target in targets)
         {
-            writer.Write('\0');
+            writer.BaseStream.Position = target.Offset;
+            writer.Write(url);
+
+            //Terminate the rest of the string
+            for (int i = 0; i < target.Length - url.Length; i++) writer.Write('\0');
         }
     }
 }
