@@ -80,10 +80,18 @@ public class PatchForm : Form
     {
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this._patcher == null) return;
+        if (this._tempFile == null) return;
         
         this._patcher.PatchUrl(this._urlField.Text);
+        
+        //TODO: warn the user if they are overwriting the file
+        File.Move(this._tempFile, this._outputFileField.FilePath, true);
 
         MessageBox.Show("Successfully patched EBOOT!");
+        
+        // Re-initializes patcher so we can patch with the same parameters again
+        // Probably slow but prevents crash
+        this.FileUpdated(this, EventArgs.Empty);
     }
 
     private void FailVerify(string reason, bool clear = true)
