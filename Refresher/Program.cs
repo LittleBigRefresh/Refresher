@@ -59,13 +59,9 @@ public class Program
             return;
         }
 
-        // FileStream       tempFileStream;
         MemoryMappedFile mappedFile;
         try
         {
-            //Open a write stream to the file
-
-            // tempFileStream = File.Open(tempFile, FileMode.Open, FileAccess.ReadWrite);
             mappedFile =
                 MemoryMappedFile.CreateFromFile(tempFile, FileMode.Open, null, 0, MemoryMappedFileAccess.ReadWrite);
         }
