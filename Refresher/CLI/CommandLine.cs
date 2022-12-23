@@ -18,7 +18,7 @@ public class CommandLine
             }
             catch
             {
-                /* */
+                // ignored
             }
         }
 
@@ -95,7 +95,7 @@ public class CommandLine
         }
         catch (Exception e)
         {
-            Console.WriteLine("Could not complete patch stopping.\n" + e);
+            Console.WriteLine("Could not complete patch, stopping.\n" + e);
 
             mappedFile.Dispose();
 
