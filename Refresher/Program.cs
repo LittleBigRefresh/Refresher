@@ -28,7 +28,7 @@ public class Program
             }
             catch
             {
-                /* */
+                // ignored
             }
         }
 
