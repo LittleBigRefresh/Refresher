@@ -2,6 +2,6 @@ namespace Refresher.Patching;
 
 public struct PatchTargetInfo
 {
-    public int Offset;
+    public long Offset;
     public int Length;
 }

@@ -1,3 +1,5 @@
+using System.IO.MemoryMappedFiles;
+using Eto;
 using Eto.Drawing;
 using Eto.Forms;
 using Refresher.Patching;
@@ -15,6 +17,8 @@ public class PatchForm : Form
     private readonly TextBox _urlField;
     
     private Patcher? _patcher;
+    private string? _tempFile;
+    private MemoryMappedFile? _mappedFile;
 
     public PatchForm()
     {
@@ -53,6 +57,7 @@ public class PatchForm : Form
 
         this._inputFileField.FilePathChanged += this.FileUpdated;
         this._urlField.TextChanged += this.FormUpdated;
+        this._outputFileField.FileAction = FileAction.SaveFile;
     }
 
     private static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
@@ -81,20 +86,54 @@ public class PatchForm : Form
         MessageBox.Show("Successfully patched EBOOT!");
     }
 
-    private void FileUpdated(object? sender, EventArgs e)
+    private void FailVerify(string reason, bool clear = true)
     {
+        if(clear) this._problems.Items.Clear();
+        this._problems.Items.Add(reason);
+        
         try
         {
-            this._patcher = new Patcher(File.ReadAllBytes(this._inputFileField.FilePath));
+            if (this._tempFile != null) File.Delete(this._tempFile);
         }
         catch
         {
-            this._patcher = null;
-            this._patchButton.Enabled = false;
+            // ignored
+        }
+        
+        this._patcher = null;
+        this._patchButton.Enabled = false;
+        this._mappedFile?.Dispose();
+    }
+
+    private void FileUpdated(object? sender, EventArgs ev)
+    {
+        try
+        {
+            //Create a temp file to store the EBOOT as we work on it
+            this._tempFile = Path.GetTempFileName();
+
+            //Copy the input file to the temp file
+            File.Copy(this._inputFileField.FilePath, this._tempFile, true);
+        }
+        catch (Exception e)
+        {
+            this.FailVerify("Could not create and copy to temporary file.\n" + e);
             return;
         }
 
-        this.FormUpdated(sender, e);
+        try
+        {
+            this._mappedFile?.Dispose();
+            this._mappedFile = MemoryMappedFile.CreateFromFile(this._tempFile, FileMode.Open, null, 0, MemoryMappedFileAccess.ReadWrite);
+            this._patcher = new Patcher(this._mappedFile.CreateViewStream());
+        }
+        catch(Exception e)
+        {
+            this.FailVerify("Could not read data from the input file.\n" + e);
+            return;
+        }
+
+        this.FormUpdated(sender, ev);
     }
 
     private void FormUpdated(object? sender, EventArgs e)

@@ -1,3 +1,4 @@
+using System.IO.MemoryMappedFiles;
 using Refresher.Patching;
 using Refresher.Verification;
 
@@ -7,35 +8,103 @@ public class CommandLine
 {
     public static void Run(CommandLineOptions options)
     {
-        byte[] data;
+        //Deletes the temporary file, if it exists
+        void DeleteTempFile(string? s)
+        {
+            try
+            {
+                if (s != null)
+                    File.Delete(s);
+            }
+            catch
+            {
+                /* */
+            }
+        }
+
+        //If the input file does not exist, exit
+        if (!File.Exists(options.InputFile))
+        {
+            Console.WriteLine("Input file does not exist.");
+            Environment.Exit(1);
+            return;
+        }
+
+        string? tempFile = null;
         try
         {
-            data = File.ReadAllBytes(options.InputFile);
+            //Create a temp file to store the EBOOT as we work on it
+            tempFile = Path.GetTempFileName();
+
+            //Copy the input file to the temp file
+            File.Copy(options.InputFile, tempFile, true);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Could not create and copy to temporary file.\n" + e);
+
+            DeleteTempFile(tempFile);
+
+            Environment.Exit(1);
+            return;
+        }
+
+        MemoryMappedFile mappedFile;
+        try
+        {
+            mappedFile =
+                MemoryMappedFile.CreateFromFile(tempFile, FileMode.Open, null, 0, MemoryMappedFileAccess.ReadWrite);
         }
         catch (Exception e)
         {
             Console.WriteLine("Could not read data from the input file.\n" + e);
+
+            DeleteTempFile(tempFile);
+
             Environment.Exit(1);
             return;
         }
 
-        Patcher patcher = new(data);
+        //Create a new patcher with the temp file stream
+        Patcher patcher = new(mappedFile.CreateViewStream());
         List<Message> messages = patcher.Verify(options.ServerUrl).ToList();
-        
-        foreach (Message message in messages)
-        {
-            Console.WriteLine(message.ToString());
-        }
 
+        //Write the messages to the console
+        foreach (Message message in messages) Console.WriteLine($"{message.Level}: {message.Content}");
+
+        //If there are any errors, exit
         if (messages.Any(m => m.Level == MessageLevel.Error))
         {
             Console.WriteLine("\nThe patching operation cannot continue due to errors while verifying. Stopping.");
+
+            mappedFile.Dispose();
+
+            DeleteTempFile(tempFile);
+
             Environment.Exit(1);
             return;
         }
-        
-        patcher.PatchUrl(options.ServerUrl);
-        
-        File.WriteAllBytes(options.OutputFile, patcher.Data);
+
+        try
+        {
+            //Patch the file
+            patcher.PatchUrl(options.ServerUrl);
+
+            //TODO: warn the user if they are overwriting the file
+            File.Move(tempFile, options.OutputFile, true);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Could not complete patch stopping.\n" + e);
+
+            mappedFile.Dispose();
+
+            DeleteTempFile(tempFile);
+
+            Environment.Exit(1);
+            return;
+        }
+
+        DeleteTempFile(tempFile);
     }
 }
