@@ -18,7 +18,7 @@ public class Program
 
     private static void CommandLine(CommandlineOptions options)
     {
-        //Deletes the temparary file, if it exists
+        //Deletes the temporary file, if it exists
         void DeleteTempFile(string s)
         {
             try
