@@ -105,7 +105,7 @@ public class Program
         }
         catch (Exception e)
         {
-            Console.WriteLine("Could not complete patch stopping.\n" + e);
+            Console.WriteLine("Could not complete patch, stopping.\n" + e);
 
             mappedFile.Dispose();
 
