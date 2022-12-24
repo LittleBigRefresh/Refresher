@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO.MemoryMappedFiles;
 using Eto;
 using Eto.Drawing;
@@ -82,7 +83,7 @@ public class PatchForm : Form
     private void Patch(object? sender, EventArgs e)
     {
         // Wait for the patch task to finish
-        this._latestTask?.Wait();
+        this._latestTask?.Wait(1000);
         
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this._patcher == null) return;
@@ -133,7 +134,7 @@ public class PatchForm : Form
     {
         // Cancel the current task, and wait for it to complete
         this._latestTokenSource?.Cancel();
-        this._latestTask?.ConfigureAwait(false);
+        this._latestTask?.Wait(1000);
         
         try
         {
@@ -170,7 +171,7 @@ public class PatchForm : Form
 
         // Cancel the current task, and wait for it to complete
         this._latestTokenSource?.Cancel();
-        this._latestTask?.ConfigureAwait(false);
+        this._latestTask?.Wait(1000);
         
         // Disable the patch button
         this._patchButton.Enabled = false;
@@ -191,13 +192,19 @@ public class PatchForm : Form
             List<Message> messages = this._patcher.Verify(url);
             
             this._latestToken.Value.ThrowIfCancellationRequested();
-            Program.App.Invoke(() => 
+            Program.App.AsyncInvoke(() => 
             {
                 this._problems.Items.Clear();
                 foreach (Message message in messages) this._problems.Items.Add(message.ToString());
-
+            
                 this._patchButton.Enabled = messages.All(m => m.Level != MessageLevel.Error);
             });
         }, this._latestToken.Value);
+    }
+
+    protected override void OnClosing(CancelEventArgs e) {
+        Environment.Exit(0);
+        
+        base.OnClosing(e);
     }
 }

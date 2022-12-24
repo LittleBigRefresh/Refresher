@@ -22,6 +22,7 @@ public class Program {
             Console.WriteLine("Launching in GUI mode");
             App = new Application();
             App.Run(new PatchForm());
+            App.Dispose();
         }
     }
 }
