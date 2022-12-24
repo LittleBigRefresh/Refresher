@@ -7,8 +7,8 @@ namespace Refresher;
 
 #nullable disable
 
-public class Program
-{
+public class Program {
+    public static Application App;
     public static void Main(string[] args)
     {
         if (args.Length > 0)
@@ -20,7 +20,8 @@ public class Program
         else
         {
             Console.WriteLine("Launching in GUI mode");
-            new Application().Run(new PatchForm());
+            App = new Application();
+            App.Run(new PatchForm());
         }
     }
 }

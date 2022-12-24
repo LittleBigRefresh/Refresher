@@ -143,7 +143,7 @@ public partial class Patcher
     /// </summary>
     /// <returns>A list of issues and notes about the EBOOT.</returns>
     [Pure]
-    public IEnumerable<Message> Verify(string url)
+    public List<Message> Verify(string url)
     {
         // TODO: check if this is an ELF, correct architecture, if url is correct length, etc.
         List<Message> messages = new();

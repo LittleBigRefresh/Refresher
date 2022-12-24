@@ -19,6 +19,9 @@ public class PatchForm : Form
     private Patcher? _patcher;
     private string? _tempFile;
     private MemoryMappedFile? _mappedFile;
+    private CancellationToken? _latestToken;
+    private CancellationTokenSource? _latestTokenSource;
+    private Task? _latestTask;
 
     public PatchForm()
     {
@@ -56,7 +59,7 @@ public class PatchForm : Form
         };
 
         this._inputFileField.FilePathChanged += this.FileUpdated;
-        this._urlField.TextChanged += this.FormUpdated;
+        this._urlField.TextChanged += this.Reverify;
         this._outputFileField.FileAction = FileAction.SaveFile;
     }
 
@@ -78,10 +81,13 @@ public class PatchForm : Form
 
     private void Patch(object? sender, EventArgs e)
     {
+        // Wait for the patch task to finish
+        this._latestTask?.Wait();
+        
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this._patcher == null) return;
         if (this._tempFile == null) return;
-        
+
         this._patcher.PatchUrl(this._urlField.Text);
 
         // Warn user if file already exists
@@ -125,12 +131,16 @@ public class PatchForm : Form
 
     private void FileUpdated(object? sender, EventArgs ev)
     {
+        // Cancel the current task, and wait for it to complete
+        this._latestTokenSource?.Cancel();
+        this._latestTask?.ConfigureAwait(false);
+        
         try
         {
-            //Create a temp file to store the EBOOT as we work on it
+            // Create a temp file to store the EBOOT as we work on it
             this._tempFile = Path.GetTempFileName();
 
-            //Copy the input file to the temp file
+            // Copy the input file to the temp file
             File.Copy(this._inputFileField.FilePath, this._tempFile, true);
         }
         catch (Exception e)
@@ -151,18 +161,43 @@ public class PatchForm : Form
             return;
         }
 
-        this.FormUpdated(sender, ev);
+        this.Reverify(sender, ev);
     }
-
-    private void FormUpdated(object? sender, EventArgs e)
+    
+    private void Reverify(object? sender, EventArgs e) 
     {
         if (this._patcher == null) return;
+
+        // Cancel the current task, and wait for it to complete
+        this._latestTokenSource?.Cancel();
+        this._latestTask?.ConfigureAwait(false);
         
-        this._problems.Items.Clear();
-        List<Message> messages = this._patcher.Verify(this._urlField.Text).ToList();
+        // Disable the patch button
+        this._patchButton.Enabled = false;
 
-        foreach (Message message in messages) this._problems.Items.Add(message.ToString());
+        // Create a new token and token source
+        this._latestTokenSource = new CancellationTokenSource();
+        this._latestToken = this._latestTokenSource.Token;
 
-        this._patchButton.Enabled = messages.All(m => m.Level != MessageLevel.Error);
+        // Create a local copy of the URL (accessing it *inside* the task will cause the thread to immediately close)
+        string url = this._urlField.Text;
+        
+        // Start a new task to verify the URL
+        this._latestTask = Task.Factory.StartNew(delegate 
+        {
+            this._latestToken.Value.ThrowIfCancellationRequested();
+            
+            // Verify the URL
+            List<Message> messages = this._patcher.Verify(url);
+            
+            this._latestToken.Value.ThrowIfCancellationRequested();
+            Program.App.Invoke(() => 
+            {
+                this._problems.Items.Clear();
+                foreach (Message message in messages) this._problems.Items.Add(message.ToString());
+
+                this._patchButton.Enabled = messages.All(m => m.Level != MessageLevel.Error);
+            });
+        }, this._latestToken.Value);
     }
 }
