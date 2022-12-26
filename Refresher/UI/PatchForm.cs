@@ -83,7 +83,8 @@ public class PatchForm : Form
     private void Patch(object? sender, EventArgs e)
     {
         // Wait for the patch task to finish
-        this._latestTask?.Wait(1000);
+        if(this._latestTask is { IsCanceled: false })
+            this._latestTask?.Wait(1000);
         
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this._patcher == null) return;
@@ -102,6 +103,9 @@ public class PatchForm : Form
 
         if (result == DialogResult.Yes)
         {
+            this._mappedFile?.Dispose();
+            this._mappedFile = null;
+            
             File.Move(this._tempFile, this._outputFileField.FilePath, true);
             MessageBox.Show("Successfully patched EBOOT!");
         }
@@ -134,7 +138,8 @@ public class PatchForm : Form
     {
         // Cancel the current task, and wait for it to complete
         this._latestTokenSource?.Cancel();
-        this._latestTask?.Wait(1000);
+        if(this._latestTask is { IsCanceled: false })
+            this._latestTask?.Wait(1000);
         
         try
         {
@@ -171,7 +176,8 @@ public class PatchForm : Form
 
         // Cancel the current task, and wait for it to complete
         this._latestTokenSource?.Cancel();
-        this._latestTask?.Wait(1000);
+        if(this._latestTask is { IsCanceled: false })
+            this._latestTask?.Wait(1000);
         
         // Disable the patch button
         this._patchButton.Enabled = false;

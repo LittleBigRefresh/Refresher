@@ -4,8 +4,8 @@
         <OutputType>Exe</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <TargetFramework>net7.0</TargetFramework>
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFramework);net7.0-windows</TargetFrameworks>
+        <TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net7.0</TargetFramework>
+        <TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net7.0-windows</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
