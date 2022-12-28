@@ -44,7 +44,6 @@ public class CommandLine
             Console.WriteLine("Could not create and copy to temporary file.\n" + e);
 
             DeleteTempFile(tempFile);
-
             Environment.Exit(1);
             return;
         }
@@ -58,9 +57,8 @@ public class CommandLine
         catch (Exception e)
         {
             Console.WriteLine("Could not read data from the input file.\n" + e);
-
+            
             DeleteTempFile(tempFile);
-
             Environment.Exit(1);
             return;
         }
@@ -78,12 +76,29 @@ public class CommandLine
             Console.WriteLine("\nThe patching operation cannot continue due to errors while verifying. Stopping.");
 
             mappedFile.Dispose();
-
             DeleteTempFile(tempFile);
-
             Environment.Exit(1);
             return;
         }
+        
+        if (messages.Any(m => m.Level == MessageLevel.Warning))
+        {
+            Console.Write("\nThere were warnings while verifying. Would you like to continue? [Y/n] ");
+            ConsoleKeyInfo key = Console.ReadKey();
+            Console.Write('\n');
+
+            if (key.KeyChar == 'n')
+            {
+                Console.WriteLine("Patching cancelled due to warnings.");
+
+                mappedFile.Dispose();
+                DeleteTempFile(tempFile);
+                Environment.Exit(1);
+                return;
+            }
+        }
+        
+        Console.WriteLine("Patching...");
 
         try
         {
@@ -98,13 +113,12 @@ public class CommandLine
             Console.WriteLine("Could not complete patch, stopping.\n" + e);
 
             mappedFile.Dispose();
-
             DeleteTempFile(tempFile);
-
             Environment.Exit(1);
             return;
         }
-
+        
         DeleteTempFile(tempFile);
+        Console.WriteLine("Successfully patched EBOOT!");
     }
 }
