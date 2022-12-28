@@ -148,9 +148,6 @@ public partial class Patcher
         // TODO: check if this is an ELF, correct architecture, if url is correct length, etc.
         List<Message> messages = new();
         
-        messages.Add(new Message(MessageLevel.Warning, "im stuff"));
-        return messages;
-
         // Check url
         if (url.EndsWith('/'))
             messages.Add(new Message(MessageLevel.Error,
