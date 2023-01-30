@@ -87,7 +87,7 @@ public class FilePatchForm : PatchForm<Patcher>
         }
         catch (Exception e)
         {
-            this.FailVerify("Could not create and copy to temporary file.\n" + e);
+            this.FailVerify("Could not create and copy to temporary file.", e);
             return;
         }
 
@@ -99,7 +99,7 @@ public class FilePatchForm : PatchForm<Patcher>
         }
         catch(Exception e)
         {
-            this.FailVerify("Could not read data from the input file.\n" + e);
+            this.FailVerify("Could not read data from the input file.", e);
             return;
         }
 
