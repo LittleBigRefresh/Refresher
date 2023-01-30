@@ -57,6 +57,17 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this.UrlField.TextChanged += this.Reverify;
     }
 
+    protected static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
+    {
+        Label label = new()
+        {
+            Text = labelText + ':',
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        return new TableRow(label, control = new TControl());
+    }
+
     public virtual void CompletePatch(object? sender, EventArgs e)
     {
         // Not necessary for some patchers maybe

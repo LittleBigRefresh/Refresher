@@ -33,17 +33,6 @@ public class FilePatchForm : PatchForm<Patcher>
         this.InitializePatcher();
     }
 
-    private static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
-    {
-        Label label = new()
-        {
-            Text = labelText + ':',
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-
-        return new TableRow(label, control = new TControl());
-    }
-
     public override void CompletePatch(object? sender, EventArgs e)
     {
         // Warn user if file already exists
