@@ -8,8 +8,17 @@ namespace Refresher.UI;
 /// </summary>
 public class MainForm : RefresherForm
 {
-    public MainForm() : base(string.Empty, new Size(384, -1))
+    public MainForm() : base(string.Empty, new Size(450, -1))
     {
-        this.Content = new Button((_,_) => this.ShowChild<FilePatchForm>()) {Text = "File Patch (using a .ELF)"};
+        StackLayout layout;
+        this.Content = layout = new StackLayout
+        (
+            new Label { Text = "Welcome to Refresher! Please pick a patching method to continue." },
+            new Button((_, _) => this.ShowChild<FilePatchForm>()) { Text = "File Patch (using a .ELF)" },
+            new Button((_, _) => this.ShowChild<EmulatorPatchForm>()) { Text = "RPCS3 Patch" }
+        );
+
+        layout.Spacing = 5;
+        layout.HorizontalContentAlignment = HorizontalAlignment.Stretch;
     }
 }

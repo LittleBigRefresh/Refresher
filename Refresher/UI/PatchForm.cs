@@ -30,7 +30,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
 
     protected void InitializePatcher()
     {
-        // ReSharper disable once VirtualMemberCallInConstructor
         TableLayout formPanel = this.FormPanel;
         formPanel.Spacing = new Size(5, 5);
         formPanel.Padding = new Padding(0, 0, 0, 10);
@@ -113,7 +112,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
 
     protected void FailVerify(string reason, Exception e, bool clear = true)
     {
-        this.FailVerify($"{reason}\n{e}");
+        this.FailVerify($"{reason}\n{e}", clear);
     }
 
     protected void FailVerify(string reason, bool clear = true)
