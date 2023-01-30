@@ -14,7 +14,7 @@
       <PackageReference Include="Eto.Forms" Version="2.7.2" />
       <PackageReference Include="Eto.Platform.Gtk" Version="2.7.2" />
       <PackageReference Condition="'$(TargetFramework)' == 'net7.0-windows'" Include="Eto.Platform.Windows" Version="2.7.2" />
-      <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico"/>
+      <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
     </ItemGroup>
 
 </Project>

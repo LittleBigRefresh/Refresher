@@ -1,6 +1,4 @@
 using System.ComponentModel;
-using System.IO.MemoryMappedFiles;
-using Eto;
 using Eto.Drawing;
 using Eto.Forms;
 using Refresher.Patching;
@@ -8,51 +6,46 @@ using Refresher.Verification;
 
 namespace Refresher.UI;
 
-public class PatchForm : Form
+public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patcher
 {
-    private readonly FilePicker _inputFileField;
-    private readonly FilePicker _outputFileField;
-    private readonly Button _patchButton;
-
-    private readonly ListBox _problems;
-    private readonly TextBox _urlField;
+    protected abstract TableLayout FormPanel { get; }
     
-    private Patcher? _patcher;
-    private string? _tempFile;
-    private MemoryMappedFile? _mappedFile;
+    private readonly Button _patchButton;
+    private readonly ListBox _problems;
+    
+    protected TextBox UrlField = null!;
+    protected TPatcher? Patcher;
+    
     private CancellationToken? _latestToken;
     private CancellationTokenSource? _latestTokenSource;
     private Task? _latestTask;
 
-    public PatchForm()
+    public PatchForm(string subtitle) : base(subtitle, new Size(570, -1), false)
     {
-        this.Title = "Refresher";
-        this.Icon = Icon.FromResource("refresher.ico");
-        
-        this.ClientSize = new Size(570, -1);
-        this.Padding = new Padding(10, 10, 10, 0);
+        this._problems = new ListBox { Height = 200 };
+        this._patchButton = new Button(this.Patch) { Text = "Patch!", Enabled = false };
 
+        this.Content = new Label { Text = $"This patcher is uninitialized. Call {nameof(this.InitializePatcher)}() at the end of the patcher's constructor." };
+    }
+
+    protected void InitializePatcher()
+    {
+        // ReSharper disable once VirtualMemberCallInConstructor
+        TableLayout formPanel = this.FormPanel;
+        formPanel.Spacing = new Size(5, 5);
+        formPanel.Padding = new Padding(0, 0, 0, 10);
+        
         this.Content = new Splitter
         {
             Orientation = Orientation.Vertical,
-
-            Panel1 = new TableLayout(new List<TableRow>
-            {
-                AddField("Input EBOOT.elf", out this._inputFileField),
-                AddField("Server URL", out this._urlField),
-                AddField("Output EBOOT.elf", out this._outputFileField),
-            })
-            {
-                Spacing = new Size(5, 5),
-                Padding = new Padding(0, 0, 0, 10),
-            },
+            Panel1 = formPanel,
 
             // ReSharper disable once RedundantExplicitParamsArrayCreation
             Panel2 = new StackLayout(new StackLayoutItem[]
             {
-                this._problems = new ListBox() { Height = 200 },
-                new Button(Guide) { Text = "Guide" },
-                this._patchButton = new Button(this.Patch) { Text = "Patch!", Enabled = false },
+                this._problems,
+                new Button(this.Guide) { Text = "View guide" },
+                this._patchButton,
             })
             {
                 Padding = new Padding(0, 10, 0, 0),
@@ -60,136 +53,81 @@ public class PatchForm : Form
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
             },
         };
-
-        this._inputFileField.FilePathChanged += this.FileUpdated;
-        this._urlField.TextChanged += this.Reverify;
-        this._outputFileField.FileAction = FileAction.SaveFile;
+        
+        this.UrlField.TextChanged += this.Reverify;
     }
 
-    private static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
+    public virtual void CompletePatch(object? sender, EventArgs e)
     {
-        Label label = new()
-        {
-            Text = labelText + ':',
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-
-        return new TableRow(label, control = new TControl());
+        // Not necessary for some patchers maybe
     }
 
-    private static void Guide(object? sender, EventArgs e)
+    public virtual void Guide(object? sender, EventArgs e)
     {
-        MessageBox.Show("No guide exists yet, stay tuned!", MessageBoxType.Warning);
+        MessageBox.Show("No guide exists for this patcher yet, so stay tuned!", MessageBoxType.Warning);
     }
 
+    /// <summary>
+    /// Called when the state of the patcher should be entirely reset, e.g. when verification has failed.
+    /// </summary>
+    protected virtual void Reset()
+    { }
+
+    /// <summary>
+    /// Cancel the current task, and wait for it to complete
+    /// </summary>
+    protected void CancelAndWaitForTask()
+    {
+        this._latestTokenSource?.Cancel();
+    }
+
+    private void WaitForTask(int timeout = 1000)
+    {
+        if(this._latestTask is { IsCanceled: false })
+            this._latestTask?.Wait(timeout);
+    }
+    
     private void Patch(object? sender, EventArgs e)
     {
         // Wait for the patch task to finish
-        if(this._latestTask is { IsCanceled: false })
-            this._latestTask?.Wait(1000);
+       this.WaitForTask();
         
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
-        if (this._patcher == null) return;
-        if (this._tempFile == null) return;
+        if (this.Patcher == null) return;
 
-        this._patcher.PatchUrl(this._urlField.Text);
-
-        // Warn user if file already exists
-        // Technically most file pickers already handle this for us but still
-        DialogResult result = DialogResult.Yes;
-        if (File.Exists(this._outputFileField.FilePath))
-        {
-            result = MessageBox.Show("You are overwriting an existing EBOOT. Are you sure you want to do this?",
-                MessageBoxButtons.YesNo, MessageBoxType.Warning);
-        }
-
-        if (result == DialogResult.Yes)
-        {
-            this._mappedFile?.Dispose();
-            this._mappedFile = null;
-            
-            File.Move(this._tempFile, this._outputFileField.FilePath, true);
-            MessageBox.Show("Successfully patched EBOOT!");
-        }
-
-        // Re-initializes patcher so we can patch with the same parameters again
-        // Probably slow but prevents crash
-        this.FileUpdated(this, EventArgs.Empty);
+        this.Patcher.PatchUrl(this.UrlField.Text);
+        
+        this.CompletePatch(sender, e);
     }
 
-    private void FailVerify(string reason, bool clear = true)
+    protected void FailVerify(string reason, bool clear = true)
     {
         if(clear) this._problems.Items.Clear();
         this._problems.Items.Add(reason);
         
-        try
-        {
-            if (this._tempFile != null) File.Delete(this._tempFile);
-        }
-        catch
-        {
-            // ignored
-        }
+        this.Reset();
         
-        this._patcher = null;
+        this.Patcher = null;
         this._patchButton.Enabled = false;
-        this._mappedFile?.Dispose();
     }
 
-    private void FileUpdated(object? sender, EventArgs ev)
+    protected void Reverify(object? sender, EventArgs e) 
     {
-        // Cancel the current task, and wait for it to complete
-        this._latestTokenSource?.Cancel();
-        if(this._latestTask is { IsCanceled: false })
-            this._latestTask?.Wait(1000);
-        
-        try
-        {
-            // Create a temp file to store the EBOOT as we work on it
-            this._tempFile = Path.GetTempFileName();
-
-            // Copy the input file to the temp file
-            File.Copy(this._inputFileField.FilePath, this._tempFile, true);
-        }
-        catch (Exception e)
-        {
-            this.FailVerify("Could not create and copy to temporary file.\n" + e);
-            return;
-        }
-
-        try
-        {
-            this._mappedFile?.Dispose();
-            this._mappedFile = MemoryMappedFile.CreateFromFile(this._tempFile, FileMode.Open, null, 0, MemoryMappedFileAccess.ReadWrite);
-            this._patcher = new Patcher(this._mappedFile.CreateViewStream());
-        }
-        catch(Exception e)
-        {
-            this.FailVerify("Could not read data from the input file.\n" + e);
-            return;
-        }
-
-        this.Reverify(sender, ev);
-    }
-    
-    private void Reverify(object? sender, EventArgs e) 
-    {
-        if (this._patcher == null) return;
+        if (this.Patcher == null) return;
 
         // Cancel the current task, and wait for it to complete
-        this._latestTokenSource?.Cancel();
-        if(this._latestTask is { IsCanceled: false })
-            this._latestTask?.Wait(1000);
+        this.CancelAndWaitForTask();
         
         // Disable the patch button
         this._patchButton.Enabled = false;
+        this._patchButton.Text = "Verifying...";
 
         // Create a new token and token source
         this._latestTokenSource = new CancellationTokenSource();
         this._latestToken = this._latestTokenSource.Token;
 
         // Create a local copy of the URL (accessing it *inside* the task will cause the thread to immediately close)
-        string url = this._urlField.Text;
+        string url = this.UrlField.Text;
         
         // Start a new task to verify the URL
         this._latestTask = Task.Factory.StartNew(delegate 
@@ -197,7 +135,7 @@ public class PatchForm : Form
             this._latestToken.Value.ThrowIfCancellationRequested();
             
             // Verify the URL
-            List<Message> messages = this._patcher.Verify(url);
+            List<Message> messages = this.Patcher.Verify(url);
             
             this._latestToken.Value.ThrowIfCancellationRequested();
             Program.App.AsyncInvoke(() => 
@@ -206,11 +144,13 @@ public class PatchForm : Form
                 foreach (Message message in messages) this._problems.Items.Add(message.ToString());
             
                 this._patchButton.Enabled = messages.All(m => m.Level != MessageLevel.Error);
+                this._patchButton.Text = "Patch!";
             });
         }, this._latestToken.Value);
     }
-
-    protected override void OnClosing(CancelEventArgs e) {
+    
+    protected override void OnClosing(CancelEventArgs e)
+    {
         Environment.Exit(0);
         
         base.OnClosing(e);
