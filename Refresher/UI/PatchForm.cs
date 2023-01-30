@@ -27,6 +27,8 @@ public class PatchForm : Form
     public PatchForm()
     {
         this.Title = "Refresher";
+        this.Icon = Icon.FromResource("refresher.ico");
+        
         this.ClientSize = new Size(570, -1);
         this.Padding = new Padding(10, 10, 10, 0);
 
