@@ -54,6 +54,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         };
         
         this.UrlField.TextChanged += this.Reverify;
+        this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
     }
 
     protected static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
