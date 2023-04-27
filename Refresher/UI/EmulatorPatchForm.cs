@@ -1,7 +1,6 @@
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
-using Eto.GtkSharp.Drawing;
 using Refresher.Patching;
 using Refresher.Verification;
 
@@ -37,6 +36,7 @@ public class EmulatorPatchForm : PatchForm<Patcher>
             {
                 this._folderField.FilePath = folder;
                 this.PathChanged(this, EventArgs.Empty);
+                this.LogMessage("RPCS3's path has been detected automatically! You do not need to change the path.");
             }
         }
 
