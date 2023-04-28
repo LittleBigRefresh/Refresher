@@ -111,7 +111,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this.CompletePatch(sender, e);
     }
 
-    protected void FailVerify(string reason, Exception e, bool clear = true)
+    protected void FailVerify(string reason, Exception? e = null, bool clear = true)
     {
         this.FailVerify($"{reason}\n{e}", clear);
     }
