@@ -11,10 +11,11 @@
 
     <ItemGroup>
       <PackageReference Include="CommandLineParser" Version="2.9.1" />
-      <PackageReference Include="Eto.Forms" Version="2.7.2" />
-      <PackageReference Include="Eto.Platform.Gtk" Version="2.7.2" />
+      <PackageReference Include="Eto.Forms" Version="2.7.5" />
+      <PackageReference Include="Eto.Platform.Gtk" Version="2.7.5" />
       <PackageReference Condition="'$(TargetFramework)' == 'net7.0-windows'" Include="Eto.Platform.Windows" Version="2.7.2" />
       <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
+      <PackageReference Include="SCEToolSharp" Version="1.0.2" />
     </ItemGroup>
 
 </Project>

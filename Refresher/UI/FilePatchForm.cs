@@ -1,10 +1,7 @@
-using System.ComponentModel;
 using System.IO.MemoryMappedFiles;
 using Eto;
-using Eto.Drawing;
 using Eto.Forms;
 using Refresher.Patching;
-using Refresher.Verification;
 
 namespace Refresher.UI;
 
@@ -32,7 +29,7 @@ public class FilePatchForm : PatchForm<Patcher>
         
         this.InitializePatcher();
     }
-
+    
     public override void CompletePatch(object? sender, EventArgs e)
     {
         // Warn user if file already exists

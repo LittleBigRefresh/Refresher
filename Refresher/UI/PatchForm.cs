@@ -11,7 +11,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     protected abstract TableLayout FormPanel { get; }
     
     private readonly Button _patchButton;
-    private readonly ListBox _problems;
+    private readonly ListBox _messages;
     
     protected TextBox UrlField = null!;
     protected TPatcher? Patcher;
@@ -22,7 +22,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
 
     public PatchForm(string subtitle) : base(subtitle, new Size(570, -1), false)
     {
-        this._problems = new ListBox { Height = 200 };
+        this._messages = new ListBox { Height = 200 };
         this._patchButton = new Button(this.Patch) { Text = "Patch!", Enabled = false };
 
         this.Content = new Label { Text = $"This patcher is uninitialized. Call {nameof(this.InitializePatcher)}() at the end of the patcher's constructor." };
@@ -30,7 +30,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
 
     protected void InitializePatcher()
     {
-        // ReSharper disable once VirtualMemberCallInConstructor
         TableLayout formPanel = this.FormPanel;
         formPanel.Spacing = new Size(5, 5);
         formPanel.Padding = new Padding(0, 0, 0, 10);
@@ -43,7 +42,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             // ReSharper disable once RedundantExplicitParamsArrayCreation
             Panel2 = new StackLayout(new StackLayoutItem[]
             {
-                this._problems,
+                this._messages,
                 new Button(this.Guide) { Text = "View guide" },
                 this._patchButton,
             })
@@ -55,6 +54,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         };
         
         this.UrlField.TextChanged += this.Reverify;
+        this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
     }
 
     protected static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
@@ -111,20 +111,25 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this.CompletePatch(sender, e);
     }
 
-    protected void FailVerify(string reason, Exception e, bool clear = true)
+    protected void FailVerify(string reason, Exception? e = null, bool clear = true)
     {
-        this.FailVerify($"{reason}\n{e}");
+        this.FailVerify($"{reason}\n{e}", clear);
     }
 
-    protected void FailVerify(string reason, bool clear = true)
+    private void FailVerify(string reason, bool clear = true)
     {
-        if(clear) this._problems.Items.Clear();
-        this._problems.Items.Add(reason);
+        if(clear) this._messages.Items.Clear();
+        this._messages.Items.Add(reason);
         
         this.Reset();
         
         this.Patcher = null;
         this._patchButton.Enabled = false;
+    }
+
+    protected void LogMessage(string message)
+    {
+        this._messages.Items.Add(message);
     }
 
     protected void Reverify(object? sender, EventArgs e) 
@@ -156,8 +161,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             this._latestToken.Value.ThrowIfCancellationRequested();
             Program.App.AsyncInvoke(() => 
             {
-                this._problems.Items.Clear();
-                foreach (Message message in messages) this._problems.Items.Add(message.ToString());
+                this._messages.Items.Clear();
+                foreach (Message message in messages) this._messages.Items.Add(message.ToString());
             
                 this._patchButton.Enabled = messages.All(m => m.Level != MessageLevel.Error);
                 this._patchButton.Text = "Patch!";
