@@ -51,7 +51,6 @@ public class EmulatorPatchForm : PatchForm<Patcher>
             }
         }
 
-        this.ClientSize = new Size(600, -1);
         this.InitializePatcher();
     }
 

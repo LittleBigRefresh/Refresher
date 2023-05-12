@@ -22,7 +22,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     private CancellationTokenSource? _latestTokenSource;
     private Task? _latestTask;
 
-    public PatchForm(string subtitle) : base(subtitle, new Size(570, -1), false)
+    public PatchForm(string subtitle) : base(subtitle, new Size(700, -1), false)
     {
         this._messages = new ListBox { Height = 200 };
         this._patchButton = new Button(this.Patch) { Text = "Patch!", Enabled = false };
