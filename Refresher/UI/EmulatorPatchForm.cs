@@ -28,7 +28,7 @@ public class EmulatorPatchForm : PatchForm<Patcher>
             AddField("RPCS3 dev_hdd0 folder", out this._folderField),
             AddField("Game to patch", out this._gameDropdown),
             AddField("Server URL", out this.UrlField),
-            AddField("Output identifier (EBOOT.<identifier>.elf)", out this._outputField),
+            AddField("Identifier (EBOOT.<value>.elf)", out this._outputField),
         });
 
         this._folderField.FileAction = FileAction.SelectFolder;

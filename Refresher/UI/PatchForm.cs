@@ -1,8 +1,10 @@
 using System.ComponentModel;
 using Eto.Drawing;
 using Eto.Forms;
+using Newtonsoft.Json;
 using Refresher.Patching;
 using Refresher.Verification;
+using Refresher.Verification.Autodiscover;
 
 namespace Refresher.UI;
 
@@ -25,7 +27,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this._messages = new ListBox { Height = 200 };
         this._patchButton = new Button(this.Patch) { Text = "Patch!", Enabled = false };
 
-        this.Content = new Label { Text = $"This patcher is uninitialized. Call {nameof(this.InitializePatcher)}() at the end of the patcher's constructor." };
+        this.Content = new Label { Text = $"This patcher is uninitialized. Call {nameof(this.InitializePatcher)}() at the end of the patcher's constructor.\n" +
+                                          $"If you're not a developer, then this is a broken build. Try downloading a newer version." };
     }
 
     protected void InitializePatcher()
@@ -44,6 +47,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             {
                 this._messages,
                 new Button(this.Guide) { Text = "View guide" },
+                new Button(this.Autodiscover) { Text = "Autodiscover" },
                 this._patchButton,
             })
             {
@@ -76,6 +80,43 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     public virtual void Guide(object? sender, EventArgs e)
     {
         MessageBox.Show("No guide exists for this patcher yet, so stay tuned!", MessageBoxType.Warning);
+    }
+
+    private void Autodiscover(object? sender, EventArgs arg)
+    {
+        try
+        {
+            using HttpClient client = new()
+            {
+                BaseAddress = new Uri(this.UrlField.Text),
+            };
+
+            HttpResponseMessage response = client.GetAsync("/autodiscover").Result;
+            response.EnsureSuccessStatusCode();
+
+            Stream stream = response.Content.ReadAsStream();
+            
+            JsonSerializer serializer = new();
+            using StreamReader streamReader = new(stream);
+            using JsonTextReader jsonReader = new(streamReader);
+
+            AutodiscoverResponse? autodiscover = serializer.Deserialize<AutodiscoverResponse>(jsonReader);
+            if (autodiscover == null) throw new InvalidOperationException("autoresponse was null");
+
+            string text = $"Successfully found a '{autodiscover.ServerBrand}' server at the given URL!\n\n" +
+                          $"Server's recommended patch URL: {autodiscover.Url}\n" +
+                          $"Custom digest key?: {(autodiscover.UsesCustomDigestKey.GetValueOrDefault() ? "Yes" : "No")}\n\n" +
+                          $"Use this server's configuration?";
+
+            DialogResult result = MessageBox.Show(text, MessageBoxButtons.YesNo);
+            if (result != DialogResult.Yes) return;
+
+            this.UrlField.Text = autodiscover.Url;
+        }
+        catch(Exception e)
+        {
+            MessageBox.Show($"Autodiscover failed: {e}", MessageBoxType.Error);
+        }
     }
 
     /// <summary>
