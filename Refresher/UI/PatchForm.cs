@@ -95,7 +95,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             response.EnsureSuccessStatusCode();
 
             Stream stream = response.Content.ReadAsStream();
-            
+
             JsonSerializer serializer = new();
             using StreamReader streamReader = new(stream);
             using JsonTextReader jsonReader = new(streamReader);
@@ -112,6 +112,11 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             if (result != DialogResult.Yes) return;
 
             this.UrlField.Text = autodiscover.Url;
+        }
+        catch (HttpRequestException e)
+        {
+            if (e.StatusCode == null) throw;
+            MessageBox.Show($"Autodiscover failed, because the server responded with {(int)e.StatusCode} {e.StatusCode}.");
         }
         catch(Exception e)
         {
