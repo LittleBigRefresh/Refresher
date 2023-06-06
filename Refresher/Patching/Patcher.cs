@@ -21,7 +21,7 @@ public partial class Patcher
 
     public Stream Stream { get; }
 
-    [GeneratedRegex("^https?[^\\x00]\\/\\/([0-9a-zA-Z.:]*)\\/([0-9a-zA-Z_]*)$", RegexOptions.Compiled)]
+    [GeneratedRegex("^https?[^\\x00]\\/\\/([0-9a-zA-Z.:].*)\\/?([0-9a-zA-Z_]*)$", RegexOptions.Compiled)]
     private static partial Regex UrlMatch();
 
     private static List<PatchTargetInfo> FindUrl(Stream file)
