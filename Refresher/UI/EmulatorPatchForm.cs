@@ -17,6 +17,7 @@ public class EmulatorPatchForm : PatchForm<Patcher>
 
     private string _tempFile;
     private string _usrDir;
+    private string _rapDir;
     private string _ebootPath;
     
     protected override TableLayout FormPanel { get; }
@@ -103,6 +104,8 @@ public class EmulatorPatchForm : PatchForm<Patcher>
         this._usrDir = Path.Combine(this._folderField.FilePath, "game", game.TitleId, "USRDIR");
         this._ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
         
+        this._rapDir = Path.Combine(this._folderField.FilePath, "home", "00000001", "exdata");
+        
         this.LogMessage("EBOOT Path: " + this._ebootPath);
         if (!File.Exists(this._ebootPath))
         {
@@ -112,6 +115,7 @@ public class EmulatorPatchForm : PatchForm<Patcher>
 
         this._tempFile = Path.GetTempFileName();
         
+        LibSceToolSharp.SetRapDirectory(this._rapDir);
         LibSceToolSharp.Decrypt(this._ebootPath, this._tempFile);
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
