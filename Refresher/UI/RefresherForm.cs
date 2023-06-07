@@ -32,6 +32,6 @@ public abstract class RefresherForm : Form
         TForm form = new();
         form.Show();
         
-        if(close) this.Close();
+        if(close) this.Visible = false;
     }
 }
