@@ -17,9 +17,7 @@ public class EmulatorPatchForm : PatchForm<Patcher>
 
     private string _tempFile;
     private string _usrDir;
-    private string _rapDir;
-    private string _ebootPath;
-    
+
     protected override TableLayout FormPanel { get; }
     
     public EmulatorPatchForm() : base("RPCS3 Patch")
@@ -40,6 +38,7 @@ public class EmulatorPatchForm : PatchForm<Patcher>
         this._gameDropdown.SelectedValueChanged += this.GameChanged;
 
         // RPCS3 builds for Windows are portable
+        // TODO: Cache the last used location for easier entry
         if (!OperatingSystem.IsWindows())
         {
             // ~/.config/rpcs3/dev_hdd0
@@ -79,6 +78,7 @@ public class EmulatorPatchForm : PatchForm<Patcher>
             {
                 item.Image = new Bitmap(iconPath).WithSize(new Size(64, 64));
             }
+
             string sfoPath = Path.Combine(gamePath, "PARAM.SFO");
             try
             {
@@ -102,12 +102,11 @@ public class EmulatorPatchForm : PatchForm<Patcher>
         Debug.Assert(game != null);
 
         this._usrDir = Path.Combine(this._folderField.FilePath, "game", game.TitleId, "USRDIR");
-        this._ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
+        string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
+        string rapDir = Path.Combine(this._folderField.FilePath, "home", "00000001", "exdata");
         
-        this._rapDir = Path.Combine(this._folderField.FilePath, "home", "00000001", "exdata");
-        
-        this.LogMessage("EBOOT Path: " + this._ebootPath);
-        if (!File.Exists(this._ebootPath))
+        this.LogMessage("EBOOT Path: " + ebootPath);
+        if (!File.Exists(ebootPath))
         {
             this.FailVerify("Could not find the EBOOT. Patching cannot continue.", clear: false);
             return;
@@ -115,8 +114,8 @@ public class EmulatorPatchForm : PatchForm<Patcher>
 
         this._tempFile = Path.GetTempFileName();
         
-        LibSceToolSharp.SetRapDirectory(this._rapDir);
-        LibSceToolSharp.Decrypt(this._ebootPath, this._tempFile);
+        LibSceToolSharp.SetRapDirectory(rapDir);
+        LibSceToolSharp.Decrypt(ebootPath, this._tempFile);
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
         
