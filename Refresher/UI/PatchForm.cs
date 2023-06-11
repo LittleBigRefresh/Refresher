@@ -1,10 +1,13 @@
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Eto.Drawing;
 using Eto.Forms;
 using Newtonsoft.Json;
 using Refresher.Patching;
 using Refresher.Verification;
 using Refresher.Verification.Autodiscover;
+using Task = System.Threading.Tasks.Task;
 
 namespace Refresher.UI;
 
@@ -79,7 +82,21 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
 
     public virtual void Guide(object? sender, EventArgs e)
     {
-        MessageBox.Show("No guide exists for this patcher yet, so stay tuned!", MessageBoxType.Warning);
+        MessageBox.Show("No guide exists for this patch method yet, so stay tuned!", MessageBoxType.Warning);
+    }
+
+    protected void OpenUrl(string url)
+    {
+        // based off of https://stackoverflow.com/a/43232486
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            Process.Start(url);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            Process.Start("xdg-open", url);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            Process.Start("open", url);
+        else
+            throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
     }
 
     private void Autodiscover(object? sender, EventArgs arg)

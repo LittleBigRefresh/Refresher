@@ -135,4 +135,9 @@ public class EmulatorPatchForm : PatchForm<Patcher>
         // Probably slow but prevents crash
         this.GameChanged(this, EventArgs.Empty);
     }
+
+    public override void Guide(object? sender, EventArgs e)
+    {
+        this.OpenUrl("https://littlebigrefresh.github.io/Docs/patching/rpcs3");
+    }
 }
