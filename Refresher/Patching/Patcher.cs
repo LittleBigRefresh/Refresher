@@ -164,7 +164,7 @@ public partial class Patcher
 
         if (this._targets.Value.Any(x => x.Length < url.Length))
             messages.Add(new Message(MessageLevel.Error,
-                "The URL is too short to fit in the EBOOT. Please use a shorter URL."));
+                "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
         
         return messages;
     }
