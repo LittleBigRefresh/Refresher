@@ -123,6 +123,8 @@ public partial class Patcher
             byte[] match = new byte[len];
             if (file.Read(match) < len) continue;
             string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
+            
+            if(str.Contains('%')) continue; // Ignore printf strings, e.g. %s
 
             Regex regex = UrlMatch();
             MatchCollection matches = regex.Matches(str);
@@ -132,6 +134,7 @@ public partial class Patcher
                 {
                     Length = len,
                     Offset = foundPosition,
+                    Data = str,
                 });
         }
 
