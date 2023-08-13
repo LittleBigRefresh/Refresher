@@ -124,9 +124,10 @@ public class EmulatorPatchForm : PatchForm<Patcher>
         this.Reverify(sender, ev);
     }
     
-    public override void CompletePatch(object? sender, EventArgs e)
-    {
-        string destination = Path.Combine(this._usrDir, $"EBOOT.{this._outputField.Text}.elf");
+    public override void CompletePatch(object? sender, EventArgs e) {
+        string identifier = string.IsNullOrWhiteSpace(this._outputField.Text) ? this._outputField.PlaceholderText : this._outputField.Text;
+        
+        string destination = Path.Combine(this._usrDir, $"EBOOT.{identifier}.elf");
         
         File.Move(this._tempFile, destination, true);
         MessageBox.Show($"Successfully patched EBOOT! It was saved to '{destination}'.");
