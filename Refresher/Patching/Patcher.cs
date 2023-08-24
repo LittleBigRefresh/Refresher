@@ -1,13 +1,16 @@
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Text;
 using System.Text.RegularExpressions;
+using ELFSharp.ELF;
+using ELFSharp.ELF.Sections;
 using Refresher.Verification;
 
 namespace Refresher.Patching;
 
 public partial class Patcher
 {
-    private readonly Lazy<List<PatchTargetInfo>> _targets;
+    private readonly Lazy<(List<PatchTargetInfo> urls, List<PatchTargetInfo> digests)> _targets;
 
     public Patcher(Stream stream)
     {
@@ -16,79 +19,93 @@ public partial class Patcher
 
         this.Stream = stream;
 
-        this._targets = new Lazy<List<PatchTargetInfo>>(() => FindUrl(stream));
+        this.Stream.Position = 0;
+
+        this._targets = new(() => FindUrls(stream));
     }
 
     public Stream Stream { get; }
 
-    [GeneratedRegex("^https?[^\\x00]\\/\\/([0-9a-zA-Z.:].*)\\/?([0-9a-zA-Z_]*)$", RegexOptions.Compiled)]
+    [GeneratedRegex("^https?[^\\x00]//([0-9a-zA-Z.:].*)/?([0-9a-zA-Z_]*)$", RegexOptions.Compiled)]
     private static partial Regex UrlMatch();
 
-    private static List<PatchTargetInfo> FindUrl(Stream file)
+    [GeneratedRegex("[a-zA-Z0-9!@#$%^&*()?/<>]", RegexOptions.Compiled)]
+    private static partial Regex DigestMatch();
+
+    /// <summary>
+    /// Finds a set of URLs and Digest keys in the given file, excluding C printf strings.
+    /// </summary>
+    /// <param name="file">A seekable stream containing the file to look through</param>
+    /// <param name="wordSize">The word size that string constants are aligned to in the ELF file, must be at least 4 bytes</param>
+    /// <returns>A list of the URLs and Digest keys</returns>
+    private static (List<PatchTargetInfo> urls, List<PatchTargetInfo> digests) FindUrls(Stream file)
     {
+        file.Position = 0;
+        using IELF? elf = ELFReader.Load(file, false);
+        file.Position = 0;
+
         BinaryReader reader = new(file);
 
-        //Get the length of the file (this operation can be costly, so lets cache it)
-        long fileLength = file.Length;
+        // The string "http" in ASCII, as an int
+        int httpInt = BitConverter.ToInt32("http"u8);
 
-        // Search for all instances of `http` in the binary
-        ReadOnlySpan<byte> http = "http"u8;
+        // The first 4-byte word of the word "cookie", which seems to always proceed digest keys
+        int cookieStartInt = BitConverter.ToInt32("cook"u8);
 
         //Found positions of `http` in the binary
-        List<long> foundPositions = new();
+        List<long> foundPossibleUrlPositions = new();
+        //Found positions of `cook` in the binary
+        List<long> foundPossibleCookiePositions = new();
 
-        //Get the length of the file (http.length also has a non-trivial cost, so we cache it)
-        long length = fileLength - http.Length;
-
-        //The buffer we read into
-        byte[] buf = new byte[http.Length];
-        long readPos = 0;
-        //While we are not at the end of the file
-        while (readPos < length)
+        foreach (ISection section in elf.Sections)
         {
-            //Set the position of the stream to the next one to check
-            reader.BaseStream.Position = readPos;
-
-            //Read into the buffer
-            int read = file.Read(buf);
-            //If we read less than the buffer size, we are at the end of the file
-            if (read < http.Length)
-                break;
-
-            bool equal = true;
-
-            //Check whether the original buffer is equal to the buffer we read
-            //NOTE: theres a slightly faster way of doing this with SIMD, but this is fine for now
-            //      see https://dev.to/antidisestablishmentarianism/c-simd-byte-array-compare-52p6
-            for (int i = 0; i < buf.Length; i++)
+            // Assume a word size of 4, i would use `ProgBitsSection<T>.Alignment`
+            // but that seems to be unrelated to the actual alignment and offset chosen for the string constants specifically (the section with all the strings is marked as 32-byte alignment[?????])
+            // so we'll just assume 4 byte alignment since that seems universal here
+            int wordSize = 4;
+            ulong sectionLength;
+            switch (section)
             {
-                if (buf[i] == http[i])
+                case ProgBitsSection<ulong> progBitsSectionUlong:
+                    file.Position = (long)progBitsSectionUlong.Offset;
+                    sectionLength = progBitsSectionUlong.Size;
+                    break;
+                case ProgBitsSection<uint> progBitsSectionUint:
+                    file.Position = progBitsSectionUint.Offset;
+                    sectionLength = progBitsSectionUint.Size;
+                    break;
+                default:
                     continue;
-
-                equal = false;
-                break;
             }
 
-            //If they are equal, we found an instance of HTTP
-            if (equal)
-            {
-                //Mark the position of the found instance
-                foundPositions.Add(readPos);
+            int read = 0;
 
-                //Skip the length of the buffer
-                readPos += buf.Length;
-            }
-            else
+            byte[] buf = new byte[wordSize];
+            //While we are not at the end of the file, read each word in
+            while (read < (int)sectionLength - wordSize)
             {
-                //Check the next position
-                readPos++;
+                read += file.Read(buf);
+
+                int bufInt = BitConverter.ToInt32(buf);
+
+                //If they are equal, we found an instance of HTTP
+                if (bufInt == httpInt)
+                {
+                    //Mark the position of the found instance
+                    foundPossibleUrlPositions.Add(reader.BaseStream.Position - wordSize);
+                }
+
+                if (bufInt == cookieStartInt)
+                {
+                    foundPossibleCookiePositions.Add(reader.BaseStream.Position - wordSize);
+                }
             }
         }
 
-        List<PatchTargetInfo> found = new();
+        List<PatchTargetInfo> foundUrls = new();
 
         bool tooLong = false;
-        foreach (long foundPosition in foundPositions)
+        foreach (long foundPosition in foundPossibleUrlPositions)
         {
             int len = 0;
 
@@ -123,14 +140,11 @@ public partial class Patcher
             byte[] match = new byte[len];
             if (file.Read(match) < len) continue;
             string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
-            
-            if(str.Contains('%')) continue; // Ignore printf strings, e.g. %s
 
-            Regex regex = UrlMatch();
-            MatchCollection matches = regex.Matches(str);
+            if (str.Contains('%')) continue; // Ignore printf strings, e.g. %s
 
-            if (matches.Count != 0)
-                found.Add(new PatchTargetInfo
+            if (UrlMatch().Matches(str).Count != 0)
+                foundUrls.Add(new PatchTargetInfo
                 {
                     Length = len,
                     Offset = foundPosition,
@@ -138,7 +152,64 @@ public partial class Patcher
                 });
         }
 
-        return found;
+        List<PatchTargetInfo> foundDigests = new();
+
+        foreach (long foundPosition in foundPossibleCookiePositions)
+        {
+            file.Position = foundPosition;
+
+            byte[] cookieBuf = new byte[8];
+            //If we didnt read enough or what we read isnt "cookie\0\0"
+            if (reader.Read(cookieBuf) < cookieBuf.Length || !"cookie\0\0"u8.SequenceEqual(cookieBuf))
+            {
+                //Skip this possibility
+                continue;
+            }
+
+            const int checkSize = 1000;
+
+            //Go back half the check size in bytes (so that `cookie` is in the middle)
+            file.Position -= checkSize / 2;
+
+            byte[] checkArr = new byte[checkSize];
+            Span<byte> toCheck = checkArr.AsSpan().Slice(0, reader.Read(checkArr));
+
+            Regex regex = DigestMatch();
+            for (int i = 0; i < toCheck.Length; i++)
+            {
+                //Skip all null bytes
+                while (i < toCheck.Length && toCheck[i] == 0) i++;
+
+                int len = 0;
+                int start = i;
+
+                //Go over all non-null bytes
+                while (i < toCheck.Length && toCheck[i] != 0)
+                {
+                    len++;
+                    i++;
+                }
+
+                if (len != 18)
+                    continue;
+
+                string str = Encoding.UTF8.GetString(toCheck.Slice(start, len));
+
+                //If theres exactly 18 matches,
+                if (regex.Matches(str).Count == 18)
+                {
+                    //Then we have found a digest key
+                    foundDigests.Add(new PatchTargetInfo
+                    {
+                        Length = len,
+                        Offset = file.Position - checkSize + start,
+                        Data = str,
+                    });
+                }
+            }
+        }
+
+        return (foundUrls, foundDigests);
     }
 
     /// <summary>
@@ -146,51 +217,74 @@ public partial class Patcher
     /// </summary>
     /// <returns>A list of issues and notes about the EBOOT.</returns>
     [Pure]
-    public List<Message> Verify(string url)
+    public List<Message> Verify(string url, bool patchDigest)
     {
         // TODO: check if this is an ELF, correct architecture, if url is correct length, etc.
         List<Message> messages = new();
-        
+
+        this.Stream.Position = 0;
+        Class output = ELFReader.CheckELFType(this.Stream);
+        if (output == Class.NotELF)
+        {
+            messages.Add(new Message(MessageLevel.Error, "File is not a valid ELF!"));
+        }
+
         // Check url
         if (url.EndsWith('/'))
             messages.Add(new Message(MessageLevel.Error,
-                "URI cannot end with a trailing slash, invalid requests will be sent to the server"));
+                                     "URI cannot end with a trailing slash, invalid requests will be sent to the server"));
 
         //Try to create an absolute URI, if it fails, its not a valid URI
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri _))
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
 
         // If there are no targets, we cant patch
-        if (this._targets.Value.Count == 0)
+        if (this._targets.Value.urls.Count == 0)
             messages.Add(new Message(MessageLevel.Error,
-                "Could not find any urls in the EBOOT. Nothing can be changed."));
+                                     "Could not find any urls in the EBOOT. Nothing can be changed."));
 
-        if (this._targets.Value.Any(x => x.Length < url.Length))
+        if (this._targets.Value.urls.Any(x => x.Length < url.Length))
             messages.Add(new Message(MessageLevel.Error,
-                "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
-        
+                                     "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
+
+        // If we are patching digest, check if we found a digest in the EBOOT
+        if (patchDigest && this._targets.Value.digests.Count == 0)
+            messages.Add(new Message(MessageLevel.Warning,
+                                     "Could not find the digest in the EBOOT. Resulting EBOOT may still work depending on game."));
+
         return messages;
     }
 
-    public void PatchUrl(string url)
+    public void Patch(string url, bool digest)
     {
         using BinaryWriter writer = new(this.Stream);
 
-        // Get a null-terminated byte sequence of the URL, as BinaryWriter.Write(string) writes a length-prepended string,
-        byte[] urlAsBytes = Encoding.UTF8.GetBytes(url);
-
-        if (this._targets.Value.Count != 0) PatchUrlFromInfoList(writer, this._targets.Value, urlAsBytes);
+        if (this._targets.Value.urls.Count != 0) PatchFromInfoList(writer, this._targets.Value, url, digest);
     }
 
-    private static void PatchUrlFromInfoList(BinaryWriter writer, List<PatchTargetInfo> targets, byte[] url)
+    private static void PatchFromInfoList(BinaryWriter writer, (List<PatchTargetInfo> urls, List<PatchTargetInfo> digests) targets, string url, bool digest)
     {
-        foreach (PatchTargetInfo target in targets)
+        byte[] urlAsBytes = Encoding.UTF8.GetBytes(url);
+        foreach (PatchTargetInfo target in targets.urls)
         {
             writer.BaseStream.Position = target.Offset;
-            writer.Write(url);
+            writer.Write(urlAsBytes);
 
             //Terminate the rest of the string
             for (int i = 0; i < target.Length - url.Length; i++) writer.Write('\0');
+        }
+
+        if (digest)
+        {
+            ReadOnlySpan<byte> digestBytes = "CustomServerDigest"u8;
+
+            foreach (PatchTargetInfo target in targets.digests)
+            {
+                Debug.Assert(target.Length == 18);
+
+                writer.BaseStream.Position = target.Offset;
+                writer.Write(digestBytes);
+            }
         }
     }
 }
