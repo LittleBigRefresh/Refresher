@@ -12,8 +12,8 @@ namespace Refresher.UI;
 public class EmulatorPatchForm : PatchForm<Patcher>
 {
     private readonly FilePicker _folderField;
-    private readonly DropDown _gameDropdown;
-    private readonly TextBox _outputField;
+    private readonly DropDown   _gameDropdown;
+    private readonly TextBox    _outputField;
 
     private string _tempFile;
     private string _usrDir;

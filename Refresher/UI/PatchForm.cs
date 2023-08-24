@@ -17,7 +17,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     
     private readonly Button _patchButton;
     private readonly ListBox _messages;
-    
+
+    protected bool PatchDigest;
     protected TextBox UrlField = null!;
     protected TPatcher? Patcher;
     
@@ -129,6 +130,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             if (result != DialogResult.Yes) return;
 
             this.UrlField.Text = autodiscover.Url;
+            this.PatchDigest = autodiscover.UsesCustomDigestKey ?? false;
         }
         catch (HttpRequestException e)
         {
@@ -169,7 +171,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this.Patcher == null) return;
 
-        this.Patcher.PatchUrl(this.UrlField.Text);
+        this.Patcher.Patch(this.UrlField.Text, this.PatchDigest);
         
         this.CompletePatch(sender, e);
     }
@@ -210,8 +212,9 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this._latestTokenSource = new CancellationTokenSource();
         this._latestToken = this._latestTokenSource.Token;
 
-        // Create a local copy of the URL (accessing it *inside* the task will cause the thread to immediately close)
+        // Create a local copy of the URL and flag for patching digest (accessing it *inside* the task will cause the thread to immediately close and would be a race condition)
         string url = this.UrlField.Text;
+        bool patchDigest = this.PatchDigest;
         
         // Start a new task to verify the URL
         this._latestTask = Task.Factory.StartNew(delegate 
@@ -219,7 +222,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             this._latestToken.Value.ThrowIfCancellationRequested();
             
             // Verify the URL
-            List<Message> messages = this.Patcher.Verify(url);
+            List<Message> messages = this.Patcher.Verify(url, patchDigest);
             
             this._latestToken.Value.ThrowIfCancellationRequested();
             Program.App.AsyncInvoke(() => 

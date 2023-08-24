@@ -50,7 +50,7 @@ public class CommandLine
 
         MemoryMappedFile mappedFile;
         try
-        {
+        { 
             mappedFile =
                 MemoryMappedFile.CreateFromFile(tempFile, FileMode.Open, null, 0, MemoryMappedFileAccess.ReadWrite);
         }
@@ -65,7 +65,7 @@ public class CommandLine
 
         //Create a new patcher with the temp file stream
         Patcher patcher = new(mappedFile.CreateViewStream());
-        List<Message> messages = patcher.Verify(options.ServerUrl).ToList();
+        List<Message> messages = patcher.Verify(options.ServerUrl, options.Digest ?? false).ToList();
 
         //Write the messages to the console
         foreach (Message message in messages) Console.WriteLine($"{message.Level}: {message.Content}");
@@ -103,7 +103,7 @@ public class CommandLine
         try
         {
             //Patch the file
-            patcher.PatchUrl(options.ServerUrl);
+            patcher.Patch(options.ServerUrl, options.Digest ?? false);
 
             //TODO: warn the user if they are overwriting the file
             File.Move(tempFile, options.OutputFile, true);
