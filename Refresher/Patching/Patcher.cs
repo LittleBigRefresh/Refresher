@@ -218,15 +218,13 @@ public partial class Patcher
     [Pure]
     public List<Message> Verify(string url, bool patchDigest)
     {
-        // TODO: check if this is an ELF, correct architecture, if url is correct length, etc.
         List<Message> messages = new();
 
         this.Stream.Position = 0;
         Class output = ELFReader.CheckELFType(this.Stream);
         if (output == Class.NotELF)
-        {
-            messages.Add(new Message(MessageLevel.Error, "File is not a valid ELF!"));
-        }
+            messages.Add(new Message(MessageLevel.Warning, 
+                                     "File is not a valid ELF!"));
 
         // Check url
         if (url.EndsWith('/'))
