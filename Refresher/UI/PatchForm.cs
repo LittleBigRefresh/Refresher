@@ -17,9 +17,9 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     
     private readonly Button _patchButton;
     private readonly ListBox _messages;
-    
-    protected TextBox  UrlField = null!;
-    protected CheckBox PatchDigest = null!;
+
+    protected bool PatchDigest;
+    protected TextBox UrlField = null!;
     protected TPatcher? Patcher;
     
     private CancellationToken? _latestToken;
@@ -62,7 +62,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         };
         
         this.UrlField.TextChanged += this.Reverify;
-        this.PatchDigest.CheckedChanged += this.Reverify;
         this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
     }
 
@@ -130,8 +129,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             DialogResult result = MessageBox.Show(text, MessageBoxButtons.YesNo);
             if (result != DialogResult.Yes) return;
 
-            this.UrlField.Text       = autodiscover.Url;
-            this.PatchDigest.Checked = autodiscover.UsesCustomDigestKey;
+            this.UrlField.Text = autodiscover.Url;
+            this.PatchDigest = autodiscover.UsesCustomDigestKey ?? false;
         }
         catch (HttpRequestException e)
         {
@@ -172,7 +171,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this.Patcher == null) return;
 
-        this.Patcher.Patch(this.UrlField.Text, this.PatchDigest.Checked ?? false);
+        this.Patcher.Patch(this.UrlField.Text, this.PatchDigest);
         
         this.CompletePatch(sender, e);
     }
@@ -213,9 +212,9 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this._latestTokenSource = new CancellationTokenSource();
         this._latestToken = this._latestTokenSource.Token;
 
-        // Create a local copy of the URL (accessing it *inside* the task will cause the thread to immediately close)
+        // Create a local copy of the URL and flag for patching digest (accessing it *inside* the task will cause the thread to immediately close and would be a race condition)
         string url = this.UrlField.Text;
-        bool patchDigest = this.PatchDigest.Checked ?? false;
+        bool patchDigest = this.PatchDigest;
         
         // Start a new task to verify the URL
         this._latestTask = Task.Factory.StartNew(delegate 

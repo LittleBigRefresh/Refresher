@@ -10,7 +10,7 @@ namespace Refresher.Patching;
 
 public partial class Patcher
 {
-    private readonly Lazy<(List<PatchTargetInfo> urls, List<PatchTargetInfo> digests)> _targets;
+    private readonly Lazy<List<PatchTargetInfo>> _targets;
 
     public Patcher(Stream stream)
     {
@@ -21,7 +21,7 @@ public partial class Patcher
 
         this.Stream.Position = 0;
 
-        this._targets = new(() => FindPatchables(stream));
+        this._targets = new(() => FindPatchableElements(stream));
     }
 
     public Stream Stream { get; }
@@ -37,7 +37,7 @@ public partial class Patcher
     /// </summary>
     /// <param name="file">A seekable stream containing the file to look through</param>
     /// <returns>A list of the URLs and Digest keys</returns>
-    private static (List<PatchTargetInfo> urls, List<PatchTargetInfo> digests) FindPatchables(Stream file)
+    private static List<PatchTargetInfo> FindPatchableElements(Stream file)
     {
         file.Position = 0;
         using IELF? elf = ELFReader.Load(file, false);
@@ -52,9 +52,9 @@ public partial class Patcher
         int cookieStartInt = BitConverter.ToInt32("cook"u8);
 
         //Found positions of `http` in the binary
-        List<long> foundPossibleUrlPositions = new();
+        List<long> possibleUrls = new();
         //Found positions of `cook` in the binary
-        List<long> foundPossibleCookiePositions = new();
+        List<long> cookiePositions = new();
 
         foreach (ISection section in elf.Sections)
         {
@@ -91,18 +91,24 @@ public partial class Patcher
                 if (bufInt == httpInt)
                 {
                     //Mark the position of the found instance
-                    foundPossibleUrlPositions.Add(reader.BaseStream.Position - wordSize);
+                    possibleUrls.Add(reader.BaseStream.Position - wordSize);
                 }
 
                 if (bufInt == cookieStartInt)
                 {
-                    foundPossibleCookiePositions.Add(reader.BaseStream.Position - wordSize);
+                    cookiePositions.Add(reader.BaseStream.Position - wordSize);
                 }
             }
         }
 
-        List<PatchTargetInfo> foundUrls = new();
+        List<PatchTargetInfo> foundItems = new();
+        FilterValidUrls(file, possibleUrls, reader, foundItems);
+        FindDigestAroundCookie(file, cookiePositions, reader, foundItems);
+        return foundItems;
+    }
 
+    private static void FilterValidUrls(Stream file, List<long> foundPossibleUrlPositions, BinaryReader reader, List<PatchTargetInfo> foundItems)
+    {
         bool tooLong = false;
         foreach (long foundPosition in foundPossibleUrlPositions)
         {
@@ -143,16 +149,18 @@ public partial class Patcher
             if (str.Contains('%')) continue; // Ignore printf strings, e.g. %s
 
             if (UrlMatch().Matches(str).Count != 0)
-                foundUrls.Add(new PatchTargetInfo
+                foundItems.Add(new PatchTargetInfo
                 {
                     Length = len,
                     Offset = foundPosition,
                     Data = str,
+                    Type = PatchTargetType.Url,
                 });
         }
+    }
 
-        List<PatchTargetInfo> foundDigests = new();
-
+    private static void FindDigestAroundCookie(Stream file, List<long> foundPossibleCookiePositions, BinaryReader reader, List<PatchTargetInfo> foundItems)
+    {
         foreach (long foundPosition in foundPossibleCookiePositions)
         {
             file.Position = foundPosition;
@@ -198,17 +206,16 @@ public partial class Patcher
                 if (regex.Matches(str).Count == 18)
                 {
                     //Then we have found a digest key
-                    foundDigests.Add(new PatchTargetInfo
+                    foundItems.Add(new PatchTargetInfo
                     {
                         Length = len,
                         Offset = file.Position - checkSize + start,
                         Data = str,
+                        Type = PatchTargetType.Digest,
                     });
                 }
             }
         }
-
-        return (foundUrls, foundDigests);
     }
 
     /// <summary>
@@ -236,33 +243,34 @@ public partial class Patcher
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
 
         // If there are no targets, we cant patch
-        if (this._targets.Value.urls.Count == 0)
+        // ReSharper disable once SimplifyLinqExpressionUseAll
+        if (!this._targets.Value.Any(x => x.Type == PatchTargetType.Url))
             messages.Add(new Message(MessageLevel.Error,
                                      "Could not find any urls in the EBOOT. Nothing can be changed."));
 
-        if (this._targets.Value.urls.Any(x => x.Length < url.Length))
+        if (this._targets.Value.Any(x => x.Type == PatchTargetType.Url && x.Length < url.Length))
             messages.Add(new Message(MessageLevel.Error,
                                      "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
 
         // If we are patching digest, check if we found a digest in the EBOOT
-        if (patchDigest && this._targets.Value.digests.Count == 0)
+        if (patchDigest && this._targets.Value.Count(x => x.Type == PatchTargetType.Digest) == 0)
             messages.Add(new Message(MessageLevel.Warning,
                                      "Could not find the digest in the EBOOT. Resulting EBOOT may still work depending on game."));
 
         return messages;
     }
 
-    public void Patch(string url, bool digest)
+    public void Patch(string url, bool patchDigest)
     {
         using BinaryWriter writer = new(this.Stream);
 
-        if (this._targets.Value.urls.Count != 0) PatchFromInfoList(writer, this._targets.Value, url, digest);
+        PatchFromInfoList(writer, this._targets.Value, url, patchDigest);
     }
 
-    private static void PatchFromInfoList(BinaryWriter writer, (List<PatchTargetInfo> urls, List<PatchTargetInfo> digests) targets, string url, bool digest)
+    private static void PatchFromInfoList(BinaryWriter writer, List<PatchTargetInfo> targets, string url, bool patchDigest)
     {
         byte[] urlAsBytes = Encoding.UTF8.GetBytes(url);
-        foreach (PatchTargetInfo target in targets.urls)
+        foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.Url))
         {
             writer.BaseStream.Position = target.Offset;
             writer.Write(urlAsBytes);
@@ -271,11 +279,11 @@ public partial class Patcher
             for (int i = 0; i < target.Length - url.Length; i++) writer.Write('\0');
         }
 
-        if (digest)
+        if (patchDigest)
         {
             ReadOnlySpan<byte> digestBytes = "CustomServerDigest"u8;
 
-            foreach (PatchTargetInfo target in targets.digests)
+            foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.Digest))
             {
                 Debug.Assert(target.Length == 18);
 
