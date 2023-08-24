@@ -1,0 +1,37 @@
+# https://acraven.medium.com/a-nuget-package-workflow-using-github-actions-7da8c6557863
+name: Create new release from pushed tag
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  release:
+    name: Release Built Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for builds
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Build, Test, and Upload Builds'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+      - name: Download artifacts
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          branch: main
+          workflow: dotnet.yml
+          workflow_conclusion: success
+          if_no_artifact_found: fail
+          skip_unpack: true
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          draft: true
+          files: |
+            *.zip
