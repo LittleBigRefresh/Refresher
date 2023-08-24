@@ -19,7 +19,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     private readonly ListBox _messages;
     
     protected TextBox  UrlField = null!;
-    protected CheckBox PatchDigest;
+    protected CheckBox PatchDigest = null!;
     protected TPatcher? Patcher;
     
     private CancellationToken? _latestToken;
