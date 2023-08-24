@@ -21,7 +21,7 @@ public partial class Patcher
 
         this.Stream.Position = 0;
 
-        this._targets = new(() => FindUrls(stream));
+        this._targets = new(() => FindPatchables(stream));
     }
 
     public Stream Stream { get; }
@@ -36,9 +36,8 @@ public partial class Patcher
     /// Finds a set of URLs and Digest keys in the given file, excluding C printf strings.
     /// </summary>
     /// <param name="file">A seekable stream containing the file to look through</param>
-    /// <param name="wordSize">The word size that string constants are aligned to in the ELF file, must be at least 4 bytes</param>
     /// <returns>A list of the URLs and Digest keys</returns>
-    private static (List<PatchTargetInfo> urls, List<PatchTargetInfo> digests) FindUrls(Stream file)
+    private static (List<PatchTargetInfo> urls, List<PatchTargetInfo> digests) FindPatchables(Stream file)
     {
         file.Position = 0;
         using IELF? elf = ELFReader.Load(file, false);
