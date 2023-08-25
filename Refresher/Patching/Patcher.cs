@@ -21,7 +21,7 @@ public partial class Patcher
 
         this.Stream.Position = 0;
 
-        this._targets = new(() => FindPatchableElements(stream));
+        this._targets = new Lazy<List<PatchTargetInfo>>(() => FindPatchableElements(stream));
     }
 
     public Stream Stream { get; }

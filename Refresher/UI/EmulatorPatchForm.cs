@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
+using Refresher.Accessors;
 using Refresher.Patching;
 using Refresher.UI.Items;
 using Refresher.Verification;
@@ -17,6 +18,8 @@ public class EmulatorPatchForm : PatchForm<Patcher>
 
     private string _tempFile;
     private string _usrDir;
+
+    private EmulatorPatchAccessor? _accessor;
 
     protected override TableLayout FormPanel { get; }
     
@@ -59,10 +62,11 @@ public class EmulatorPatchForm : PatchForm<Patcher>
         string path = this._folderField.FilePath;
         this._gameDropdown.Items.Clear();
 
-        string gamesPath = Path.Join(path, "game");
-        if (!Directory.Exists(gamesPath)) return;
+        this._accessor = new EmulatorPatchAccessor(path);
+        
+        if (!this._accessor.DirectoryExists("game")) return;
             
-        string[] games = Directory.GetDirectories(Path.Join(path, "game"));
+        string[] games = this._accessor.GetDirectoriesInDirectory("game").ToArray();
         
         foreach (string gamePath in games)
         {
@@ -74,15 +78,17 @@ public class EmulatorPatchForm : PatchForm<Patcher>
             GameItem item = new();
             
             string iconPath = Path.Combine(gamePath, "ICON0.PNG");
-            if (File.Exists(iconPath))
+            if (this._accessor.FileExists(iconPath))
             {
-                item.Image = new Bitmap(iconPath).WithSize(new Size(64, 64));
+                using Stream iconStream = this._accessor.OpenRead(iconPath);
+                item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));
             }
 
             string sfoPath = Path.Combine(gamePath, "PARAM.SFO");
             try
             {
-                ParamSfo sfo = new(File.OpenRead(sfoPath));
+                using Stream sfoStream = this._accessor.OpenRead(sfoPath);
+                ParamSfo sfo = new(sfoStream);
                 item.Text = $"{sfo.Table["TITLE"]} [{game}]";
             }
             catch
@@ -100,13 +106,14 @@ public class EmulatorPatchForm : PatchForm<Patcher>
     {
         GameItem? game = this._gameDropdown.SelectedValue as GameItem;
         Debug.Assert(game != null);
+        Debug.Assert(this._accessor != null);
 
-        this._usrDir = Path.Combine(this._folderField.FilePath, "game", game.TitleId, "USRDIR");
-        string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
-        string rapDir = Path.Combine(this._folderField.FilePath, "home", "00000001", "exdata");
+        this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
+        string ebootPath = this._accessor.DownloadFile(Path.Combine(this._usrDir, "EBOOT.BIN"));
+        string rapDir = this._accessor.DownloadDirectory(Path.Combine("home", "00000001", "exdata"));
         
-        this.LogMessage("EBOOT Path: " + ebootPath);
-        if (!File.Exists(ebootPath))
+        this.LogMessage($"EBOOT Path: {ebootPath}");
+        if (!this._accessor.FileExists(ebootPath))
         {
             this.FailVerify("Could not find the EBOOT. Patching cannot continue.", clear: false);
             return;
@@ -125,11 +132,12 @@ public class EmulatorPatchForm : PatchForm<Patcher>
     }
     
     public override void CompletePatch(object? sender, EventArgs e) {
+        Debug.Assert(this._accessor != null);
         string identifier = string.IsNullOrWhiteSpace(this._outputField.Text) ? this._outputField.PlaceholderText : this._outputField.Text;
         
         string destination = Path.Combine(this._usrDir, $"EBOOT.{identifier}.elf");
         
-        File.Move(this._tempFile, destination, true);
+        this._accessor.UploadFile(this._tempFile, destination);
         MessageBox.Show($"Successfully patched EBOOT! It was saved to '{destination}'.");
 
         // Re-initialize patcher so we can patch with the same parameters again
