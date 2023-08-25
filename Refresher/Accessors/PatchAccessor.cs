@@ -27,20 +27,4 @@ public abstract class PatchAccessor
         
         inStream.CopyTo(outStream);
     }
-    
-    public string DownloadDirectory(string path)
-    {
-        string outDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
-        Directory.CreateDirectory(outDir);
-        
-        IEnumerable<string> files = this.GetFilesInDirectory(path);
-        foreach (string filePath in files)
-        {
-            using FileStream outStream = File.OpenWrite(Path.Join(outDir, Path.GetFileName(filePath)));
-            using Stream inStream = this.OpenRead(filePath);
-            inStream.CopyTo(outStream);
-        }
-
-        return outDir;
-    }
 }

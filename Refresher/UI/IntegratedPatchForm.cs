@@ -53,6 +53,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             
             // Example TitleID: BCUS98208, must be 9 chars
             if(game.Length != 9) continue; // Skip over profiles/save data/other garbage
+            if(!game.StartsWith("NP") && !game.StartsWith('B')) continue;
 
             GameItem item = new();
             
@@ -89,10 +90,20 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
 
         this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
         string ebootPath = this.Accessor.DownloadFile(Path.Combine(this._usrDir, "EBOOT.BIN"));
-        string rapDir = this.Accessor.DownloadDirectory(Path.Combine("home", "00000001", "exdata"));
+        
+        string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
+        Directory.CreateDirectory(licenseDir);
+        IEnumerable<string> licenseFiles = this.Accessor.GetFilesInDirectory(Path.Combine("home", "00000001", "exdata"));
+        
+        foreach (string licenseFile in licenseFiles)
+        {
+            if(!licenseFile.Contains(game.TitleId)) continue;
+            string downloadedFile = this.Accessor.DownloadFile(licenseFile);
+            File.Move(downloadedFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+        }
         
         this.LogMessage($"EBOOT Path: {ebootPath}");
-        if (!this.Accessor.FileExists(ebootPath))
+        if (!File.Exists(ebootPath))
         {
             this.FailVerify("Could not find the EBOOT. Patching cannot continue.", clear: false);
             return;
@@ -100,7 +111,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
 
         this._tempFile = Path.GetTempFileName();
         
-        LibSceToolSharp.SetRapDirectory(rapDir);
+        LibSceToolSharp.SetRapDirectory(licenseDir);
         LibSceToolSharp.Decrypt(ebootPath, this._tempFile);
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");

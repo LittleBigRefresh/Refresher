@@ -6,7 +6,7 @@ namespace Refresher.UI;
 
 public class EmulatorPatchForm : IntegratedPatchForm
 {
-    private FilePicker _folderField;
+    private FilePicker _folderField = null!;
 
     public EmulatorPatchForm() : base("RPCS3 Patch")
     {
