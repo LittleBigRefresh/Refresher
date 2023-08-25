@@ -7,6 +7,7 @@
         <TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net7.0</TargetFramework>
         <TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net7.0-windows</TargetFramework>
         <ApplicationIcon>Resources\refresher.ico</ApplicationIcon>
+        <BuiltInComInteropSupport Condition="'$(TargetFramework)' == 'net7.0-windows'">true</BuiltInComInteropSupport>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -18,7 +19,7 @@
       <PackageReference Include="ELFSharp" Version="2.17.2" />
       <PackageReference Include="Eto.Forms" Version="2.7.5" />
       <PackageReference Include="Eto.Platform.Gtk" Version="2.7.5" />
-      <PackageReference Condition="'$(TargetFramework)' == 'net7.0-windows'" Include="Eto.Platform.Windows" Version="2.7.5" />
+      <PackageReference Condition="'$(TargetFramework)' == 'net7.0-windows'" Include="Eto.Platform.Wpf" Version="2.7.5" />
       <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="SCEToolSharp" Version="1.0.7" />
