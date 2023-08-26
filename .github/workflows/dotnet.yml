@@ -10,8 +10,12 @@ on:
 
 jobs:
   build:
-    name: Build, Test, and Upload Builds
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    name: Build, Test, and Upload Builds (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
@@ -21,25 +25,32 @@ jobs:
         
     - name: Set VERSION variable from tag (for tag pushes)
       if: ${{ contains(github.ref, 'refs/tags') }}
+      shell: bash
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
 
     - name: Set VERSION variable from tag (for normal commits)
+      shell: bash
       if: ${{ !contains(github.ref, 'refs/tags') }}
       run: echo "VERSION=0.0.0" >> $GITHUB_ENV
       
     - name: Print VERSION variable for debugging
+      shell: bash
       run: echo "$VERSION"
         
     - name: Restore
       run: dotnet restore
       
     - name: Publish for Linux x64
+      if: matrix.os == 'ubuntu-latest'
       run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION}
       
     - name: Publish for Windows x64
-      run: dotnet publish -c Release -r win-x64 --self-contained Refresher /p:Version=${VERSION}
+      if: matrix.os == 'windows-latest'
+      shell: bash
+      run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
       
     - name: Upload Linux x64 build
+      if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v3.1.1
       with:
           name: "Refresher for Linux x64"
@@ -48,9 +59,10 @@ jobs:
           retention-days: 30
           
     - name: Upload Windows x64 build
+      if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v3.1.1
       with:
           name: "Refresher for Windows x64"
-          path: "Refresher/bin/Release/net7.0/win-x64/publish/"
+          path: "Refresher/bin/Release/net7.0-windows/win-x64/publish/"
           if-no-files-found: error
           retention-days: 30
