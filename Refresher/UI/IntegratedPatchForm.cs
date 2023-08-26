@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Eto.Drawing;
 using Eto.Forms;
 using Refresher.Accessors;
@@ -12,7 +13,7 @@ namespace Refresher.UI;
 public abstract class IntegratedPatchForm : PatchForm<Patcher>
 {
     private readonly DropDown _gameDropdown;
-    private readonly TextBox _outputField;
+    private readonly TextBox? _outputField;
     
     private string _tempFile;
     private string _usrDir;
@@ -21,18 +22,22 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     
     protected override TableLayout FormPanel { get; }
     
+    [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
     protected IntegratedPatchForm(string subtitle) : base(subtitle)
     {
         this.FormPanel = new TableLayout(new List<TableRow>
         {
-            // ReSharper disable once VirtualMemberCallInConstructor
             this.AddRemoteField(),
             AddField("Game to patch", out this._gameDropdown),
             AddField("Server URL", out this.UrlField),
-            AddField("Identifier (EBOOT.<value>.elf)", out this._outputField),
         });
+
+        if (!this.ShouldReplaceExecutable)
+        {
+            this.FormPanel.Rows.Add(AddField("Identifier (EBOOT.<value>.elf)", out this._outputField));
+            this._outputField!.PlaceholderText = "refresh";
+        }
         
-        this._outputField.PlaceholderText = "refresh";
         this._gameDropdown.SelectedValueChanged += this.GameChanged;
         
         this.InitializePatcher();
@@ -93,13 +98,21 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
-        IEnumerable<string> licenseFiles = this.Accessor.GetFilesInDirectory(Path.Combine("home", "00000001", "exdata"));
-        
-        foreach (string licenseFile in licenseFiles)
+
+        // if this is a NP game then download RIFs/RAPs, disc copies don't need anything else
+        if (game.TitleId.StartsWith('N'))
         {
-            if(!licenseFile.Contains(game.TitleId)) continue;
-            string downloadedFile = this.Accessor.DownloadFile(licenseFile);
-            File.Move(downloadedFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+            // TODO: the first user might not have the licenses necessary, should download from all users
+            IEnumerable<string> licenseFiles = this.Accessor.GetFilesInDirectory(Path.Combine("home", "00000001", "exdata"));
+            foreach (string licenseFile in licenseFiles)
+            {
+                // only download if it contains our game's title id
+                // TODO: determine content id directly so we skip dlc licenses
+                if(!licenseFile.Contains(game.TitleId)) continue;
+                
+                string downloadedFile = this.Accessor.DownloadFile(licenseFile);
+                File.Move(downloadedFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+            }
         }
         
         this.LogMessage($"EBOOT Path: {ebootPath}");
@@ -123,11 +136,38 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     
     public override void CompletePatch(object? sender, EventArgs e) {
         Debug.Assert(this.Accessor != null);
-        string identifier = string.IsNullOrWhiteSpace(this._outputField.Text) ? this._outputField.PlaceholderText : this._outputField.Text;
         
-        string destination = Path.Combine(this._usrDir, $"EBOOT.{identifier}.elf");
+        string? identifier = string.IsNullOrWhiteSpace(this._outputField?.Text) ? this._outputField?.PlaceholderText : this._outputField?.Text;
+        identifier ??= "";
+
+        string fileToUpload;
+        if (this.NeedsResign)
+        {
+            string encryptedTempFile = Path.GetTempFileName();
+            LibSceToolSharp.SetDiscEncryptOptions();
+            LibSceToolSharp.Encrypt(this._tempFile, encryptedTempFile);
+
+            fileToUpload = encryptedTempFile;
+        }
+        else
+        {
+            fileToUpload = this._tempFile;
+        }
+
+        string destinationFile = this.ShouldReplaceExecutable ? "EBOOT.BIN" : $"EBOOT.{identifier}.BIN";
+        string destination = Path.Combine(this._usrDir, destinationFile);
+
+        // if we're replacing the executable, back it up to EBOOT.BIN.ORIG before we do so
+        if (this.ShouldReplaceExecutable)
+        {
+            string backup = destination + ".ORIG";
+            if (!this.Accessor.FileExists(backup))
+                this.Accessor.DuplicateFile(destination, backup);
+            
+            this.Accessor.RemoveFile(destination);
+        }
         
-        this.Accessor.UploadFile(this._tempFile, destination);
+        this.Accessor.UploadFile(fileToUpload, destination);
         MessageBox.Show($"Successfully patched EBOOT! It was saved to '{destination}'.");
 
         // Re-initialize patcher so we can patch with the same parameters again
@@ -136,4 +176,6 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     }
 
     protected abstract TableRow AddRemoteField();
+    protected abstract bool NeedsResign { get; }
+    protected abstract bool ShouldReplaceExecutable { get; }
 }

@@ -43,4 +43,7 @@ public class EmulatorPatchForm : IntegratedPatchForm
     {
         return AddField("RPCS3 dev_hdd0 folder", out this._folderField);
     }
+
+    protected override bool NeedsResign => false;
+    protected override bool ShouldReplaceExecutable => false;
 }

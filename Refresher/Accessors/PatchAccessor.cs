@@ -8,6 +8,7 @@ public abstract class PatchAccessor
     public abstract IEnumerable<string> GetFilesInDirectory(string path);
     public abstract Stream OpenRead(string path);
     public abstract Stream OpenWrite(string path);
+    public abstract void RemoveFile(string path);
 
     public string DownloadFile(string path)
     {
@@ -23,6 +24,14 @@ public abstract class PatchAccessor
     public void UploadFile(string inPath, string outPath)
     {
         using FileStream inStream = File.OpenRead(inPath);
+        using Stream outStream = this.OpenWrite(outPath);
+        
+        inStream.CopyTo(outStream);
+    }
+
+    public virtual void DuplicateFile(string inPath, string outPath)
+    {
+        using Stream inStream = this.OpenRead(inPath);
         using Stream outStream = this.OpenWrite(outPath);
         
         inStream.CopyTo(outStream);

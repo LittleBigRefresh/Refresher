@@ -22,4 +22,7 @@ public class ConsolePatchForm : IntegratedPatchForm
     {
         return AddField("PS3's IP", out this._remoteAddress);
     }
+
+    protected override bool NeedsResign => true;
+    protected override bool ShouldReplaceExecutable => true;
 }

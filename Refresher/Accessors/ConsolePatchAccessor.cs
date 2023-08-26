@@ -15,42 +15,40 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         this._client.AutoConnect();
     }
     
-    private string GetPath(string path)
+    private static string GetPath(string path)
     {
         if (Path.IsPathRooted(path)) return path;
         return BasePath + path;
     }
 
-    public override bool DirectoryExists(string path) => this._client.DirectoryExists(this.GetPath(path));
+    public override bool DirectoryExists(string path) => this._client.DirectoryExists(GetPath(path));
 
-    public override bool FileExists(string path) => this._client.FileExists(this.GetPath(path));
+    public override bool FileExists(string path) => this._client.FileExists(GetPath(path));
 
     public override IEnumerable<string> GetDirectoriesInDirectory(string path) =>
-        this._client.GetListing(this.GetPath(path))
+        this._client.GetListing(GetPath(path))
             .Where(l => l.Type == FtpObjectType.Directory)
             .Select(l => l.FullName);
 
     public override IEnumerable<string> GetFilesInDirectory(string path) =>
-        this._client.GetListing(this.GetPath(path))
+        this._client.GetListing(GetPath(path))
             .Where(l => l.Type == FtpObjectType.File)
             .Select(l => l.FullName);
 
     public override Stream OpenRead(string path)
     {
         MemoryStream ms = new();
-        this._client.DownloadStream(ms, this.GetPath(path));
+        this._client.DownloadStream(ms, GetPath(path));
         ms.Seek(0, SeekOrigin.Begin);
         return ms;
         
         // technically we can use a stream directly but this uses a lot more requests
-        // and webman doesnt like that
-        return this._client.OpenRead(this.GetPath(path));
+        // and webman doesnt like that, it tends to just slow down to a crawl after a bunch of them :(
+        // return this._client.OpenRead(GetPath(path));
     }
 
-    public override Stream OpenWrite(string path)
-    {
-        return this._client.OpenWrite(this.GetPath(path));
-    }
+    public override Stream OpenWrite(string path) => this._client.OpenWrite(GetPath(path));
+    public override void RemoveFile(string path) => this._client.DeleteFile(GetPath(path));
 
     public void Dispose()
     {
