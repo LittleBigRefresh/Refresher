@@ -48,6 +48,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     }
 
     public override Stream OpenWrite(string path) => this._client.OpenWrite(GetPath(path));
+
     public override void RemoveFile(string path) => this._client.DeleteFile(GetPath(path));
 
     public void Dispose()

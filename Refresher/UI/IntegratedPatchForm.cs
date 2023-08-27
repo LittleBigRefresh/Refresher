@@ -167,6 +167,10 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             this.Accessor.RemoveFile(destination);
         }
         
+        // wait a second for the ps3 to calm the fuck down
+        // this is apparently necessary
+        Thread.Sleep(1000); // TODO: don't. block. the. main. fucking. thread.
+        
         this.Accessor.UploadFile(fileToUpload, destination);
         MessageBox.Show($"Successfully patched EBOOT! It was saved to '{destination}'.");
 
