@@ -58,6 +58,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
                 Padding = new Padding(0, 10, 0, 0),
                 Spacing = 5,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Bottom,
             },
         };
         
@@ -65,7 +66,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
     }
 
-    protected static TableRow AddField<TControl>(string labelText, out TControl control, Button? button = null) where TControl : Control, new()
+    protected static TableRow AddField<TControl>(string labelText, out TControl control, Button? button = null, int forceHeight = -1) where TControl : Control, new()
     {
         Label label = new()
         {
@@ -73,16 +74,22 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             VerticalAlignment = VerticalAlignment.Center,
         };
 
+        control = new TControl();
+        if (forceHeight != -1)
+        {
+            control.Height = forceHeight;
+        }
+
         if (button != null)
         {
             DynamicLayout buttonLayout = new();
-            buttonLayout.AddRow(button, control = new TControl());
+            buttonLayout.AddRow(button, control);
             buttonLayout.Spacing = new Size(5, 0);
             
             return new TableRow(label, buttonLayout);
         }
         
-        return new TableRow(label, control = new TControl());
+        return new TableRow(label, control);
     }
 
     public virtual void CompletePatch(object? sender, EventArgs e)

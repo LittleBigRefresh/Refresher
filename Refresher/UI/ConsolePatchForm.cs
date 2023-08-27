@@ -16,6 +16,11 @@ public class ConsolePatchForm : IntegratedPatchForm
         base.PathChanged(sender, ev);
     }
 
+    protected override void GameChanged(object? sender, EventArgs ev)
+    {
+        base.GameChanged(sender, ev);
+    }
+
     protected override TableRow AddRemoteField()
     {
         return AddField("PS3's IP", out this._remoteAddress, new Button(this.PathChanged) { Text = "Connect" });

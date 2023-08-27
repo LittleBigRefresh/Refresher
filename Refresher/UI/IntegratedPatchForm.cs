@@ -28,7 +28,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         this.FormPanel = new TableLayout(new List<TableRow>
         {
             this.AddRemoteField(),
-            AddField("Game to patch", out this._gameDropdown),
+            AddField("Game to patch", out this._gameDropdown, forceHeight: 56),
             AddField("Server URL", out this.UrlField),
         });
 
@@ -87,7 +87,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         }
     }
 
-    protected void GameChanged(object? sender, EventArgs ev)
+    protected virtual void GameChanged(object? sender, EventArgs ev)
     {
         GameItem? game = this._gameDropdown.SelectedValue as GameItem;
         Debug.Assert(game != null);

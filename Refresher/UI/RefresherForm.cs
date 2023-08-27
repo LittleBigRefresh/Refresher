@@ -17,6 +17,7 @@ public abstract class RefresherForm : Form
         }
 
         this.ClientSize = size;
+        this.AutoSize = true;
         this.Padding = new Padding(10, 10, 10, padBottom ? 10 : 0);
         
         this.Icon = Icon.FromResource("refresher.ico");
