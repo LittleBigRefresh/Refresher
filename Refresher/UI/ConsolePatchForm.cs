@@ -25,6 +25,11 @@ public class ConsolePatchForm : IntegratedPatchForm
     {
         return AddField("PS3's IP", out this._remoteAddress, new Button(this.PathChanged) { Text = "Connect" });
     }
+    
+    public override void Guide(object? sender, EventArgs e)
+    {
+        this.OpenUrl("https://littlebigrefresh.github.io/Docs/patching/ps3");
+    }
 
     protected override bool NeedsResign => true;
     protected override bool ShouldReplaceExecutable => true;

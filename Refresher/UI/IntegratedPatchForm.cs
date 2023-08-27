@@ -162,7 +162,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         {
             string backup = destination + ".ORIG";
             if (!this.Accessor.FileExists(backup))
-                this.Accessor.DuplicateFile(destination, backup);
+                this.Accessor.CopyFile(destination, backup);
             
             this.Accessor.RemoveFile(destination);
         }
@@ -177,6 +177,28 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         // Re-initialize patcher so we can patch with the same parameters again
         // Probably slow but prevents crash
         this.GameChanged(this, EventArgs.Empty);
+    }
+    
+    public override IEnumerable<Button> AddExtraButtons()
+    {
+        if (this.ShouldReplaceExecutable)
+        {
+            yield return new Button(this.RevertToOriginalExecutable) { Text = "Revert EBOOT" };
+        }
+    }
+
+    private void RevertToOriginalExecutable(object? sender, EventArgs e)
+    {
+        if (this.Accessor == null) return;
+
+        if (!this.Accessor.FileExists(this._usrDir + "EBOOT.BIN.ORIG"))
+        {
+            MessageBox.Show("Cannot revert EBOOT since the original EBOOT does not exist", MessageBoxType.Error);
+            return;
+        }
+        
+        this.Accessor.CopyFile(this._usrDir + "EBOOT.BIN.ORIG", this._usrDir + "EBOOT.BIN");
+        MessageBox.Show("The EBOOT has successfully been reverted to it's original backup");
     }
 
     protected abstract TableRow AddRemoteField();

@@ -29,7 +29,7 @@ public abstract class PatchAccessor
         inStream.CopyTo(outStream);
     }
 
-    public virtual void DuplicateFile(string inPath, string outPath)
+    public virtual void CopyFile(string inPath, string outPath)
     {
         using Stream inStream = this.OpenRead(inPath);
         using Stream outStream = this.OpenWrite(outPath);

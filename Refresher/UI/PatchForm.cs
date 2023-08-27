@@ -40,6 +40,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         TableLayout formPanel = this.FormPanel;
         formPanel.Spacing = new Size(5, 5);
         formPanel.Padding = new Padding(0, 0, 0, 10);
+
+        StackLayout layout;
         
         this.Content = new Splitter
         {
@@ -47,7 +49,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             Panel1 = formPanel,
 
             // ReSharper disable once RedundantExplicitParamsArrayCreation
-            Panel2 = new StackLayout(new StackLayoutItem[]
+            Panel2 = layout = new StackLayout(new StackLayoutItem[]
             {
                 this._messages,
                 new Button(this.Guide) { Text = "View guide" },
@@ -62,6 +64,9 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             },
         };
         
+        foreach (Button button in this.AddExtraButtons())
+            layout.Items.Add(button);
+
         this.UrlField.TextChanged += this.Reverify;
         this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
     }
@@ -75,10 +80,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         };
 
         control = new TControl();
-        if (forceHeight != -1)
-        {
-            control.Height = forceHeight;
-        }
+        if (forceHeight != -1) control.Height = forceHeight;
 
         if (button != null)
         {
@@ -95,6 +97,11 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     public virtual void CompletePatch(object? sender, EventArgs e)
     {
         // Not necessary for some patchers maybe
+    }
+
+    public virtual IEnumerable<Button> AddExtraButtons()
+    {
+        return Array.Empty<Button>();
     }
 
     public virtual void Guide(object? sender, EventArgs e)
@@ -120,10 +127,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     {
         try
         {
-            using HttpClient client = new()
-            {
-                BaseAddress = new Uri(this.UrlField.Text),
-            };
+            using HttpClient client = new();
+            client.BaseAddress = new Uri(this.UrlField.Text);
 
             HttpResponseMessage response = client.GetAsync("/autodiscover").Result;
             response.EnsureSuccessStatusCode();
