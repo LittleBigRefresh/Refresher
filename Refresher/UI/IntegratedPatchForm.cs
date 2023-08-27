@@ -63,10 +63,17 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             GameItem item = new();
             
             string iconPath = Path.Combine(gamePath, "ICON0.PNG");
-            if (this.Accessor.FileExists(iconPath))
+            try
             {
-                using Stream iconStream = this.Accessor.OpenRead(iconPath);
-                item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));
+                if (this.Accessor.FileExists(iconPath))
+                {
+                    using Stream iconStream = this.Accessor.OpenRead(iconPath);
+                    item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));
+                }
+            }
+            catch
+            {
+                // don't set any image
             }
 
             string sfoPath = Path.Combine(gamePath, "PARAM.SFO");
@@ -163,13 +170,13 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             string backup = destination + ".ORIG";
             if (!this.Accessor.FileExists(backup))
                 this.Accessor.CopyFile(destination, backup);
-            
-            this.Accessor.RemoveFile(destination);
         }
-        
-        // wait a second for the ps3 to calm the fuck down
-        // this is apparently necessary
-        Thread.Sleep(1000); // TODO: don't. block. the. main. fucking. thread.
+
+        if (this.Accessor.FileExists(destination))
+            this.Accessor.RemoveFile(destination);
+
+        // wait a second for the ps3 to calm down
+        Thread.Sleep(1000); // TODO: don't. block. the. main. thread.
         
         this.Accessor.UploadFile(fileToUpload, destination);
         MessageBox.Show($"Successfully patched EBOOT! It was saved to '{destination}'.");
@@ -191,13 +198,19 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     {
         if (this.Accessor == null) return;
 
-        if (!this.Accessor.FileExists(this._usrDir + "EBOOT.BIN.ORIG"))
+        string eboot = this._usrDir + "EBOOT.BIN";
+        string ebootOrig = this._usrDir + "EBOOT.BIN.ORIG";
+
+        if (!this.Accessor.FileExists(ebootOrig))
         {
             MessageBox.Show("Cannot revert EBOOT since the original EBOOT does not exist", MessageBoxType.Error);
             return;
         }
         
-        this.Accessor.CopyFile(this._usrDir + "EBOOT.BIN.ORIG", this._usrDir + "EBOOT.BIN");
+        if(this.Accessor.FileExists(eboot))
+            this.Accessor.RemoveFile(eboot);
+        
+        this.Accessor.CopyFile(ebootOrig, eboot);
         MessageBox.Show("The EBOOT has successfully been reverted to it's original backup");
     }
 

@@ -47,7 +47,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         // return this._client.OpenRead(GetPath(path));
     }
 
-    public override Stream OpenWrite(string path) => this._client.OpenWrite(GetPath(path));
+    public override Stream OpenWrite(string path) => this._client.OpenWrite(GetPath(path), FtpDataType.Binary, false);
 
     public override void RemoveFile(string path) => this._client.DeleteFile(GetPath(path));
 
