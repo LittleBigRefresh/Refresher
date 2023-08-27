@@ -65,7 +65,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
         this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
     }
 
-    protected static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
+    protected static TableRow AddField<TControl>(string labelText, out TControl control, Button? button = null) where TControl : Control, new()
     {
         Label label = new()
         {
@@ -73,6 +73,15 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             VerticalAlignment = VerticalAlignment.Center,
         };
 
+        if (button != null)
+        {
+            DynamicLayout buttonLayout = new();
+            buttonLayout.AddRow(button, control = new TControl());
+            buttonLayout.Spacing = new Size(5, 0);
+            
+            return new TableRow(label, buttonLayout);
+        }
+        
         return new TableRow(label, control = new TControl());
     }
 

@@ -8,9 +8,7 @@ public class ConsolePatchForm : IntegratedPatchForm
     private TextBox _remoteAddress = null!;
     
     public ConsolePatchForm() : base("PS3 Patch")
-    {
-        this._remoteAddress.LostFocus += this.PathChanged;
-    }
+    {}
 
     protected override void PathChanged(object? sender, EventArgs ev)
     {
@@ -20,7 +18,7 @@ public class ConsolePatchForm : IntegratedPatchForm
 
     protected override TableRow AddRemoteField()
     {
-        return AddField("PS3's IP", out this._remoteAddress);
+        return AddField("PS3's IP", out this._remoteAddress, new Button(this.PathChanged) { Text = "Connect" });
     }
 
     protected override bool NeedsResign => true;
