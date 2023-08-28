@@ -26,7 +26,9 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     private CancellationTokenSource? _latestTokenSource;
     private Task? _latestTask;
 
-    public PatchForm(string subtitle) : base(subtitle, new Size(700, -1), false)
+    private bool _usedAutoDiscover = false;
+
+    protected PatchForm(string subtitle) : base(subtitle, new Size(700, -1), false)
     {
         this._messages = new ListBox { Height = 200 };
         this._patchButton = new Button(this.Patch) { Text = "Patch!", Enabled = false };
@@ -53,7 +55,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             {
                 this._messages,
                 new Button(this.Guide) { Text = "View guide" },
-                new Button(this.Autodiscover) { Text = "Autodiscover" },
+                new Button(this.AutoDiscover) { Text = "AutoDiscover" },
                 this._patchButton,
             })
             {
@@ -123,7 +125,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
             throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
     }
 
-    private void Autodiscover(object? sender, EventArgs arg)
+    private void AutoDiscover(object? sender, EventArgs arg)
     {
         try
         {
@@ -152,15 +154,16 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
 
             this.UrlField.Text = autodiscover.Url;
             this.PatchDigest = autodiscover.UsesCustomDigestKey ?? false;
+            this._usedAutoDiscover = true;
         }
         catch (HttpRequestException e)
         {
             if (e.StatusCode == null) throw;
-            MessageBox.Show($"Autodiscover failed, because the server responded with {(int)e.StatusCode} {e.StatusCode}.");
+            MessageBox.Show($"AutoDiscover failed, because the server responded with {(int)e.StatusCode} {e.StatusCode}.");
         }
         catch(Exception e)
         {
-            MessageBox.Show($"Autodiscover failed: {e}", MessageBoxType.Error);
+            MessageBox.Show($"AutoDiscover failed: {e}", MessageBoxType.Error);
         }
     }
 
@@ -187,10 +190,30 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     private void Patch(object? sender, EventArgs e)
     {
         // Wait for the patch task to finish
-       this.WaitForTask();
+        this.WaitForTask();
         
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this.Patcher == null) return;
+
+        if (!this._usedAutoDiscover)
+        {
+            DialogResult result = MessageBox.Show("You didn't use AutoDiscover. Would you like to try to run it now?", MessageBoxButtons.YesNoCancel, MessageBoxType.Question);
+            
+            // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+            switch (result)
+            {
+                case DialogResult.Yes:
+                    this.AutoDiscover(this, EventArgs.Empty);
+                    break;
+                case DialogResult.No:
+                    MessageBox.Show("Okay, AutoDiscover won't be used. If you have issues with this patch, try using it next time.");
+                    break;
+                case DialogResult.Cancel:
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
 
         this.Patcher.Patch(this.UrlField.Text, this.PatchDigest);
         
