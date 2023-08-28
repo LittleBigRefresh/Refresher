@@ -111,7 +111,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             return;
         }
         
-        string downloadedEboot = this.Accessor.DownloadFile(ebootPath);
+        string downloadedFile = this.Accessor.DownloadFile(ebootPath);
         
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
@@ -127,13 +127,13 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
                 // TODO: determine content id directly so we skip dlc licenses
                 if(!licenseFile.Contains(game.TitleId)) continue;
                 
-                string downloadedFile = this.Accessor.DownloadFile(licenseFile);
-                File.Move(downloadedFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+                string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
+                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
             }
         }
         
-        this.LogMessage($"EBOOT Path: {ebootPath}");
-        if (!File.Exists(ebootPath))
+        this.LogMessage($"Downloaded EBOOT Path: {downloadedFile}");
+        if (!File.Exists(downloadedFile))
         {
             this.FailVerify("Could not find the EBOOT. Patching cannot continue.", clear: false);
             return;
@@ -142,7 +142,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         this._tempFile = Path.GetTempFileName();
         
         LibSceToolSharp.SetRapDirectory(licenseDir);
-        LibSceToolSharp.Decrypt(ebootPath, this._tempFile);
+        LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
         
