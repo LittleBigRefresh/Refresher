@@ -206,7 +206,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patch
     {
         if(clear) this._messages.Items.Clear();
         this._messages.Items.Add(reason);
-        
+
+        MessageBox.Show(reason, MessageBoxType.Error);
         this.Reset();
         
         this.Patcher = null;

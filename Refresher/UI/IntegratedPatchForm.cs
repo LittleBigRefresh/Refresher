@@ -103,7 +103,15 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         Debug.Assert(this.Accessor != null);
 
         this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
-        string ebootPath = this.Accessor.DownloadFile(Path.Combine(this._usrDir, "EBOOT.BIN"));
+        string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
+
+        if (!this.Accessor.FileExists(ebootPath))
+        {
+            this.FailVerify("The EBOOT.BIN file does not exist. Try pressing 'Revert EBOOT' to see if that helps.");
+            return;
+        }
+        
+        string downloadedEboot = this.Accessor.DownloadFile(ebootPath);
         
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
@@ -205,7 +213,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
 
         if (!this.Accessor.FileExists(ebootOrig))
         {
-            MessageBox.Show("Cannot revert EBOOT since the original EBOOT does not exist", MessageBoxType.Error);
+            MessageBox.Show("Cannot revert EBOOT since the original EBOOT does not exist. We're sorry for your loss.", MessageBoxType.Error);
             return;
         }
         
@@ -213,7 +221,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             this.Accessor.RemoveFile(eboot);
         
         this.Accessor.CopyFile(ebootOrig, eboot);
-        MessageBox.Show("The EBOOT has successfully been reverted to its original backup");
+        MessageBox.Show("The EBOOT has successfully been reverted to its original backup.");
     }
 
     protected abstract TableRow AddRemoteField();
