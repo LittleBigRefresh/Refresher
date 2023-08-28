@@ -12,13 +12,42 @@ public class ConsolePatchForm : IntegratedPatchForm
 
     protected override void PathChanged(object? sender, EventArgs ev)
     {
-        this.Accessor = new ConsolePatchAccessor(this._remoteAddress.Text);
+        this.InitializePatchAccessor();
         base.PathChanged(sender, ev);
+        this.DisposePatchAccessor();
     }
 
     protected override void GameChanged(object? sender, EventArgs ev)
     {
+        this.InitializePatchAccessor();
         base.GameChanged(sender, ev);
+        this.DisposePatchAccessor();
+    }
+
+    public override void CompletePatch(object? sender, EventArgs e)
+    {
+        this.InitializePatchAccessor();
+        base.CompletePatch(sender, e);
+        this.DisposePatchAccessor();
+    }
+
+    protected override void RevertToOriginalExecutable(object? sender, EventArgs e)
+    {
+        this.InitializePatchAccessor();
+        base.RevertToOriginalExecutable(sender, e);
+        this.DisposePatchAccessor();
+    }
+
+    private void InitializePatchAccessor()
+    {
+        this.DisposePatchAccessor();
+        this.Accessor = new ConsolePatchAccessor(this._remoteAddress.Text);
+    }
+
+    private void DisposePatchAccessor()
+    {
+        if (this.Accessor is IDisposable disposable)
+            disposable.Dispose();
     }
 
     protected override TableRow AddRemoteField()

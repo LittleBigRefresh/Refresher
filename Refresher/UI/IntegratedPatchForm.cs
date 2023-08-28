@@ -196,7 +196,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         }
     }
 
-    private void RevertToOriginalExecutable(object? sender, EventArgs e)
+    protected virtual void RevertToOriginalExecutable(object? sender, EventArgs e)
     {
         if (this.Accessor == null) return;
 
