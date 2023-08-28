@@ -200,8 +200,8 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     {
         if (this.Accessor == null) return;
 
-        string eboot = this._usrDir + "EBOOT.BIN";
-        string ebootOrig = this._usrDir + "EBOOT.BIN.ORIG";
+        string eboot = Path.Combine(this._usrDir, "EBOOT.BIN");
+        string ebootOrig = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG");
 
         if (!this.Accessor.FileExists(ebootOrig))
         {
@@ -213,7 +213,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             this.Accessor.RemoveFile(eboot);
         
         this.Accessor.CopyFile(ebootOrig, eboot);
-        MessageBox.Show("The EBOOT has successfully been reverted to it's original backup");
+        MessageBox.Show("The EBOOT has successfully been reverted to its original backup");
     }
 
     protected abstract TableRow AddRemoteField();
