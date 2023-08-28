@@ -222,6 +222,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         
         this.Accessor.CopyFile(ebootOrig, eboot);
         MessageBox.Show("The EBOOT has successfully been reverted to its original backup.");
+        this.GameChanged(this, EventArgs.Empty);
     }
 
     protected abstract TableRow AddRemoteField();
