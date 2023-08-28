@@ -96,6 +96,8 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
 
     protected virtual void GameChanged(object? sender, EventArgs ev)
     {
+        LibSceToolSharp.Init();
+        
         GameItem? game = this._gameDropdown.SelectedValue as GameItem;
         Debug.Assert(game != null);
         Debug.Assert(this.Accessor != null);
