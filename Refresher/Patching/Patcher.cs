@@ -39,12 +39,16 @@ public partial class Patcher
     /// <returns>A list of the URLs and Digest keys</returns>
     private static List<PatchTargetInfo> FindPatchableElements(Stream file)
     {
+        long start = Stopwatch.GetTimestamp();
+        
         file.Position = 0;
         using IELF? elf = ELFReader.Load(file, false);
         file.Position = 0;
 
-        BinaryReader reader = new(file);
-
+        //Buffer the stream with a size of 4096
+        BufferedStream bufferedStream = new(file, 4096);
+        BinaryReader reader = new(bufferedStream);
+        
         // The string "http" in ASCII, as an int
         int httpInt = BitConverter.ToInt32("http"u8);
 
@@ -56,65 +60,56 @@ public partial class Patcher
         //Found positions of `cook` in the binary
         List<long> cookiePositions = new();
 
-        foreach (ISection section in elf.Sections)
+        long read = 0;
+        
+        //Create an array twice the size of the data we are wanting to check
+        Span<byte> arr = new byte[8];
+        while (reader.Read(arr) == arr.Length)
         {
-            // Assume a word size of 4, i would use `ProgBitsSection<T>.Alignment`
-            // but that seems to be unrelated to the actual alignment and offset chosen for the string constants specifically (the section with all the strings is marked as 32-byte alignment[?????])
-            // so we'll just assume 4 byte alignment since that seems universal here
-            int wordSize = 4;
-            ulong sectionLength;
-            switch (section)
+            long? found = null;
+            for (int i = 0; i < 5; i++)
             {
-                case ProgBitsSection<ulong> progBitsSectionUlong:
-                    file.Position = (long)progBitsSectionUlong.Offset;
-                    sectionLength = progBitsSectionUlong.Size;
-                    break;
-                case ProgBitsSection<uint> progBitsSectionUint:
-                    file.Position = progBitsSectionUint.Offset;
-                    sectionLength = progBitsSectionUint.Size;
-                    break;
-                default:
-                    continue;
-            }
+                int check = BitConverter.ToInt32(arr[i..(i + 4)]);
 
-            int read = 0;
-
-            byte[] buf = new byte[wordSize];
-            //While we are not at the end of the file, read each word in
-            while (read < (int)sectionLength - wordSize)
-            {
-                read += file.Read(buf);
-
-                int bufInt = BitConverter.ToInt32(buf);
-
-                //If they are equal, we found an instance of HTTP
-                if (bufInt == httpInt)
+                if (check == httpInt)
                 {
-                    //Mark the position of the found instance
-                    possibleUrls.Add(reader.BaseStream.Position - wordSize);
+                    possibleUrls.Add(read + i - 4);
+                    found = read + i - 4;
+                    break;
                 }
 
-                if (bufInt == cookieStartInt)
+                // ReSharper disable once InvertIf
+                if (check == cookieStartInt)
                 {
-                    cookiePositions.Add(reader.BaseStream.Position - wordSize);
+                    cookiePositions.Add(read + i - 4);
+                    found = read + i - 4;
+                    break;
                 }
             }
+
+            //Seek 4 bytes after the position we started at, or 4 bytes after the starting index of a match
+            reader.BaseStream.Seek(found == null ? read + 4 : found.Value + 4, SeekOrigin.Begin);
+
+            read += arr.Length;
         }
-
+        
         List<PatchTargetInfo> foundItems = new();
-        FilterValidUrls(file, possibleUrls, reader, foundItems);
-        FindDigestAroundCookie(file, cookiePositions, reader, foundItems);
+        FilterValidUrls(reader, possibleUrls, foundItems);
+        FindDigestAroundCookie(reader, cookiePositions, foundItems);
+
+        long end = Stopwatch.GetTimestamp();
+        Console.WriteLine($"Detecting patchables took {(double)(end - start) / (double)Stopwatch.Frequency} seconds!");
         return foundItems;
     }
 
-    private static void FilterValidUrls(Stream file, List<long> foundPossibleUrlPositions, BinaryReader reader, List<PatchTargetInfo> foundItems)
+    private static void FilterValidUrls(BinaryReader reader, List<long> foundPossibleUrlPositions, List<PatchTargetInfo> foundItems)
     {
         bool tooLong = false;
         foreach (long foundPosition in foundPossibleUrlPositions)
         {
             int len = 0;
 
-            file.Position = foundPosition;
+            reader.BaseStream.Position = foundPosition;
 
             //Find the first null byte
             while (reader.ReadByte() != 0)
@@ -137,13 +132,16 @@ public partial class Patcher
             //Keep reading until we arent at a null byte
             while (reader.ReadByte() == 0) len++;
 
-            file.Position = foundPosition;
+            //Remove one from length to make sure to leave a single null byte after
+            len -= 1;
+            
+            reader.BaseStream.Position = foundPosition;
 
             //`len` at this point is the amount of bytes that are actually available to repurpose
             //This includes all extra null bytes except for the last one
 
             byte[] match = new byte[len];
-            if (file.Read(match) < len) continue;
+            if (reader.Read(match) < len) continue;
             string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
 
             if (str.Contains('%')) continue; // Ignore printf strings, e.g. %s
@@ -159,11 +157,11 @@ public partial class Patcher
         }
     }
 
-    private static void FindDigestAroundCookie(Stream file, List<long> foundPossibleCookiePositions, BinaryReader reader, List<PatchTargetInfo> foundItems)
+    private static void FindDigestAroundCookie(BinaryReader reader, List<long> foundPossibleCookiePositions, List<PatchTargetInfo> foundItems)
     {
         foreach (long foundPosition in foundPossibleCookiePositions)
         {
-            file.Position = foundPosition;
+            reader.BaseStream.Position = foundPosition;
 
             byte[] cookieBuf = new byte[8];
             //If we didnt read enough or what we read isnt "cookie\0\0"
@@ -176,7 +174,7 @@ public partial class Patcher
             const int checkSize = 1000;
 
             //Go back half the check size in bytes (so that `cookie` is in the middle)
-            file.Position -= checkSize / 2;
+            reader.BaseStream.Position -= checkSize / 2;
 
             byte[] checkArr = new byte[checkSize];
             Span<byte> toCheck = checkArr.AsSpan().Slice(0, reader.Read(checkArr));
@@ -209,7 +207,7 @@ public partial class Patcher
                     foundItems.Add(new PatchTargetInfo
                     {
                         Length = len,
-                        Offset = file.Position - checkSize + start,
+                        Offset = reader.BaseStream.Position - checkSize + start,
                         Data = str,
                         Type = PatchTargetType.Digest,
                     });
