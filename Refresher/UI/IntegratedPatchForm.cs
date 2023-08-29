@@ -25,18 +25,20 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
     protected IntegratedPatchForm(string subtitle) : base(subtitle)
     {
-        this.FormPanel = new TableLayout(new List<TableRow>
+        List<TableRow> rows = new()
         {
             this.AddRemoteField(),
             AddField("Game to patch", out this._gameDropdown, forceHeight: 56),
-            AddField("Server URL", out this.UrlField),
-        });
+            AddField("Server URL", out this.UrlField), 
+        };
 
         if (!this.ShouldReplaceExecutable)
         {
-            this.FormPanel.Rows.Add(AddField("Identifier (EBOOT.<value>.elf)", out this._outputField));
+            rows.Add(AddField("Identifier (EBOOT.<value>.elf)", out this._outputField));
             this._outputField!.PlaceholderText = "refresh";
         }
+        
+        this.FormPanel = new TableLayout(rows);
         
         this._gameDropdown.SelectedValueChanged += this.GameChanged;
         
@@ -171,7 +173,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
             fileToUpload = this._tempFile;
         }
 
-        string destinationFile = this.ShouldReplaceExecutable ? "EBOOT.BIN" : $"EBOOT.{identifier}.BIN";
+        string destinationFile = this.ShouldReplaceExecutable ? "EBOOT.BIN" : this.NeedsResign ? $"EBOOT.{identifier}.BIN" : $"EBOOT.{identifier}.elf";
         string destination = Path.Combine(this._usrDir, destinationFile);
 
         // if we're replacing the executable, back it up to EBOOT.BIN.ORIG before we do so
