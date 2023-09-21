@@ -1,3 +1,4 @@
+using System.Reflection;
 using Refresher.Patching.PSP;
 using Refresher.Verification;
 
@@ -98,5 +99,13 @@ public class PSPPatcher : IPatcher
         //Flush and dispose the stream
         gamePluginsFileStream.Flush();
         gamePluginsFileStream.Dispose();
+
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        Stream allefresherStream = assembly.GetManifestResourceStream("Refresher.Resources.Allefresher.prx")!;
+
+        using FileStream allefresherOutput = File.Open(Path.Combine(pluginsDir, "Allefresher.prx"), FileMode.Create);
+        
+        //Copy the Allefresher embedded resource to the output file
+        allefresherStream.CopyTo(allefresherOutput);
     }
 }
