@@ -29,11 +29,10 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         {
             this.AddRemoteField(),
             AddField("Game to patch", out this._gameDropdown, forceHeight: 56),
+            AddField("Server URL", out this.UrlField),
         };
             
         this._gameDropdown.SelectedValueChanged += this.GameChanged;
-
-        rows.Add(AddField("Server URL", out this.UrlField));
 
         if (!this.ShouldReplaceExecutable)
         {
