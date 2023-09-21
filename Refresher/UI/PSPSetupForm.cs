@@ -28,15 +28,22 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
         {
             try
             {
+                Console.WriteLine($"Checking drive {drive.Name}...");
+                
                 //If theres no PSP folder,
                 if (!Directory.Exists(Path.Combine(drive.RootDirectory.FullName, "PSP")))
                 {
+                    Console.WriteLine($"Drive {drive.Name} has no PSP folder, ignoring...");
+                    
                     //Skip this drive
                     continue;
                 }
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine($"Checking drive failed due to exception, see below");
+                Console.WriteLine(ex);
+                
                 //If we fail to check dir info, its probably not mounted in a safe/accessible way
                 continue;
             }
@@ -45,10 +52,10 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
             this._pspDrive.Items.Add(drive.Name, drive.RootDirectory.FullName);
         }
 
-        //If there is any items in the dropdown,
+        // If there are any items in the dropdown...
         if (this._pspDrive.Items.Count > 0)
         {
-            //Select the first item
+            // ...then select the first item.
             this._pspDrive.SelectedIndex = 0;
         }
         

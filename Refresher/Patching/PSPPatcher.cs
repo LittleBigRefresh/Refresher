@@ -7,6 +7,14 @@ namespace Refresher.Patching;
 public class PSPPatcher : IPatcher
 {
     public string? PSPDrivePath;
+
+    private readonly Stream _allefresher;
+    
+    public PSPPatcher()
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        this._allefresher = assembly.GetManifestResourceStream("Refresher.Resources.Allefresher.prx")!;
+    }
     
     public List<Message> Verify(string url, bool patchDigest)
     {
@@ -15,7 +23,7 @@ public class PSPPatcher : IPatcher
         if (!Uri.TryCreate(url, UriKind.Absolute, out _))
             messages.Add(new Message(MessageLevel.Error, "URL failed to parse!"));
 
-        if (string.IsNullOrEmpty(this.PSPDrivePath))
+        if (string.IsNullOrEmpty(this.PSPDrivePath) || !Directory.Exists(this.PSPDrivePath))
             messages.Add(new Message(MessageLevel.Error, "Invalid PSP Drive path!"));
         
         return messages;
@@ -100,12 +108,11 @@ public class PSPPatcher : IPatcher
         gamePluginsFileStream.Flush();
         gamePluginsFileStream.Dispose();
 
-        Assembly assembly = Assembly.GetExecutingAssembly();
-        Stream allefresherStream = assembly.GetManifestResourceStream("Refresher.Resources.Allefresher.prx")!;
-
         using FileStream allefresherOutput = File.Open(Path.Combine(pluginsDir, "Allefresher.prx"), FileMode.Create);
+
+        this._allefresher.Seek(0, SeekOrigin.Begin);
         
         //Copy the Allefresher embedded resource to the output file
-        allefresherStream.CopyTo(allefresherOutput);
+        this._allefresher.CopyTo(allefresherOutput);
     }
 }

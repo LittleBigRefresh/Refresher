@@ -229,11 +229,11 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
     protected abstract TableRow AddRemoteField();
     /// <summary>
-    /// Whether or not the executable is resigned or not
+    /// Whether the target platform requires the executable to be resigned or not
     /// </summary>
     protected abstract bool NeedsResign { get; }
     /// <summary>
-    /// Whether or not the patcher replaces the executable
+    /// Whether the target platform requires the executable to be named <c>EBOOT.BIN</c>
     /// </summary>
     protected abstract bool ShouldReplaceExecutable { get; }
 }
