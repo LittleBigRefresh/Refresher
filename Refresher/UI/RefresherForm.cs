@@ -28,11 +28,18 @@ public abstract class RefresherForm : Form
     /// </summary>
     /// <param name="close">Should the parent window be closed after the child is shown? Defaults to true.</param>
     /// <typeparam name="TForm">The child <see cref="RefresherForm"/> to show.</typeparam>
-    protected void ShowChild<TForm>(bool close = true) where TForm : RefresherForm, new()
+    protected TForm ShowChild<TForm>(bool close = true) where TForm : RefresherForm, new()
     {
         TForm form = new();
+        
+        //Disable this form while the child form runs
+        this.Enabled = false;
+        form.Closing += (_, _) => this.Enabled = true;
+        
         form.Show();
         
         if(close) this.Visible = false;
+
+        return form;
     }
 }

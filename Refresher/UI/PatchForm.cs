@@ -55,6 +55,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             {
                 this._messages,
                 new Button(this.Guide) { Text = "View guide" },
+                new Button(this.SelectServer) {Text = "Select Server"},
                 new Button(this.AutoDiscover) { Text = "AutoDiscover" },
                 this._patchButton,
             })
@@ -71,6 +72,17 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
         this.UrlField.TextChanged += this.Reverify;
         this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
+    }
+
+    private void SelectServer(object? sender, EventArgs e)
+    {
+        ServerSelector form = this.ShowChild<ServerSelector>(false);
+
+        form.SelectionBox.Activated += (_, _) =>
+        {
+            this.UrlField.Text = form.SelectionBox.SelectedKey;
+            this.AutoDiscover(null, null!);
+        };
     }
 
     protected static TableRow AddField<TControl>(string labelText, out TControl control, Button? button = null, int forceHeight = -1) where TControl : Control, new()
