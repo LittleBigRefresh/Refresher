@@ -68,7 +68,7 @@ public class PSPPatcher : IPatcher
             entries = PSPPluginListParser.Parse(new StreamReader(stream));
 
             //If Allefresher is not in the list,
-            if (!entries.Any(entry => entry.Path.Contains("Allefresher.prx")))
+            if (!entries.Any(entry => entry.Path.Contains("Allefresher.prx", StringComparison.InvariantCultureIgnoreCase)))
             {
                 //Add Allefresher to the game plugin list
                 entries.Add(new PSPPluginListEntry(allefresherPath, 1));
