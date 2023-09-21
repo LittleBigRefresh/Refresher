@@ -8,11 +8,11 @@ using Refresher.Verification;
 
 namespace Refresher.Patching;
 
-public partial class Patcher
+public partial class EbootPatcher : IPatcher
 {
     private readonly Lazy<List<PatchTargetInfo>> _targets;
 
-    public Patcher(Stream stream)
+    public EbootPatcher(Stream stream)
     {
         if (!stream.CanRead || !stream.CanSeek || !stream.CanWrite)
             throw new ArgumentException("Stream must be readable, seekable and writable", nameof(stream));

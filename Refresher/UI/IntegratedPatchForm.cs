@@ -10,7 +10,7 @@ using SCEToolSharp;
 
 namespace Refresher.UI;
 
-public abstract class IntegratedPatchForm : PatchForm<Patcher>
+public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 {
     private readonly DropDown _gameDropdown;
     private readonly TextBox? _outputField;
@@ -28,19 +28,24 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         List<TableRow> rows = new()
         {
             this.AddRemoteField(),
-            AddField("Game to patch", out this._gameDropdown, forceHeight: 56),
-            AddField("Server URL", out this.UrlField), 
         };
 
-        if (!this.ShouldReplaceExecutable)
+        if (this.HasGameSelection)
+        {
+            rows.Add(AddField("Game to patch", out this._gameDropdown, forceHeight: 56));
+            
+            this._gameDropdown.SelectedValueChanged += this.GameChanged;
+        }
+
+        rows.Add(AddField("Server URL", out this.UrlField));
+
+        if (!this.ShouldReplaceExecutable && this.PatchesFile)
         {
             rows.Add(AddField("Identifier (EBOOT.<value>.elf)", out this._outputField));
             this._outputField!.PlaceholderText = "refresh";
         }
         
         this.FormPanel = new TableLayout(rows);
-        
-        this._gameDropdown.SelectedValueChanged += this.GameChanged;
         
         this.InitializePatcher();
     }
@@ -148,7 +153,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
         
-        this.Patcher = new Patcher(File.Open(this._tempFile, FileMode.Open, FileAccess.ReadWrite));
+        this.Patcher = new EbootPatcher(File.Open(this._tempFile, FileMode.Open, FileAccess.ReadWrite));
 
         this.Reverify(sender, ev);
     }
@@ -200,7 +205,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     
     public override IEnumerable<Button> AddExtraButtons()
     {
-        if (this.ShouldReplaceExecutable)
+        if (this.ShouldReplaceExecutable && this.PatchesFile)
         {
             yield return new Button(this.RevertToOriginalExecutable) { Text = "Revert EBOOT" };
         }
@@ -228,6 +233,20 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     }
 
     protected abstract TableRow AddRemoteField();
+    /// <summary>
+    /// Whether or not the executable is resigned or not
+    /// </summary>
     protected abstract bool NeedsResign { get; }
+    /// <summary>
+    /// Whether or not the patcher replaces the executable
+    /// </summary>
     protected abstract bool ShouldReplaceExecutable { get; }
+    /// <summary>
+    /// Whether or not the game selection dropdown is displayed
+    /// </summary>
+    protected abstract bool HasGameSelection { get; }
+    /// <summary>
+    /// Whether or not the executable is patched directly, removes a bunch of file related buttons
+    /// </summary>
+    protected abstract bool PatchesFile { get; }
 }

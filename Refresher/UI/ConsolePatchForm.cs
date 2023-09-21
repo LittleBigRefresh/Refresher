@@ -62,4 +62,8 @@ public class ConsolePatchForm : IntegratedPatchForm
 
     protected override bool NeedsResign => true;
     protected override bool ShouldReplaceExecutable => true;
+
+    protected override bool HasGameSelection => true;
+
+    protected override bool PatchesFile => true;
 }
