@@ -196,7 +196,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         Thread.Sleep(1000); // TODO: don't. block. the. main. thread.
         
         this.Accessor.UploadFile(fileToUpload, destination);
-        MessageBox.Show($"Successfully patched EBOOT! It was saved to '{destination}'.");
+        MessageBox.Show(this, $"Successfully patched EBOOT! It was saved to '{destination}'.", "Success!");
 
         // Re-initialize patcher so we can patch with the same parameters again
         // Probably slow but prevents crash

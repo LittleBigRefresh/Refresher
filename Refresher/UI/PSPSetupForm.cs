@@ -54,7 +54,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
         
         this.InitializePatcher();
     }
-
+    
     private void SelectedDriveChange(object? sender, EventArgs e)
     {
         this.Patcher!.PSPDrivePath = this._pspDrive.SelectedKey;
@@ -62,5 +62,6 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
 
     public override void CompletePatch(object? sender, EventArgs e)
     {
+        MessageBox.Show(this, "Setup complete! *Safely* eject your Memory Stick or PSP in your OS, then open the game!", "Success!");
     }
 }
