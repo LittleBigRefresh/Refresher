@@ -28,18 +28,14 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         List<TableRow> rows = new()
         {
             this.AddRemoteField(),
+            AddField("Game to patch", out this._gameDropdown, forceHeight: 56),
         };
-
-        if (this.HasGameSelection)
-        {
-            rows.Add(AddField("Game to patch", out this._gameDropdown, forceHeight: 56));
             
-            this._gameDropdown.SelectedValueChanged += this.GameChanged;
-        }
+        this._gameDropdown.SelectedValueChanged += this.GameChanged;
 
         rows.Add(AddField("Server URL", out this.UrlField));
 
-        if (!this.ShouldReplaceExecutable && this.PatchesFile)
+        if (!this.ShouldReplaceExecutable)
         {
             rows.Add(AddField("Identifier (EBOOT.<value>.elf)", out this._outputField));
             this._outputField!.PlaceholderText = "refresh";
@@ -205,7 +201,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     
     public override IEnumerable<Button> AddExtraButtons()
     {
-        if (this.ShouldReplaceExecutable && this.PatchesFile)
+        if (this.ShouldReplaceExecutable)
         {
             yield return new Button(this.RevertToOriginalExecutable) { Text = "Revert EBOOT" };
         }
@@ -241,12 +237,4 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     /// Whether or not the patcher replaces the executable
     /// </summary>
     protected abstract bool ShouldReplaceExecutable { get; }
-    /// <summary>
-    /// Whether or not the game selection dropdown is displayed
-    /// </summary>
-    protected abstract bool HasGameSelection { get; }
-    /// <summary>
-    /// Whether or not the executable is patched directly, removes a bunch of file related buttons
-    /// </summary>
-    protected abstract bool PatchesFile { get; }
 }

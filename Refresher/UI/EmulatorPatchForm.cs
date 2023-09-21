@@ -46,8 +46,4 @@ public class EmulatorPatchForm : IntegratedPatchForm
 
     protected override bool NeedsResign => false;
     protected override bool ShouldReplaceExecutable => false;
-
-    protected override bool HasGameSelection => true;
-
-    protected override bool PatchesFile => true;
 }
