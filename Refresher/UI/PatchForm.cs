@@ -11,7 +11,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Refresher.UI;
 
-public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : Patcher
+public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class, IPatcher
 {
     protected abstract TableLayout FormPanel { get; }
     

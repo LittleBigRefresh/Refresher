@@ -10,7 +10,7 @@ using SCEToolSharp;
 
 namespace Refresher.UI;
 
-public abstract class IntegratedPatchForm : PatchForm<Patcher>
+public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 {
     private readonly DropDown _gameDropdown;
     private readonly TextBox? _outputField;
@@ -29,8 +29,10 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         {
             this.AddRemoteField(),
             AddField("Game to patch", out this._gameDropdown, forceHeight: 56),
-            AddField("Server URL", out this.UrlField), 
+            AddField("Server URL", out this.UrlField),
         };
+            
+        this._gameDropdown.SelectedValueChanged += this.GameChanged;
 
         if (!this.ShouldReplaceExecutable)
         {
@@ -39,8 +41,6 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         }
         
         this.FormPanel = new TableLayout(rows);
-        
-        this._gameDropdown.SelectedValueChanged += this.GameChanged;
         
         this.InitializePatcher();
     }
@@ -148,7 +148,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
         
-        this.Patcher = new Patcher(File.Open(this._tempFile, FileMode.Open, FileAccess.ReadWrite));
+        this.Patcher = new EbootPatcher(File.Open(this._tempFile, FileMode.Open, FileAccess.ReadWrite));
 
         this.Reverify(sender, ev);
     }
@@ -191,7 +191,7 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
         Thread.Sleep(1000); // TODO: don't. block. the. main. thread.
         
         this.Accessor.UploadFile(fileToUpload, destination);
-        MessageBox.Show($"Successfully patched EBOOT! It was saved to '{destination}'.");
+        MessageBox.Show(this, $"Successfully patched EBOOT! It was saved to '{destination}'.", "Success!");
 
         // Re-initialize patcher so we can patch with the same parameters again
         // Probably slow but prevents crash
@@ -228,6 +228,12 @@ public abstract class IntegratedPatchForm : PatchForm<Patcher>
     }
 
     protected abstract TableRow AddRemoteField();
+    /// <summary>
+    /// Whether the target platform requires the executable to be resigned or not
+    /// </summary>
     protected abstract bool NeedsResign { get; }
+    /// <summary>
+    /// Whether the target platform requires the executable to be named <c>EBOOT.BIN</c>
+    /// </summary>
     protected abstract bool ShouldReplaceExecutable { get; }
 }

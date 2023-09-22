@@ -64,8 +64,8 @@ public class CommandLine
         }
 
         //Create a new patcher with the temp file stream
-        Patcher patcher = new(mappedFile.CreateViewStream());
-        List<Message> messages = patcher.Verify(options.ServerUrl, options.Digest ?? false).ToList();
+        EbootPatcher ebootPatcher = new(mappedFile.CreateViewStream());
+        List<Message> messages = ebootPatcher.Verify(options.ServerUrl, options.Digest ?? false).ToList();
 
         //Write the messages to the console
         foreach (Message message in messages) Console.WriteLine($"{message.Level}: {message.Content}");
@@ -103,7 +103,7 @@ public class CommandLine
         try
         {
             //Patch the file
-            patcher.Patch(options.ServerUrl, options.Digest ?? false);
+            ebootPatcher.Patch(options.ServerUrl, options.Digest ?? false);
 
             //TODO: warn the user if they are overwriting the file
             File.Move(tempFile, options.OutputFile, true);

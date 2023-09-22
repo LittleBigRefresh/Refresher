@@ -5,7 +5,7 @@ using Refresher.Patching;
 
 namespace Refresher.UI;
 
-public class FilePatchForm : PatchForm<Patcher>
+public class FilePatchForm : PatchForm<EbootPatcher>
 {
     private readonly FilePicker _inputFileField;
     private readonly FilePicker _outputFileField;
@@ -92,7 +92,7 @@ public class FilePatchForm : PatchForm<Patcher>
         {
             this._mappedFile?.Dispose();
             this._mappedFile = MemoryMappedFile.CreateFromFile(this._tempFile, FileMode.Open, null, 0, MemoryMappedFileAccess.ReadWrite);
-            this.Patcher = new Patcher(this._mappedFile.CreateViewStream());
+            this.Patcher = new EbootPatcher(this._mappedFile.CreateViewStream());
         }
         catch(Exception e)
         {
