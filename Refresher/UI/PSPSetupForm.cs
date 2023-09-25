@@ -26,18 +26,38 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
         
         foreach (DriveInfo drive in drives)
         {
+            bool isVita = false;
+            string pspEmuFolderName = "";
+
             try
             {
                 Console.WriteLine($"Checking drive {drive.Name}...");
-                
-                //If theres no PSP folder,
-                if (!Directory.Exists(Path.Combine(drive.RootDirectory.FullName, "PSP")))
+
+                // Match for all directories called PSP and PSPEMU
+                // NOTE: we do this because the PSP filesystem is case insensitive, and the .NET STL is case sensitive on linux
+                List<string> possiblePspMatches = Directory.EnumerateDirectories(drive.RootDirectory.FullName, "PSP", new EnumerationOptions
                 {
-                    Console.WriteLine($"Drive {drive.Name} has no PSP folder, ignoring...");
+                    MatchCasing = MatchCasing.CaseInsensitive,
+                    AttributesToSkip = 0
+                }).ToList();
+
+                List<string> possiblePsVitaMatches = Directory.EnumerateDirectories(drive.RootDirectory.FullName, "PSPEMU", new EnumerationOptions
+                {
+                    MatchCasing = MatchCasing.CaseInsensitive,
+                    AttributesToSkip = 0
+                }).ToList();
+
+                // If theres no PSP folder or PSPEMU folder,
+                if (!possiblePspMatches.Any() && !possiblePsVitaMatches.Any())
+                {
+                    Console.WriteLine($"Drive {drive.Name} has no PSP/PSPEMU folder, ignoring...");
                     
                     //Skip this drive
                     continue;
                 }
+                
+                isVita = possiblePsVitaMatches.Any();
+                if(isVita) pspEmuFolderName = possiblePsVitaMatches[0];
             }
             catch(Exception ex)
             {
@@ -49,7 +69,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
             }
             
             //If the drive has a PSP folder, add it to the list
-            this._pspDrive.Items.Add(drive.Name, drive.RootDirectory.FullName);
+            this._pspDrive.Items.Add(drive.Name + (isVita ? " (PS Vita)" : " (PSP)"), isVita ? pspEmuFolderName : drive.RootDirectory.FullName);
         }
 
         // If there are any items in the dropdown...
