@@ -35,17 +35,17 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
 
                 // Match for all directories called PSP and PSPEMU
                 // NOTE: we do this because the PSP filesystem is case insensitive, and the .NET STL is case sensitive on linux
-                IEnumerable<string> possiblePspMatches = Directory.EnumerateDirectories(drive.RootDirectory.FullName, "PSP", new EnumerationOptions
+                List<string> possiblePspMatches = Directory.EnumerateDirectories(drive.RootDirectory.FullName, "PSP", new EnumerationOptions
                 {
                     MatchCasing = MatchCasing.CaseInsensitive,
                     AttributesToSkip = 0
-                });
+                }).ToList();
 
-                IEnumerable<string> possiblePsVitaMatches = Directory.EnumerateDirectories(drive.RootDirectory.FullName, "PSPEMU", new EnumerationOptions
+                List<string> possiblePsVitaMatches = Directory.EnumerateDirectories(drive.RootDirectory.FullName, "PSPEMU", new EnumerationOptions
                 {
                     MatchCasing = MatchCasing.CaseInsensitive,
                     AttributesToSkip = 0
-                });
+                }).ToList();
 
                 // If theres no PSP folder or PSPEMU folder,
                 if (!possiblePspMatches.Any() && !possiblePsVitaMatches.Any())
@@ -57,7 +57,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
                 }
                 
                 isVita = possiblePsVitaMatches.Any();
-                if( isVita ) { pspEmuFolderName = possiblePsVitaMatches.First(); }
+                if( isVita ) { pspEmuFolderName = possiblePsVitaMatches[0]; }
             }
             catch(Exception ex)
             {
