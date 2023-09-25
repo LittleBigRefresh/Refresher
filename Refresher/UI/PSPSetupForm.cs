@@ -69,7 +69,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
             }
             
             //If the drive has a PSP folder, add it to the list
-            this._pspDrive.Items.Add(drive.Name + (isVita ? " (Vita)" : " (PSP)"), isVita ? pspEmuFolderName : drive.RootDirectory.FullName);
+            this._pspDrive.Items.Add(drive.Name + (isVita ? " (PS Vita)" : " (PSP)"), isVita ? pspEmuFolderName : drive.RootDirectory.FullName);
         }
 
         // If there are any items in the dropdown...
