@@ -58,10 +58,10 @@ public class PSPPatcher : IPatcher
 
         //Match for all files called "game.txt" in the plugins directory
         //NOTE: we do this because the PSP filesystem is case insensitive, and the .NET STL is case sensitive on linux
-        List<string> possibleMatches = Directory.EnumerateFiles(pluginsDir, "game.txt", new EnumerationOptions
+        IEnumerable<string> possibleMatches = Directory.EnumerateFiles(pluginsDir, "game.txt", new EnumerationOptions
         {
             MatchCasing = MatchCasing.CaseInsensitive,
-        }).ToList();
+        });
 
         FileStream gamePluginsFileStream;
 
@@ -71,7 +71,7 @@ public class PSPPatcher : IPatcher
         if (possibleMatches.Any())
         {
             //Open the first match
-            FileStream stream = File.OpenRead(possibleMatches[0]);
+            FileStream stream = File.OpenRead(possibleMatches.First());
 
             //Read out the matches
             entries = PSPPluginListParser.Parse(new StreamReader(stream));
@@ -87,7 +87,7 @@ public class PSPPatcher : IPatcher
             stream.Dispose();
 
             //Open a new write stream to the game.txt file
-            gamePluginsFileStream = File.Open(possibleMatches[0], FileMode.Truncate);
+            gamePluginsFileStream = File.Open(possibleMatches.First(), FileMode.Truncate);
         }
         else
         {
