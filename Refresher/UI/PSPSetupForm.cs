@@ -57,7 +57,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
                 }
                 
                 isVita = possiblePsVitaMatches.Any();
-                if( isVita ) { pspEmuFolderName = possiblePsVitaMatches.First(); }
+                if(isVita) pspEmuFolderName = possiblePsVitaMatches.First();
             }
             catch(Exception ex)
             {
