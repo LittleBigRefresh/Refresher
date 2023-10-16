@@ -237,7 +237,7 @@ public partial class EbootPatcher : IPatcher
                                      "URI cannot end with a trailing slash, invalid requests will be sent to the server"));
 
         //Try to create an absolute URI, if it fails, its not a valid URI
-        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri _))
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? _))
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
 
         // If there are no targets, we cant patch
