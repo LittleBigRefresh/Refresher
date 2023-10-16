@@ -81,7 +81,12 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
         
         this.InitializePatcher();
     }
-    
+
+    public override void Guide(object? sender, EventArgs e)
+    {
+        this.OpenUrl("https://littlebigrefresh.github.io/Docs/patching/psp");
+    }
+
     private void SelectedDriveChange(object? sender, EventArgs e)
     {
         this.Patcher!.PSPDrivePath = this._pspDrive.SelectedKey;
