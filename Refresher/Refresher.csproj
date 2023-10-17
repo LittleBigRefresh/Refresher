@@ -21,7 +21,7 @@
       <PackageReference Condition="'$(TargetFramework)' != 'net7.0-windows'" Include="Eto.Platform.Gtk" Version="2.7.5" />
       <PackageReference Condition="'$(TargetFramework)' == 'net7.0-windows'" Include="Eto.Platform.Wpf" Version="2.7.5" />
       <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
-      <PackageReference Include="FluentFTP" Version="47.1.0" />
+      <PackageReference Include="FluentFTP" Version="48.0.1" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="SCEToolSharp" Version="1.0.9" />
       <EmbeddedResource Include="Resources\Allefresher.prx" />
