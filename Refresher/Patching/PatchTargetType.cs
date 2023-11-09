@@ -11,10 +11,6 @@ public enum PatchTargetType
     /// </summary>
     Host,
     /// <summary>
-    /// 2 32-bit big endian port numbers right after one another
-    /// </summary>
-    DoubleNumeric32BitPort,
-    /// <summary>
     /// A LBP digest key
     /// </summary>
     Digest,

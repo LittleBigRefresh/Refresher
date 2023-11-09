@@ -31,6 +31,9 @@ public partial class EbootPatcher : IPatcher
 
     [GeneratedRegex("[a-zA-Z0-9!@#$%^&*()?/<>~\\[\\]]", RegexOptions.Compiled)]
     private static partial Regex DigestMatch();
+    
+    [GeneratedRegex(@"lbpk\.ps3\.online\.sce.\.com", RegexOptions.Compiled)]
+    private static partial Regex LbpkDomainMatch();
 
     /// <summary>
     /// Finds a set of URLs and Digest keys in the given file, excluding C printf strings.
@@ -58,17 +61,12 @@ public partial class EbootPatcher : IPatcher
         //If string "lbpk" in ASCII, as an int
         int lbpkStartInt = BitConverter.ToInt32("lbpk"u8);
 
-        //The main LBPK port
-        int lbpkPort = BitConverter.ToInt32(new byte[] { 0x00, 0x00, 0x27, 0x42 });
-
         //Found positions of `http` in the binary
         List<long> possibleUrls = new();
         //Found positions of `cook` in the binary
         List<long> cookiePositions = new();
         //Found positions of `lbpk` in the binary
         List<long> lbpkPositions = new();
-        //Found positions of the LBPK server port
-        List<long> lbpkPortPositions = new();
 
         long read = 0;
         
@@ -95,13 +93,6 @@ public partial class EbootPatcher : IPatcher
                     break;
                 }
 
-                if (check == lbpkPort)
-                {
-                    lbpkPortPositions.Add(read + i - 4);
-                    found = read + i - 4;
-                    break;
-                }
-                
                 // ReSharper disable once InvertIf
                 if (check == lbpkStartInt)
                 {
@@ -121,44 +112,15 @@ public partial class EbootPatcher : IPatcher
         FilterValidUrls(reader, possibleUrls, foundItems);
         FindDigestAroundCookie(reader, cookiePositions, foundItems);
         FindLbpkDomains(reader, lbpkPositions, foundItems);
-        FindLbpkPorts(reader, lbpkPortPositions, foundItems);
 
         long end = Stopwatch.GetTimestamp();
         Console.WriteLine($"Detecting patchables took {(double)(end - start) / (double)Stopwatch.Frequency} seconds!");
         return foundItems;
     }
-
-    private static int SwapEndianness(int num)
-    {
-        return (num & 0x000000FF) << 24 |
-               (num & 0x0000FF00) << 8 |
-               (num & 0x00FF0000) >> 8 |
-               (int)((num & 0xFF000000) >> 24);
-    }
-
-    private static void FindLbpkPorts(BinaryReader reader, List<long> foundLbpkPortPositions, List<PatchTargetInfo> foundItems)
-    {
-        foreach (long foundPosition in foundLbpkPortPositions)
-        {
-            reader.BaseStream.Position = foundPosition;
-            int port1 = SwapEndianness(reader.ReadInt32());
-            int port2 = SwapEndianness(reader.ReadInt32());
-
-            if (port1 != 10050 || port2 != 10051) continue;
-            
-            foundItems.Add(new PatchTargetInfo
-            {
-                Offset = foundPosition,
-                Length = sizeof(int) * 2,
-                Data = null,
-                Type = PatchTargetType.DoubleNumeric32BitPort,
-            });
-        }
-    }
     
     private static void FindLbpkDomains(BinaryReader reader, List<long> foundLbpkPositions, List<PatchTargetInfo> foundItems)
     {
-        string host = "lbpk.ps3.online.scea.com";
+        int hostLength = "lbpk.ps3.online.scea.com".Length;
         
         foreach (long foundPosition in foundLbpkPositions)
         {
@@ -172,7 +134,7 @@ public partial class EbootPatcher : IPatcher
             {
                 len++;
 
-                if (len > host.Length + 1)
+                if (len > hostLength + 1)
                 {
                     tooLong = true;
                     break;
@@ -197,15 +159,14 @@ public partial class EbootPatcher : IPatcher
             if (reader.Read(match) < len) continue;
             string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
 
-            if (str != host) continue; // Ignore unknown domains
-
-            foundItems.Add(new PatchTargetInfo
-            {
-                Length = len,
-                Offset = foundPosition,
-                Data = str,
-                Type = PatchTargetType.Host,
-            });
+            if (LbpkDomainMatch().Matches(str).Count != 0)
+                foundItems.Add(new PatchTargetInfo
+                {
+                    Length = len,
+                    Offset = foundPosition,
+                    Data = str,
+                    Type = PatchTargetType.Host,
+                });
         }
     }
 
@@ -380,7 +341,6 @@ public partial class EbootPatcher : IPatcher
         
         byte[] urlAsBytes = Encoding.UTF8.GetBytes(url);
         byte[] hostAsBytes = Encoding.UTF8.GetBytes(uri.Host);
-        int port = SwapEndianness(uri.Port);
         foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.Url))
         {
             writer.BaseStream.Position = target.Offset;
@@ -399,20 +359,6 @@ public partial class EbootPatcher : IPatcher
             for (int i = 0; i < target.Length - hostAsBytes.Length; i++) writer.Write('\0');
         }
         
-        foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.DoubleNumeric32BitPort))
-        {
-            writer.BaseStream.Position = target.Offset;
-            
-            Debug.Assert(target.Length == sizeof(int) * 2);
-            
-            //TODO: expose somehow the ability to specify separate ports here, this WILL break at some point, as im not sure what the second port is used for yet
-            
-            //Write the first port
-            writer.Write(port);
-            //Write the second port
-            writer.Write(port);
-        }
-
         if (patchDigest)
         {
             ReadOnlySpan<byte> digestBytes = "CustomServerDigest"u8;
