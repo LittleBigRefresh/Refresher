@@ -31,6 +31,9 @@ public partial class EbootPatcher : IPatcher
 
     [GeneratedRegex("[a-zA-Z0-9!@#$%^&*()?/<>~\\[\\]]", RegexOptions.Compiled)]
     private static partial Regex DigestMatch();
+    
+    [GeneratedRegex(@"lbpk\.ps3\.online\.sce.\.com", RegexOptions.Compiled)]
+    private static partial Regex LbpkDomainMatch();
 
     /// <summary>
     /// Finds a set of URLs and Digest keys in the given file, excluding C printf strings.
@@ -55,10 +58,15 @@ public partial class EbootPatcher : IPatcher
         // The first 4-byte word of the word "cookie", which seems to always proceed digest keys
         int cookieStartInt = BitConverter.ToInt32("cook"u8);
 
+        //If string "lbpk" in ASCII, as an int
+        int lbpkStartInt = BitConverter.ToInt32("lbpk"u8);
+
         //Found positions of `http` in the binary
         List<long> possibleUrls = new();
         //Found positions of `cook` in the binary
         List<long> cookiePositions = new();
+        //Found positions of `lbpk` in the binary
+        List<long> lbpkPositions = new();
 
         long read = 0;
         
@@ -78,10 +86,17 @@ public partial class EbootPatcher : IPatcher
                     break;
                 }
 
-                // ReSharper disable once InvertIf
                 if (check == cookieStartInt)
                 {
                     cookiePositions.Add(read + i - 4);
+                    found = read + i - 4;
+                    break;
+                }
+
+                // ReSharper disable once InvertIf
+                if (check == lbpkStartInt)
+                {
+                    lbpkPositions.Add(read + i - 4);
                     found = read + i - 4;
                     break;
                 }
@@ -96,17 +111,72 @@ public partial class EbootPatcher : IPatcher
         List<PatchTargetInfo> foundItems = new();
         FilterValidUrls(reader, possibleUrls, foundItems);
         FindDigestAroundCookie(reader, cookiePositions, foundItems);
+        FindLbpkDomains(reader, lbpkPositions, foundItems);
 
         long end = Stopwatch.GetTimestamp();
         Console.WriteLine($"Detecting patchables took {(double)(end - start) / (double)Stopwatch.Frequency} seconds!");
         return foundItems;
     }
+    
+    private static void FindLbpkDomains(BinaryReader reader, List<long> foundLbpkPositions, List<PatchTargetInfo> foundItems)
+    {
+        int hostLength = "lbpk.ps3.online.scea.com".Length;
+        
+        foreach (long foundPosition in foundLbpkPositions)
+        {
+            bool tooLong = false;
+
+            int len = 0;
+
+            reader.BaseStream.Position = foundPosition;
+
+            while (reader.ReadByte() != 0)
+            {
+                len++;
+
+                if (len > hostLength + 1)
+                {
+                    tooLong = true;
+                    break;
+                }
+            }
+
+            //Skip this string and continue
+            if (tooLong) continue;
+            
+            //Keep reading until we arent at a null byte
+            while (reader.ReadByte() == 0) len++;
+
+            //Remove one from length to make sure to leave a single null byte after
+            len -= 1;
+            
+            reader.BaseStream.Position = foundPosition;
+
+            //`len` at this point is the amount of bytes that are actually available to repurpose
+            //This includes all extra null bytes except for the last one
+
+            byte[] match = new byte[len];
+            if (reader.Read(match) < len) continue;
+            string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
+
+            if (LbpkDomainMatch().Matches(str).Count != 0)
+                foundItems.Add(new PatchTargetInfo
+                {
+                    Length = len,
+                    Offset = foundPosition,
+                    Data = str,
+                    Type = PatchTargetType.Host,
+                });
+        }
+    }
 
     private static void FilterValidUrls(BinaryReader reader, List<long> foundPossibleUrlPositions, List<PatchTargetInfo> foundItems)
     {
-        bool tooLong = false;
+        
         foreach (long foundPosition in foundPossibleUrlPositions)
         {
+            bool tooLong = false;
+        
             int len = 0;
 
             reader.BaseStream.Position = foundPosition;
@@ -123,11 +193,7 @@ public partial class EbootPatcher : IPatcher
                 }
             }
 
-            if (tooLong)
-            {
-                tooLong = false;
-                continue;
-            }
+            if (tooLong) continue;
 
             //Keep reading until we arent at a null byte
             while (reader.ReadByte() == 0) len++;
@@ -235,20 +301,24 @@ public partial class EbootPatcher : IPatcher
         if (url.EndsWith('/'))
             messages.Add(new Message(MessageLevel.Error,
                                      "URI cannot end with a trailing slash, invalid requests will be sent to the server"));
-
+        
         //Try to create an absolute URI, if it fails, its not a valid URI
-        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? _))
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
 
-        // If there are no targets, we cant patch
+        // If there are no Url or Host targets, we cant patch
         // ReSharper disable once SimplifyLinqExpressionUseAll
-        if (!this._targets.Value.Any(x => x.Type == PatchTargetType.Url))
+        if (!this._targets.Value.Any(x => x.Type is PatchTargetType.Url or PatchTargetType.Host))
             messages.Add(new Message(MessageLevel.Error,
-                                     "Could not find any urls in the EBOOT. Nothing can be changed."));
+                                     "Could not find any urls in the EBOOT. Nothing can be changed. If you believe this is a bug, please open an issue."));
 
         if (this._targets.Value.Any(x => x.Type == PatchTargetType.Url && x.Length < url.Length))
             messages.Add(new Message(MessageLevel.Error,
-                                     "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
+                "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
+        
+        if (uri != null && this._targets.Value.Any(x => x.Type == PatchTargetType.Host && x.Length < uri.Host.Length))
+            messages.Add(new Message(MessageLevel.Error,
+                "The URL host is too long to fit in the EBOOT. Please use a shorter host."));
 
         // If we are patching digest, check if we found a digest in the EBOOT
         if (patchDigest && this._targets.Value.Count(x => x.Type == PatchTargetType.Digest) == 0)
@@ -267,16 +337,28 @@ public partial class EbootPatcher : IPatcher
 
     private static void PatchFromInfoList(BinaryWriter writer, List<PatchTargetInfo> targets, string url, bool patchDigest)
     {
+        Uri uri = new(url);
+        
         byte[] urlAsBytes = Encoding.UTF8.GetBytes(url);
+        byte[] hostAsBytes = Encoding.UTF8.GetBytes(uri.Host);
         foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.Url))
         {
             writer.BaseStream.Position = target.Offset;
             writer.Write(urlAsBytes);
 
             //Terminate the rest of the string
-            for (int i = 0; i < target.Length - url.Length; i++) writer.Write('\0');
+            for (int i = 0; i < target.Length - urlAsBytes.Length; i++) writer.Write('\0');
         }
 
+        foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.Host))
+        {
+            writer.BaseStream.Position = target.Offset;
+            writer.Write(hostAsBytes);
+            
+            //Terminate the rest of the string
+            for (int i = 0; i < target.Length - hostAsBytes.Length; i++) writer.Write('\0');
+        }
+        
         if (patchDigest)
         {
             ReadOnlySpan<byte> digestBytes = "CustomServerDigest"u8;
