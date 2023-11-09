@@ -55,10 +55,20 @@ public partial class EbootPatcher : IPatcher
         // The first 4-byte word of the word "cookie", which seems to always proceed digest keys
         int cookieStartInt = BitConverter.ToInt32("cook"u8);
 
+        //If string "lbpk" in ASCII, as an int
+        int lbpkStartInt = BitConverter.ToInt32("lbpk"u8);
+
+        //The main LBPK port
+        int lbpkPort = BitConverter.ToInt32(new byte[] { 0x00, 0x00, 0x27, 0x42 });
+
         //Found positions of `http` in the binary
         List<long> possibleUrls = new();
         //Found positions of `cook` in the binary
         List<long> cookiePositions = new();
+        //Found positions of `lbpk` in the binary
+        List<long> lbpkPositions = new();
+        //Found positions of the LBPK server port
+        List<long> lbpkPortPositions = new();
 
         long read = 0;
         
@@ -78,10 +88,24 @@ public partial class EbootPatcher : IPatcher
                     break;
                 }
 
-                // ReSharper disable once InvertIf
                 if (check == cookieStartInt)
                 {
                     cookiePositions.Add(read + i - 4);
+                    found = read + i - 4;
+                    break;
+                }
+
+                if (check == lbpkPort)
+                {
+                    lbpkPortPositions.Add(read + i - 4);
+                    found = read + i - 4;
+                    break;
+                }
+                
+                // ReSharper disable once InvertIf
+                if (check == lbpkStartInt)
+                {
+                    lbpkPositions.Add(read + i - 4);
                     found = read + i - 4;
                     break;
                 }
@@ -96,17 +120,102 @@ public partial class EbootPatcher : IPatcher
         List<PatchTargetInfo> foundItems = new();
         FilterValidUrls(reader, possibleUrls, foundItems);
         FindDigestAroundCookie(reader, cookiePositions, foundItems);
+        FindLbpkDomains(reader, lbpkPositions, foundItems);
+        FindLbpkPorts(reader, lbpkPortPositions, foundItems);
 
         long end = Stopwatch.GetTimestamp();
         Console.WriteLine($"Detecting patchables took {(double)(end - start) / (double)Stopwatch.Frequency} seconds!");
         return foundItems;
     }
 
+    private static int SwapEndianness(int num)
+    {
+        return (num & 0x000000FF) << 24 |
+               (num & 0x0000FF00) << 8 |
+               (num & 0x00FF0000) >> 8 |
+               (int)((num & 0xFF000000) >> 24);
+    }
+
+    private static void FindLbpkPorts(BinaryReader reader, List<long> foundLbpkPortPositions, List<PatchTargetInfo> foundItems)
+    {
+        foreach (long foundPosition in foundLbpkPortPositions)
+        {
+            reader.BaseStream.Position = foundPosition;
+            int port1 = SwapEndianness(reader.ReadInt32());
+            int port2 = SwapEndianness(reader.ReadInt32());
+
+            if (port1 != 10050 || port2 != 10051) continue;
+            
+            foundItems.Add(new PatchTargetInfo
+            {
+                Offset = foundPosition,
+                Length = sizeof(int) * 2,
+                Data = null,
+                Type = PatchTargetType.DoubleNumeric32BitPort,
+            });
+        }
+    }
+    
+    private static void FindLbpkDomains(BinaryReader reader, List<long> foundLbpkPositions, List<PatchTargetInfo> foundItems)
+    {
+        string host = "lbpk.ps3.online.scea.com";
+        
+        foreach (long foundPosition in foundLbpkPositions)
+        {
+            bool tooLong = false;
+
+            int len = 0;
+
+            reader.BaseStream.Position = foundPosition;
+
+            while (reader.ReadByte() != 0)
+            {
+                len++;
+
+                if (len > host.Length + 1)
+                {
+                    tooLong = true;
+                    break;
+                }
+            }
+
+            //Skip this string and continue
+            if (tooLong) continue;
+            
+            //Keep reading until we arent at a null byte
+            while (reader.ReadByte() == 0) len++;
+
+            //Remove one from length to make sure to leave a single null byte after
+            len -= 1;
+            
+            reader.BaseStream.Position = foundPosition;
+
+            //`len` at this point is the amount of bytes that are actually available to repurpose
+            //This includes all extra null bytes except for the last one
+
+            byte[] match = new byte[len];
+            if (reader.Read(match) < len) continue;
+            string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
+
+            if (str != host) continue; // Ignore unknown domains
+
+            foundItems.Add(new PatchTargetInfo
+            {
+                Length = len,
+                Offset = foundPosition,
+                Data = str,
+                Type = PatchTargetType.Host,
+            });
+        }
+    }
+
     private static void FilterValidUrls(BinaryReader reader, List<long> foundPossibleUrlPositions, List<PatchTargetInfo> foundItems)
     {
-        bool tooLong = false;
+        
         foreach (long foundPosition in foundPossibleUrlPositions)
         {
+            bool tooLong = false;
+        
             int len = 0;
 
             reader.BaseStream.Position = foundPosition;
@@ -123,11 +232,7 @@ public partial class EbootPatcher : IPatcher
                 }
             }
 
-            if (tooLong)
-            {
-                tooLong = false;
-                continue;
-            }
+            if (tooLong) continue;
 
             //Keep reading until we arent at a null byte
             while (reader.ReadByte() == 0) len++;
@@ -235,20 +340,24 @@ public partial class EbootPatcher : IPatcher
         if (url.EndsWith('/'))
             messages.Add(new Message(MessageLevel.Error,
                                      "URI cannot end with a trailing slash, invalid requests will be sent to the server"));
-
+        
         //Try to create an absolute URI, if it fails, its not a valid URI
-        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? _))
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
 
-        // If there are no targets, we cant patch
+        // If there are no Url or Host targets, we cant patch
         // ReSharper disable once SimplifyLinqExpressionUseAll
-        if (!this._targets.Value.Any(x => x.Type == PatchTargetType.Url))
+        if (!this._targets.Value.Any(x => x.Type is PatchTargetType.Url or PatchTargetType.Host))
             messages.Add(new Message(MessageLevel.Error,
-                                     "Could not find any urls in the EBOOT. Nothing can be changed."));
+                                     "Could not find any urls in the EBOOT. Nothing can be changed. If you believe this is a bug, please open an issue."));
 
         if (this._targets.Value.Any(x => x.Type == PatchTargetType.Url && x.Length < url.Length))
             messages.Add(new Message(MessageLevel.Error,
-                                     "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
+                "The URL is too long to fit in the EBOOT. Please use a shorter URL."));
+        
+        if (uri != null && this._targets.Value.Any(x => x.Type == PatchTargetType.Host && x.Length < uri.Host.Length))
+            messages.Add(new Message(MessageLevel.Error,
+                "The URL host is too long to fit in the EBOOT. Please use a shorter host."));
 
         // If we are patching digest, check if we found a digest in the EBOOT
         if (patchDigest && this._targets.Value.Count(x => x.Type == PatchTargetType.Digest) == 0)
@@ -267,14 +376,41 @@ public partial class EbootPatcher : IPatcher
 
     private static void PatchFromInfoList(BinaryWriter writer, List<PatchTargetInfo> targets, string url, bool patchDigest)
     {
+        Uri uri = new(url);
+        
         byte[] urlAsBytes = Encoding.UTF8.GetBytes(url);
+        byte[] hostAsBytes = Encoding.UTF8.GetBytes(uri.Host);
+        int port = SwapEndianness(uri.Port);
         foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.Url))
         {
             writer.BaseStream.Position = target.Offset;
             writer.Write(urlAsBytes);
 
             //Terminate the rest of the string
-            for (int i = 0; i < target.Length - url.Length; i++) writer.Write('\0');
+            for (int i = 0; i < target.Length - urlAsBytes.Length; i++) writer.Write('\0');
+        }
+
+        foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.Host))
+        {
+            writer.BaseStream.Position = target.Offset;
+            writer.Write(hostAsBytes);
+            
+            //Terminate the rest of the string
+            for (int i = 0; i < target.Length - hostAsBytes.Length; i++) writer.Write('\0');
+        }
+        
+        foreach (PatchTargetInfo target in targets.Where(x => x.Type == PatchTargetType.DoubleNumeric32BitPort))
+        {
+            writer.BaseStream.Position = target.Offset;
+            
+            Debug.Assert(target.Length == sizeof(int) * 2);
+            
+            //TODO: expose somehow the ability to specify separate ports here, this WILL break at some point, as im not sure what the second port is used for yet
+            
+            //Write the first port
+            writer.Write(port);
+            //Write the second port
+            writer.Write(port);
         }
 
         if (patchDigest)
