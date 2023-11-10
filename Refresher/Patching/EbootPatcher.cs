@@ -3,7 +3,6 @@ using System.Diagnostics.Contracts;
 using System.Text;
 using System.Text.RegularExpressions;
 using ELFSharp.ELF;
-using ELFSharp.ELF.Sections;
 using Refresher.Verification;
 
 namespace Refresher.Patching;
@@ -11,6 +10,12 @@ namespace Refresher.Patching;
 public partial class EbootPatcher : IPatcher
 {
     private readonly Lazy<List<PatchTargetInfo>> _targets;
+
+    public bool GenerateRpcs3Patch = false;
+    public string? Rpcs3PatchFolder = null;
+    public string? PpuHash = null;
+    public string? GameVersion = null;
+    public string? GameName;
 
     public EbootPatcher(Stream stream)
     {
@@ -332,7 +337,66 @@ public partial class EbootPatcher : IPatcher
     {
         using BinaryWriter writer = new(this.Stream);
 
-        PatchFromInfoList(writer, this._targets.Value, url, patchDigest);
+        if (this.GenerateRpcs3Patch)
+        {
+            Debug.Assert(this.Rpcs3PatchFolder != null);
+            Debug.Assert(this.PpuHash != null);
+            Debug.Assert(this.GameName != null);
+            Debug.Assert(this.GameVersion != null);
+
+            string patchesFile = Path.Combine(this.Rpcs3PatchFolder, "imported_patch.yml");
+
+            if (!File.Exists(patchesFile))
+                //Write the header to the patches file
+                File.WriteAllText(patchesFile, "Version: 1.2\n\n");
+
+            string template = $"""
+                               PPU-{this.PpuHash}:
+                                 "Refresher Patch ({url})":
+                                   Games:
+                                     "{this.GameName}":
+                                       NPUA80662: [ {this.GameVersion} ]
+                                   Author: "Refresher (automated)"
+                                   Notes: "This patches the game to connect to {url}"
+                                   Patch Version:
+                                   Patch:
+                               """;
+            string strPatchTemplate = """
+                                            - [ utf8, 0x{0}, "{1}" ]
+                                      """;
+
+            StringBuilder final = new();
+            final.AppendLine("");
+            final.AppendLine(template);
+            
+            foreach (PatchTargetInfo patchTargetInfo in this._targets.Value)
+            {
+                long fileOffset = patchTargetInfo.Offset + 0x10000;
+                
+                switch (patchTargetInfo.Type)
+                {
+                    case PatchTargetType.Url:
+                        final.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), $"{url}\\0"));
+                        break;
+                    case PatchTargetType.Host:
+                        final.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), $"{new Uri(url).Host}\\0"));
+                        break;
+                    case PatchTargetType.Digest:
+                        //If we shouldn't patch digests, skip writing this
+                        if (!patchDigest) break;
+                        
+                        final.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), "CustomServerDigest"));
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            File.AppendAllText(patchesFile, final.ToString());
+            
+            ;
+        } else 
+            PatchFromInfoList(writer, this._targets.Value, url, patchDigest);
     }
 
     private static void PatchFromInfoList(BinaryWriter writer, List<PatchTargetInfo> targets, string url, bool patchDigest)

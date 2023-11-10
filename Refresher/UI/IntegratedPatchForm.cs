@@ -12,8 +12,8 @@ namespace Refresher.UI;
 
 public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 {
-    private readonly DropDown _gameDropdown;
-    private readonly TextBox? _outputField;
+    protected readonly DropDown GameDropdown;
+    protected readonly TextBox? OutputField;
     
     private string _tempFile;
     private string _usrDir;
@@ -25,19 +25,17 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
     protected IntegratedPatchForm(string subtitle) : base(subtitle)
     {
-        List<TableRow> rows = new()
-        {
-            this.AddRemoteField(),
-            AddField("Game to patch", out this._gameDropdown, forceHeight: 56),
-            AddField("Server URL", out this.UrlField),
-        };
-            
-        this._gameDropdown.SelectedValueChanged += this.GameChanged;
+        List<TableRow> rows = new();
+        rows.AddRange(this.AddFields());
+        rows.Add(AddField("Game to patch", out this.GameDropdown, forceHeight: 56));
+        rows.Add(AddField("Server URL", out this.UrlField));
+
+        this.GameDropdown.SelectedValueChanged += this.GameChanged;
 
         if (!this.ShouldReplaceExecutable)
         {
-            rows.Add(AddField("Identifier (EBOOT.<value>.elf)", out this._outputField));
-            this._outputField!.PlaceholderText = "refresh";
+            rows.Add(AddField("Identifier (EBOOT.<value>.elf)", out this.OutputField));
+            this.OutputField!.PlaceholderText = "refresh";
         }
         
         this.FormPanel = new TableLayout(rows);
@@ -48,7 +46,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     protected virtual void PathChanged(object? sender, EventArgs ev)
     {
         Debug.Assert(this.Accessor != null);
-        this._gameDropdown.Items.Clear();
+        this.GameDropdown.Items.Clear();
         
         if (!this.Accessor.DirectoryExists("game")) return;
             
@@ -92,7 +90,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
             item.TitleId = game;
             
-            this._gameDropdown.Items.Add(item);
+            this.GameDropdown.Items.Add(item);
         }
     }
 
@@ -100,7 +98,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     {
         LibSceToolSharp.Init();
         
-        GameItem? game = this._gameDropdown.SelectedValue as GameItem;
+        GameItem? game = this.GameDropdown.SelectedValue as GameItem;
         Debug.Assert(game != null);
         Debug.Assert(this.Accessor != null);
 
@@ -156,7 +154,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     public override void CompletePatch(object? sender, EventArgs e) {
         Debug.Assert(this.Accessor != null);
         
-        string? identifier = string.IsNullOrWhiteSpace(this._outputField?.Text) ? this._outputField?.PlaceholderText : this._outputField?.Text;
+        string? identifier = string.IsNullOrWhiteSpace(this.OutputField?.Text) ? this.OutputField?.PlaceholderText : this.OutputField?.Text;
         identifier ??= "";
 
         string fileToUpload;
@@ -227,7 +225,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         this.GameChanged(this, EventArgs.Empty);
     }
 
-    protected abstract TableRow AddRemoteField();
+    protected abstract IEnumerable<TableRow> AddFields();
     /// <summary>
     /// Whether the target platform requires the executable to be resigned or not
     /// </summary>
