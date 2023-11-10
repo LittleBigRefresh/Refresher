@@ -198,7 +198,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     
     public override IEnumerable<Button> AddExtraButtons()
     {
-        if (this.ShouldReplaceExecutable)
+        if (this.ShouldReplaceExecutable && this.ShowRevertEbootButton)
         {
             yield return new Button(this.RevertToOriginalExecutable) { Text = "Revert EBOOT" };
         }
@@ -234,4 +234,5 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     /// Whether the target platform requires the executable to be named <c>EBOOT.BIN</c>
     /// </summary>
     protected abstract bool ShouldReplaceExecutable { get; }
+    protected virtual bool ShowRevertEbootButton => true;
 }

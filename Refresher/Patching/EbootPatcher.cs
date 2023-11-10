@@ -177,7 +177,6 @@ public partial class EbootPatcher : IPatcher
 
     private static void FilterValidUrls(BinaryReader reader, List<long> foundPossibleUrlPositions, List<PatchTargetInfo> foundItems)
     {
-        
         foreach (long foundPosition in foundPossibleUrlPositions)
         {
             bool tooLong = false;
@@ -335,8 +334,6 @@ public partial class EbootPatcher : IPatcher
 
     public void Patch(string url, bool patchDigest)
     {
-        using BinaryWriter writer = new(this.Stream);
-
         if (this.GenerateRpcs3Patch)
         {
             Debug.Assert(this.Rpcs3PatchFolder != null);
@@ -365,38 +362,45 @@ public partial class EbootPatcher : IPatcher
                                             - [ utf8, 0x{0}, "{1}" ]
                                       """;
 
-            StringBuilder final = new();
-            final.AppendLine("");
-            final.AppendLine(template);
+            StringBuilder finalPatch = new();
+            finalPatch.AppendLine("");
+            finalPatch.AppendLine(template);
             
             foreach (PatchTargetInfo patchTargetInfo in this._targets.Value)
             {
-                long fileOffset = patchTargetInfo.Offset + 0x10000;
+                //The offset that an ELF is loaded into memory
+                const long elfLoadOffset = 0x10000;
+                //Offset the file offset by the offset the ELF is loaded into memory,
+                //this is due to RPCS3 patches working in memory space rather than file space
+                long fileOffset = patchTargetInfo.Offset + elfLoadOffset;
                 
                 switch (patchTargetInfo.Type)
                 {
                     case PatchTargetType.Url:
-                        final.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), $"{url}\\0"));
+                        finalPatch.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), $"{url}\\0"));
                         break;
                     case PatchTargetType.Host:
-                        final.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), $"{new Uri(url).Host}\\0"));
+                        finalPatch.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), $"{new Uri(url).Host}\\0"));
                         break;
                     case PatchTargetType.Digest:
                         //If we shouldn't patch digests, skip writing this
                         if (!patchDigest) break;
                         
-                        final.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), "CustomServerDigest"));
+                        finalPatch.AppendLine(string.Format(strPatchTemplate, fileOffset.ToString("x8"), "CustomServerDigest"));
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
 
-            File.AppendAllText(patchesFile, final.ToString());
-            
-            ;
-        } else 
+            File.AppendAllText(patchesFile, finalPatch.ToString());
+        }
+        else
+        {
+            using BinaryWriter writer = new(this.Stream);
+
             PatchFromInfoList(writer, this._targets.Value, url, patchDigest);
+        }
     }
 
     private static void PatchFromInfoList(BinaryWriter writer, List<PatchTargetInfo> targets, string url, bool patchDigest)
