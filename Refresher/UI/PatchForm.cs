@@ -195,6 +195,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this.Patcher == null) return;
 
+        this.BeforePatch(sender, e);
+
         if (!this._usedAutoDiscover)
         {
             DialogResult result = MessageBox.Show("You didn't use AutoDiscover. Would you like to try to run it now?", MessageBoxButtons.YesNoCancel, MessageBoxType.Question);
@@ -219,6 +221,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         
         this.CompletePatch(sender, e);
     }
+    
+    protected virtual void BeforePatch(object? sender, EventArgs e) {}
 
     protected void FailVerify(string reason, Exception? e = null, bool clear = true)
     {

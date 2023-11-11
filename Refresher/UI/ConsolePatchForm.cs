@@ -50,9 +50,9 @@ public class ConsolePatchForm : IntegratedPatchForm
             disposable.Dispose();
     }
 
-    protected override TableRow AddRemoteField()
+    protected override IEnumerable<TableRow> AddFields()
     {
-        return AddField("PS3's IP", out this._remoteAddress, new Button(this.PathChanged) { Text = "Connect" });
+        return new[] { AddField("PS3's IP", out this._remoteAddress, new Button(this.PathChanged) { Text = "Connect" }) };
     }
     
     public override void Guide(object? sender, EventArgs e)
