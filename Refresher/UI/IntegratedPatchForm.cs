@@ -118,7 +118,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         this.LogMessage($"Downloaded EBOOT Path: {downloadedFile}");
         if (!File.Exists(downloadedFile))
         {
-            this.FailVerify("Could not find the EBOOT. Patching cannot continue.", clear: false);
+            this.FailVerify("Could not find the EBOOT we downloaded. This is likely a bug. Patching cannot continue.", clear: false);
             return;
         }
 
