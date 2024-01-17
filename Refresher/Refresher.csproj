@@ -23,7 +23,7 @@
       <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
       <PackageReference Include="FluentFTP" Version="49.0.1" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-      <PackageReference Include="SCEToolSharp" Version="1.1.3" />
+      <PackageReference Include="SCEToolSharp" Version="1.1.4" />
       <EmbeddedResource Include="Resources\Allefresher.prx" />
     </ItemGroup>
 

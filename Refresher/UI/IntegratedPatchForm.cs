@@ -157,7 +157,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
         //If we are using the console patch accessor, fill out the IDPS patch file.
         if (this.Accessor is ConsolePatchAccessor consolePatchAccessor) 
-            LibSceToolSharp.SetIdpsFilePath(consolePatchAccessor.IdpsFile);
+            LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
 
         LibSceToolSharp.SetRifPath(licenseDir);
         LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
