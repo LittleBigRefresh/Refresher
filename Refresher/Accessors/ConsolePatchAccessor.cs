@@ -8,13 +8,28 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     private readonly FtpClient _client;
     private const string BasePath = "/dev_hdd0/";
 
+    public string IdpsFile;
+
     public ConsolePatchAccessor(string remoteIp)
     {
         this._client = new FtpClient(remoteIp, "anonymous", "");
         this._client.Config.LogToConsole = true;
         this._client.AutoConnect();
+        
+        UriBuilder idpsPs3 = new("http", remoteIp, 80, "idps.ps3");
+        UriBuilder idpsHex = new("http", remoteIp, 80, "dev_hdd0/idps.hex");
+        
+        HttpClient httpClient = new();
+
+        //Get the /idps.ps3 path, this creates the idps.hex file we can grab.
+        _ = httpClient.GetAsync(idpsPs3.Uri).Result;
+
+        //Get a new path for an IDPS file
+        this.IdpsFile = Path.GetTempFileName();
+
+        File.WriteAllBytes(this.IdpsFile, httpClient.GetAsync(idpsHex.Uri).Result.Content.ReadAsByteArrayAsync().Result);
     }
-    
+
     private static string GetPath(string path)
     {
         if (Path.IsPathRooted(path)) return path;
