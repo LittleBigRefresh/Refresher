@@ -68,7 +68,7 @@ public class ConsolePatchForm : IntegratedPatchForm
         }
         catch(Exception ex)
         {
-            MessageBox.Show($"Unknown error failed while connecting to PS3...\nAre you sure the IP is correct?\n\n{ex}", "Error!");
+            MessageBox.Show($"An unknown error occurred while connecting to the PS3.\n\nException details: {ex}", "Error");
             return false;
         }
 
