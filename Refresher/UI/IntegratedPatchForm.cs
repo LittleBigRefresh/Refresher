@@ -133,6 +133,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         {
             foreach (string user in this.Accessor.GetDirectoriesInDirectory(Path.Combine("home")))
             {
+                Console.WriteLine($"Checking all license files in {user}");
                 foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
                 {
                     //If the license file does not contain the content ID in its path, skip it
