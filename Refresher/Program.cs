@@ -24,7 +24,34 @@ public class Program
         {
             Console.WriteLine("Launching in GUI mode");
             App = new Application();
-            App.Run(new MainForm());
+            App.UnhandledException += (sender, eventArgs)
+                => MessageBox.Show($"""
+                                    Unhandled error!
+                                    PLEASE
+                                    PLEASE
+                                    PLEASE
+                                    Send this message box to us with details! This is never intentional, you should never see this!
+                                    
+                                    {eventArgs.ExceptionObject}
+                                    """,
+                    "Critical Error!");
+            
+            try
+            {
+                App.Run(new MainForm());
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show($"""
+                                 Unhandled error!
+                                 PLEASE
+                                 PLEASE
+                                 PLEASE
+                                 Send this message box to us with details! This is never intentional, you should never see this!
+                                 
+                                 {ex}
+                                 """, "Critical Error!");
+            }
             App.Dispose();
         }
     }
