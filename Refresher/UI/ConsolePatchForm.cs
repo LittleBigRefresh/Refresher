@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using Eto.Forms;
 using Refresher.Accessors;
 
@@ -12,36 +13,66 @@ public class ConsolePatchForm : IntegratedPatchForm
 
     protected override void PathChanged(object? sender, EventArgs ev)
     {
-        this.InitializePatchAccessor();
+        if (this._remoteAddress.Text.Trim().Length == 0)
+        {
+            MessageBox.Show("Please input a valid IP!", "Error");
+            return;
+        }
+
+        if (!this.InitializePatchAccessor()) 
+            return;
         base.PathChanged(sender, ev);
         this.DisposePatchAccessor();
     }
 
     protected override void GameChanged(object? sender, EventArgs ev)
     {
-        this.InitializePatchAccessor();
+        if (!this.InitializePatchAccessor()) 
+            return;
         base.GameChanged(sender, ev);
         this.DisposePatchAccessor();
     }
 
     public override void CompletePatch(object? sender, EventArgs e)
     {
-        this.InitializePatchAccessor();
+        if (!this.InitializePatchAccessor()) 
+            return;
         base.CompletePatch(sender, e);
         this.DisposePatchAccessor();
     }
 
     protected override void RevertToOriginalExecutable(object? sender, EventArgs e)
     {
-        this.InitializePatchAccessor();
+        if (!this.InitializePatchAccessor()) 
+            return;
         base.RevertToOriginalExecutable(sender, e);
         this.DisposePatchAccessor();
     }
 
-    private void InitializePatchAccessor()
+    private bool InitializePatchAccessor()
     {
         this.DisposePatchAccessor();
-        this.Accessor = new ConsolePatchAccessor(this._remoteAddress.Text);
+        try
+        {
+            this.Accessor = new ConsolePatchAccessor(this._remoteAddress.Text.Trim());
+        }
+        catch(TimeoutException)
+        {
+            MessageBox.Show($"Timed out waiting for response from PS3...\nAre you sure the webMAN FTP server is running?", "Error!");
+            return false;
+        }
+        catch(UriFormatException)
+        {
+            MessageBox.Show($"Unable to parse IP, make sure you typed it in correctly!", "Error!");
+            return false; 
+        }
+        catch(Exception ex)
+        {
+            MessageBox.Show($"Unknown error failed while connecting to PS3...\nAre you sure the IP is correct?\n\n{ex}", "Error!");
+            return false;
+        }
+
+        return true;
     }
 
     private void DisposePatchAccessor()
