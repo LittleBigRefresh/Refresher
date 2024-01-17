@@ -26,13 +26,10 @@ public class Program
             App = new Application();
             App.UnhandledException += (sender, eventArgs)
                 => MessageBox.Show($"""
-                                    Unhandled error!
-                                    PLEASE
-                                    PLEASE
-                                    PLEASE
-                                    Send this message box to us with details! This is never intentional, you should never see this!
+                                    There was an unhandled error in Refresher!
+                                    *Please* screenshot this message box and send it to us over GitHub or Discord with details on what you were doing. This is likely a bug in Refresher.
                                     
-                                    {eventArgs.ExceptionObject}
+                                    Exception details: {eventArgs.ExceptionObject}
                                     """,
                     "Critical Error!");
             
