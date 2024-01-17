@@ -14,6 +14,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     {
         this._client = new FtpClient(remoteIp, "anonymous", "");
         this._client.Config.LogToConsole = true;
+        this._client.Config.ConnectTimeout = 5000;
         this._client.AutoConnect();
         
         UriBuilder idpsPs3 = new("http", remoteIp, 80, "idps.ps3");
