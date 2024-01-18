@@ -122,15 +122,15 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             return;
         }
 
-        string contentId = LibSceToolSharp.GetContentId(downloadedFile).TrimEnd('\0');
-        this._cachedContentIds[game.TitleId] = contentId;
-        
-        string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
-        Directory.CreateDirectory(licenseDir);
-
         // if this is a NP game then download the RIF for the right content ID, disc copies don't need anything else
         if (game.TitleId.StartsWith('N'))
         {
+            string contentId = LibSceToolSharp.GetContentId(downloadedFile).TrimEnd('\0');
+            this._cachedContentIds[game.TitleId] = contentId;
+
+            string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
+            Directory.CreateDirectory(licenseDir);
+
             foreach (string user in this.Accessor.GetDirectoriesInDirectory(Path.Combine("home")))
             {
                 Console.WriteLine($"Checking all license files in {user}");
@@ -139,27 +139,28 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     //If the license file does not contain the content ID in its path, skip it
                     if (!licenseFile.Contains(contentId))
                         continue;
-                    
+
                     //If it is a valid content id, lets download that user's exdata
                     string downloadedActDat = this.Accessor.DownloadFile(Path.Combine(user, "exdata", "act.dat"));
                     LibSceToolSharp.SetActDatFilePath(downloadedActDat);
-                    
+
                     //And the license file
                     string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
                     File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
-                    
+
                     Console.WriteLine($"Downloaded license file {licenseFile}.");
                 }
             }
+            
+            //If we are using the console patch accessor, fill out the IDPS patch file.
+            if (this.Accessor is ConsolePatchAccessor consolePatchAccessor) 
+                LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
+
+            LibSceToolSharp.SetRifPath(licenseDir);
         }
-        
+
         this._tempFile = Path.GetTempFileName();
-
-        //If we are using the console patch accessor, fill out the IDPS patch file.
-        if (this.Accessor is ConsolePatchAccessor consolePatchAccessor) 
-            LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
-
-        LibSceToolSharp.SetRifPath(licenseDir);
+        
         LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
