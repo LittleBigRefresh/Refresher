@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Sockets;
 using FluentFTP;
+using Refresher.Exceptions;
 
 namespace Refresher.Accessors;
 
@@ -15,7 +17,9 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         this._client = new FtpClient(remoteIp, "anonymous", "");
         this._client.Config.LogToConsole = true;
         this._client.Config.ConnectTimeout = 5000;
-        this._client.AutoConnect();
+        
+        FtpProfile? profile = this._client.AutoConnect();
+        if (profile == null) throw new FTPConnectionFailureException();
 
         this.IdpsFile = new Lazy<byte[]>(() =>
         {

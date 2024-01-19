@@ -1,6 +1,8 @@
 using System.Net.Sockets;
+using System.Reflection;
 using Eto.Forms;
 using Refresher.Accessors;
+using Refresher.Exceptions;
 
 namespace Refresher.UI;
 
@@ -56,14 +58,19 @@ public class ConsolePatchForm : IntegratedPatchForm
         {
             this.Accessor = new ConsolePatchAccessor(this._remoteAddress.Text.Trim());
         }
+        catch (FTPConnectionFailureException)
+        {
+            MessageBox.Show("Could not connect to the FTP server likely due to the PS3 rejecting the connection.\nAre you sure the webMAN FTP server is running?", "Error");
+            return false;
+        }
         catch(TimeoutException)
         {
-            MessageBox.Show($"The FTP connection timed out while we were waiting for a response from the PS3.\nAre you sure the webMAN FTP server is running?", "Error");
+            MessageBox.Show("The FTP connection timed out while we were waiting for a response from the PS3.\nAre you sure the webMAN FTP server is running?", "Error");
             return false;
         }
         catch(UriFormatException)
         {
-            MessageBox.Show($"The IP address was unable to be parsed. Are you sure you typed it in correctly?", "Error");
+            MessageBox.Show("The IP address was unable to be parsed. Are you sure you typed it in correctly?", "Error");
             return false; 
         }
         catch(Exception ex)
