@@ -94,6 +94,8 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         }
     }
 
+    private readonly Dictionary<string, string> _cachedContentIds = new();
+    
     protected virtual void GameChanged(object? sender, EventArgs ev)
     {
         LibSceToolSharp.Init();
@@ -113,35 +115,52 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         
         string downloadedFile = this.Accessor.DownloadFile(ebootPath);
         
-        string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
-        Directory.CreateDirectory(licenseDir);
-
-        // if this is a NP game then download RIFs/RAPs, disc copies don't need anything else
-        if (game.TitleId.StartsWith('N'))
-        {
-            // TODO: the first user might not have the licenses necessary, should download from all users
-            IEnumerable<string> licenseFiles = this.Accessor.GetFilesInDirectory(Path.Combine("home", "00000001", "exdata"));
-            foreach (string licenseFile in licenseFiles)
-            {
-                // only download if it contains our game's title id
-                // TODO: determine content id directly so we skip dlc licenses
-                if(!licenseFile.Contains(game.TitleId)) continue;
-                
-                string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
-                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
-            }
-        }
-        
         this.LogMessage($"Downloaded EBOOT Path: {downloadedFile}");
         if (!File.Exists(downloadedFile))
         {
-            this.FailVerify("Could not find the EBOOT. Patching cannot continue.", clear: false);
+            this.FailVerify("Could not find the EBOOT we downloaded. This is likely a bug. Patching cannot continue.", clear: false);
             return;
+        }
+
+        // if this is a NP game then download the RIF for the right content ID, disc copies don't need anything else
+        if (game.TitleId.StartsWith('N'))
+        {
+            string contentId = LibSceToolSharp.GetContentId(downloadedFile).TrimEnd('\0');
+            this._cachedContentIds[game.TitleId] = contentId;
+
+            string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
+            Directory.CreateDirectory(licenseDir);
+
+            foreach (string user in this.Accessor.GetDirectoriesInDirectory(Path.Combine("home")))
+            {
+                Console.WriteLine($"Checking all license files in {user}");
+                foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
+                {
+                    //If the license file does not contain the content ID in its path, skip it
+                    if (!licenseFile.Contains(contentId))
+                        continue;
+
+                    //If it is a valid content id, lets download that user's exdata
+                    string downloadedActDat = this.Accessor.DownloadFile(Path.Combine(user, "exdata", "act.dat"));
+                    LibSceToolSharp.SetActDatFilePath(downloadedActDat);
+
+                    //And the license file
+                    string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
+                    File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+
+                    Console.WriteLine($"Downloaded license file {licenseFile}.");
+                }
+            }
+            
+            //If we are using the console patch accessor, fill out the IDPS patch file.
+            if (this.Accessor is ConsolePatchAccessor consolePatchAccessor) 
+                LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
+
+            LibSceToolSharp.SetRifPath(licenseDir);
         }
 
         this._tempFile = Path.GetTempFileName();
         
-        LibSceToolSharp.SetRapDirectory(licenseDir);
         LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
@@ -160,8 +179,19 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         string fileToUpload;
         if (this.NeedsResign)
         {
+            GameItem? game = this.GameDropdown.SelectedValue as GameItem;
+            Debug.Assert(game != null);
+            
             string encryptedTempFile = Path.GetTempFileName();
-            LibSceToolSharp.SetDiscEncryptOptions();
+            if (game.TitleId.StartsWith('N'))
+            {
+                LibSceToolSharp.SetNpdrmEncryptOptions();
+                LibSceToolSharp.SetNpdrmContentId(this._cachedContentIds[game.TitleId]);
+            }
+            else
+            {
+                LibSceToolSharp.SetDiscEncryptOptions();
+            }
             LibSceToolSharp.Encrypt(this._tempFile, encryptedTempFile);
 
             fileToUpload = encryptedTempFile;
