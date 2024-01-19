@@ -65,10 +65,22 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             string iconPath = Path.Combine(gamePath, "ICON0.PNG");
             try
             {
-                if (this.Accessor.FileExists(iconPath))
+                Stream? iconStream = null;
+
+                if (GameCacheAccessor.IconExistsInCache(game))
                 {
-                    using Stream iconStream = this.Accessor.OpenRead(iconPath);
+                    iconStream = GameCacheAccessor.GetIconFromCache(game);
+                }
+                else if (this.Accessor.FileExists(iconPath))
+                {
+                    iconStream = this.Accessor.OpenRead(iconPath);
+                    GameCacheAccessor.WriteIconToCache(game, iconStream);
+                }
+
+                if (iconStream != null)
+                {
                     item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));
+                    iconStream.Dispose();
                 }
             }
             catch
@@ -79,7 +91,18 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             string sfoPath = Path.Combine(gamePath, "PARAM.SFO");
             try
             {
-                using Stream sfoStream = this.Accessor.OpenRead(sfoPath);
+                Stream sfoStream;
+
+                if (GameCacheAccessor.GameDataExistsInCache(game))
+                {
+                    sfoStream = GameCacheAccessor.GetGameDataFromCache(game);
+                }
+                else
+                {
+                    sfoStream = this.Accessor.OpenRead(sfoPath);
+                    GameCacheAccessor.WriteGameDataToCache(game, sfoStream);
+                }
+                
                 ParamSfo sfo = new(sfoStream);
                 item.Text = $"{sfo.Table["TITLE"]} [{game}]";
             }
