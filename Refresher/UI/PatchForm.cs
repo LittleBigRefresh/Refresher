@@ -75,9 +75,11 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     protected static TableRow AddField<TControl>(string labelText, out TControl control, Button? button = null, int forceHeight = -1) where TControl : Control, new()
     {
+        if (!string.IsNullOrWhiteSpace(labelText)) labelText += ':';
+        
         Label label = new()
         {
-            Text = labelText + ':',
+            Text = labelText,
             VerticalAlignment = VerticalAlignment.Center,
         };
 
