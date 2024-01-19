@@ -15,7 +15,7 @@ public class ConsolePatchForm : IntegratedPatchForm
     {
         if (this._remoteAddress.Text.Trim().Length == 0)
         {
-            MessageBox.Show("Please input a valid IP!", "Error");
+            MessageBox.Show("Please enter a valid IP address. You can usually see this listed under Network settings on your PS3.", "Error");
             return;
         }
 
@@ -58,17 +58,17 @@ public class ConsolePatchForm : IntegratedPatchForm
         }
         catch(TimeoutException)
         {
-            MessageBox.Show($"Timed out waiting for response from PS3...\nAre you sure the webMAN FTP server is running?", "Error!");
+            MessageBox.Show($"The FTP connection timed out while we were waiting for a response from the PS3.\nAre you sure the webMAN FTP server is running?", "Error");
             return false;
         }
         catch(UriFormatException)
         {
-            MessageBox.Show($"Unable to parse IP, make sure you typed it in correctly!", "Error!");
+            MessageBox.Show($"The IP address was unable to be parsed. Are you sure you typed it in correctly?", "Error");
             return false; 
         }
         catch(Exception ex)
         {
-            MessageBox.Show($"Unknown error failed while connecting to PS3...\nAre you sure the IP is correct?\n\n{ex}", "Error!");
+            MessageBox.Show($"An unknown error occurred while connecting to the PS3.\n\nException details: {ex}", "Error");
             return false;
         }
 
