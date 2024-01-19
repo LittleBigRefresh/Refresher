@@ -238,7 +238,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         if(clear) this._messages.Items.Clear();
         this._messages.Items.Add(reason);
 
-        MessageBox.Show(reason, MessageBoxType.Error);
+        MessageBox.Show(reason, "Verification Failed", MessageBoxType.Error);
         this.Reset();
         
         this.Patcher = null;
