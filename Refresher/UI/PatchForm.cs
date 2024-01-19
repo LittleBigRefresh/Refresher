@@ -208,7 +208,9 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
                     this.AutoDiscover(this, EventArgs.Empty);
                     break;
                 case DialogResult.No:
-                    MessageBox.Show("Okay, AutoDiscover won't be used. If you have issues with this patch, try using it next time.");
+                    MessageBox.Show("Okay, AutoDiscover won't be used. If you have issues with this patch, try using it next time.\n" +
+                                    "You can also try clicking 'Revert EBOOT' before patching to undo any server-specific patches that may cause issues.\n\n" +
+                                    "Click OK to proceed with patching.");
                     break;
                 case DialogResult.Cancel:
                     return;
