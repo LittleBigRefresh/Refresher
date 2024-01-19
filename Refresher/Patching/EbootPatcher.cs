@@ -296,10 +296,6 @@ public partial class EbootPatcher : IPatcher
         List<Message> messages = new();
 
         this.Stream.Position = 0;
-        Class output = ELFReader.CheckELFType(this.Stream);
-        if (output == Class.NotELF)
-            messages.Add(new Message(MessageLevel.Warning, 
-                                     "File is not a valid ELF!"));
 
         // Check url
         if (url.EndsWith('/'))
@@ -309,6 +305,13 @@ public partial class EbootPatcher : IPatcher
         //Try to create an absolute URI, if it fails, its not a valid URI
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
+        
+        Class output = ELFReader.CheckELFType(this.Stream);
+        if (output == Class.NotELF)
+        {
+            messages.Add(new Message(MessageLevel.Error, "File is not a valid ELF file."));
+            return messages; // Early return, since here on out we check for valid patchables.
+        }
 
         // If there are no Url or Host targets, we cant patch
         // ReSharper disable once SimplifyLinqExpressionUseAll
