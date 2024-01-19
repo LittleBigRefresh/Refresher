@@ -162,11 +162,16 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         this._tempFile = Path.GetTempFileName();
         
         LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
+        // HACK: scetool doesn't give us result codes, check if the file has been written to instead
+        if (new FileInfo(this._tempFile).Length == 0)
+        {
+            this.FailVerify("The EBOOT failed to decrypt. Check the log for more information.");
+            return;
+        }
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
         
         this.Patcher = new EbootPatcher(File.Open(this._tempFile, FileMode.Open, FileAccess.ReadWrite));
-
         this.Reverify(sender, ev);
     }
     
