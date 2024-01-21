@@ -163,9 +163,14 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     if (!licenseFile.Contains(contentId))
                         continue;
 
-                    //If it is a valid content id, lets download that user's exdata
-                    string downloadedActDat = this.Accessor.DownloadFile(Path.Combine(user, "exdata", "act.dat"));
-                    LibSceToolSharp.SetActDatFilePath(downloadedActDat);
+                    string actDatPath = Path.Combine(user, "exdata", "act.dat");
+                    
+                    //If it is a valid content id, lets download that user's act.dat, if its there
+                    if (this.Accessor.FileExists(actDatPath))
+                    {
+                        string downloadedActDat = this.Accessor.DownloadFile(actDatPath);
+                        LibSceToolSharp.SetActDatFilePath(downloadedActDat);
+                    }
 
                     //And the license file
                     string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
@@ -180,6 +185,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
 
             LibSceToolSharp.SetRifPath(licenseDir);
+            LibSceToolSharp.SetRapDirectory(licenseDir);
         }
 
         this._tempFile = Path.GetTempFileName();
