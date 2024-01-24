@@ -156,6 +156,8 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
             foreach (string user in this.Accessor.GetDirectoriesInDirectory(Path.Combine("home")))
             {
+                bool found = false;
+                
                 Console.WriteLine($"Checking all license files in {user}");
                 foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
                 {
@@ -177,7 +179,13 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
 
                     Console.WriteLine($"Downloaded license file {licenseFile}.");
+
+                    found = true;
+                    break;
                 }
+
+                if (found) 
+                    break;
             }
             
             //If we are using the console patch accessor, fill out the IDPS patch file.
