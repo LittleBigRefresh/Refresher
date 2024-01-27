@@ -16,6 +16,7 @@ public partial class EbootPatcher : IPatcher
     public string? PpuHash = null;
     public string? GameVersion = null;
     public string? GameName;
+    public string? TitleId;
 
     public EbootPatcher(Stream stream)
     {
@@ -332,6 +333,21 @@ public partial class EbootPatcher : IPatcher
             messages.Add(new Message(MessageLevel.Warning,
                                      "Could not find the digest in the EBOOT. Resulting EBOOT may still work depending on game."));
 
+        if (this.GenerateRpcs3Patch)
+        {
+            if (string.IsNullOrWhiteSpace(this.GameVersion))
+            {
+                messages.Add(new Message(MessageLevel.Error,
+                    "Missing game version!")); 
+            }
+
+            if (string.IsNullOrWhiteSpace(this.PpuHash))
+            {
+                messages.Add(new Message(MessageLevel.Error,
+                    "Missing PPU hash!")); 
+            }
+        }
+        
         return messages;
     }
 
@@ -340,9 +356,10 @@ public partial class EbootPatcher : IPatcher
         if (this.GenerateRpcs3Patch)
         {
             Debug.Assert(this.Rpcs3PatchFolder != null);
-            Debug.Assert(this.PpuHash != null);
             Debug.Assert(this.GameName != null);
-            Debug.Assert(this.GameVersion != null);
+            Debug.Assert(this.TitleId != null);
+            Debug.Assert(!string.IsNullOrEmpty(this.PpuHash));
+            Debug.Assert(!string.IsNullOrEmpty(this.GameVersion));
 
             string patchesFile = Path.Combine(this.Rpcs3PatchFolder, "imported_patch.yml");
 
@@ -350,12 +367,16 @@ public partial class EbootPatcher : IPatcher
                 //Write the header to the patches file
                 File.WriteAllText(patchesFile, "Version: 1.2\n\n");
 
+            //Trim the PPU- prefix, if its there
+            if (this.PpuHash.StartsWith("PPU-"))
+                this.PpuHash = this.PpuHash[4..];
+            
             string template = $"""
                                PPU-{this.PpuHash}:
                                  "Refresher Patch ({url})":
                                    Games:
                                      "{this.GameName}":
-                                       NPUA80662: [ {this.GameVersion} ]
+                                       {this.TitleId}: [ {this.GameVersion} ]
                                    Author: "Refresher (automated)"
                                    Notes: "This patches the game to connect to {url}"
                                    Patch Version:

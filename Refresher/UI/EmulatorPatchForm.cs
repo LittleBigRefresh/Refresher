@@ -34,6 +34,19 @@ public class EmulatorPatchForm : IntegratedPatchForm
                 this.LogMessage("RPCS3's path has been detected automatically! You do not need to change the path.");
             }
         }
+
+        this._ppuHash.TextChanged += this.UpdateTextFields;
+        this._gameVersion.TextChanged += this.UpdateTextFields; 
+    }
+    
+    private void UpdateTextFields(object? sender, EventArgs args)
+    {
+        if (this.Patcher != null)
+        {
+            this.Patcher.PpuHash = this._ppuHash.Text;
+            this.Patcher.GameVersion = this._gameVersion.Text;
+            this.Reverify(null, EventArgs.Empty);
+        }
     }
 
     protected override void BeforePatch(object? sender, EventArgs e)
@@ -45,6 +58,7 @@ public class EmulatorPatchForm : IntegratedPatchForm
             this.Patcher.GameVersion = this._gameVersion.Text;
             this.Patcher.Rpcs3PatchFolder = Path.Combine(this._folderField.FilePath, "../patches");
             this.Patcher.GameName = ((GameItem)this.GameDropdown.SelectedValue).Text;
+            this.Patcher.TitleId = ((GameItem)this.GameDropdown.SelectedValue).TitleId;
         }
     }
 
@@ -73,6 +87,15 @@ public class EmulatorPatchForm : IntegratedPatchForm
             AddField("RPCS3 dev_hdd0 folder", out this._folderField),
             AddField("", out this._filePatchButton),
         };
+    }
+
+    protected override void GameChanged(object? sender, EventArgs ev)
+    {
+        base.GameChanged(sender, ev);
+        
+        this.Patcher!.GenerateRpcs3Patch = true;
+        this.UpdateTextFields(null, EventArgs.Empty);
+        this.Reverify(null, EventArgs.Empty);
     }
 
     protected override bool NeedsResign => false;
