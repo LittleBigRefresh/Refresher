@@ -25,6 +25,7 @@
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="SCEToolSharp" Version="1.1.5" />
       <EmbeddedResource Include="Resources\Allefresher.prx" />
+      <PackageReference Include="Sentry" Version="3.41.4" />
     </ItemGroup>
 
 

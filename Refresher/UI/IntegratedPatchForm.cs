@@ -127,6 +127,8 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         Debug.Assert(game != null);
         Debug.Assert(this.Accessor != null);
 
+        throw new ObjectDisposedException("big fart");
+
         this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
         string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG"); // Prefer original backup over active copy
         
