@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Refresher.Patching;
 using Refresher.Verification;
 using Refresher.Verification.Autodiscover;
+using Sentry;
 using Task = System.Threading.Tasks.Task;
 
 namespace Refresher.UI;
@@ -129,6 +130,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     private void AutoDiscover(object? sender, EventArgs arg)
     {
+        SentrySdk.AddBreadcrumb($"Invoking autodiscover on URL '{this.UrlField.Text}'");
         try
         {
             using HttpClient client = new();
@@ -165,6 +167,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         }
         catch(Exception e)
         {
+            SentrySdk.CaptureException(e);
             MessageBox.Show($"AutoDiscover failed: {e}", MessageBoxType.Error);
         }
     }
@@ -238,6 +241,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         if(clear) this._messages.Items.Clear();
         this._messages.Items.Add(reason);
 
+        SentrySdk.AddBreadcrumb(reason, "Verification Failure", level: BreadcrumbLevel.Error);
         MessageBox.Show(reason, "Verification Failed", MessageBoxType.Error);
         this.Reset();
         
@@ -247,11 +251,13 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     protected void LogMessage(string message)
     {
+        SentrySdk.AddBreadcrumb(message, "Log");
         this._messages.Items.Add(message);
     }
 
     protected void Reverify(object? sender, EventArgs e) 
     {
+        SentrySdk.AddBreadcrumb("Reverify triggered");
         if (this.Patcher == null) return;
 
         // Cancel the current task, and wait for it to complete

@@ -1,5 +1,6 @@
 using Eto.Drawing;
 using Eto.Forms;
+using Sentry;
 
 namespace Refresher.UI;
 
@@ -33,6 +34,8 @@ public abstract class RefresherForm : Form
         TForm form = new();
         form.Show();
         
-        if(close) this.Visible = false;
+        SentrySdk.AddBreadcrumb($"Showing child form {form.GetType().Name} '{form.Title}'");
+
+        if (close) this.Visible = false;
     }
 }

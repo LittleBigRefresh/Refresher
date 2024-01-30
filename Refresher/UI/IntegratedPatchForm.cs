@@ -7,6 +7,7 @@ using Refresher.Patching;
 using Refresher.UI.Items;
 using Refresher.Verification;
 using SCEToolSharp;
+using Sentry;
 
 namespace Refresher.UI;
 
@@ -46,6 +47,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     protected virtual void PathChanged(object? sender, EventArgs ev)
     {
         Debug.Assert(this.Accessor != null);
+        SentrySdk.AddBreadcrumb($"Path changed, using accessor {this.Accessor.GetType().Name}");
         this.GameDropdown.Items.Clear();
         
         if (!this.Accessor.DirectoryExists("game")) return;
@@ -126,6 +128,8 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         GameItem? game = this.GameDropdown.SelectedValue as GameItem;
         Debug.Assert(game != null);
         Debug.Assert(this.Accessor != null);
+        
+        SentrySdk.AddBreadcrumb($"Game changed to TitleID '{game.TitleId}'");
 
         this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
         string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG"); // Prefer original backup over active copy

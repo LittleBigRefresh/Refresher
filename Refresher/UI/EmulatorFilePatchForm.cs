@@ -10,7 +10,7 @@ public class EmulatorFilePatchForm : IntegratedPatchForm
 {
     private FilePicker _folderField = null!;
 
-    public EmulatorFilePatchForm() : base("RPCS3 Patch")
+    public EmulatorFilePatchForm() : base("Advanced RPCS3 Patch")
     {
         this._folderField.FileAction = FileAction.SelectFolder;
         this._folderField.FilePathChanged += this.PathChanged;
