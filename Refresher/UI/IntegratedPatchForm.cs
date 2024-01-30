@@ -128,12 +128,21 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         Debug.Assert(this.Accessor != null);
 
         this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
-        string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
-
+        string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG"); // Prefer original backup over active copy
+        
+        // If the backup doesn't exist, use the EBOOT.BIN
         if (!this.Accessor.FileExists(ebootPath))
         {
-            this.FailVerify("The EBOOT.BIN file does not exist. Try pressing 'Revert EBOOT' to see if that helps.");
-            return;
+            this.LogMessage("Couldn't find an original backup of the EBOOT, using active copy. This is not an error.");
+            ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
+            
+            // If we land here, then we have no valid patch target without any way to recover.
+            // This is very inconvenient for us and the user.
+            if (!this.Accessor.FileExists(ebootPath))
+            {
+                this.FailVerify("The EBOOT.BIN file does not exist, nor does the original backup exist. Something has gone horribly wrong.");
+                return;
+            }
         }
         
         string downloadedFile = this.Accessor.DownloadFile(ebootPath);
