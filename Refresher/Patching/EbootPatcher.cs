@@ -35,7 +35,7 @@ public partial class EbootPatcher : IPatcher
     [GeneratedRegex("^https?[^\\x00]//([0-9a-zA-Z.:].*)/?([0-9a-zA-Z_]*)$", RegexOptions.Compiled)]
     private static partial Regex UrlMatch();
 
-    [GeneratedRegex("[a-zA-Z0-9!@#$%^&*()?/<>~\\[\\]]", RegexOptions.Compiled)]
+    [GeneratedRegex("[a-zA-Z0-9!@#$%^&*()?/<>~|\\[\\]]", RegexOptions.Compiled)]
     private static partial Regex DigestMatch();
     
     [GeneratedRegex(@"lbpk\.ps3\.online\.sce.\.com", RegexOptions.Compiled)]
