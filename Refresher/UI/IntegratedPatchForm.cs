@@ -161,52 +161,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         // if this is a NP game then download the RIF for the right content ID, disc copies don't need anything else
         if (game.TitleId.StartsWith('N'))
         {
-            string contentId = LibSceToolSharp.GetContentId(downloadedFile).TrimEnd('\0');
-            this._cachedContentIds[game.TitleId] = contentId;
-
-            string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
-            Directory.CreateDirectory(licenseDir);
-
-            foreach (string user in this.Accessor.GetDirectoriesInDirectory(Path.Combine("home")))
-            {
-                bool found = false;
-                
-                Console.WriteLine($"Checking all license files in {user}");
-                foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
-                {
-                    //If the license file does not contain the content ID in its path, skip it
-                    if (!licenseFile.Contains(contentId))
-                        continue;
-
-                    string actDatPath = Path.Combine(user, "exdata", "act.dat");
-                    
-                    //If it is a valid content id, lets download that user's act.dat, if its there
-                    if (this.Accessor.FileExists(actDatPath))
-                    {
-                        string downloadedActDat = this.Accessor.DownloadFile(actDatPath);
-                        LibSceToolSharp.SetActDatFilePath(downloadedActDat);
-                    }
-
-                    //And the license file
-                    string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
-                    File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
-
-                    Console.WriteLine($"Downloaded license file {licenseFile}.");
-
-                    found = true;
-                    break;
-                }
-
-                if (found) 
-                    break;
-            }
-            
-            //If we are using the console patch accessor, fill out the IDPS patch file.
-            if (this.Accessor is ConsolePatchAccessor consolePatchAccessor) 
-                LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
-
-            LibSceToolSharp.SetRifPath(licenseDir);
-            LibSceToolSharp.SetRapDirectory(licenseDir);
+            this.DownloadLicenseFile(downloadedFile, game);
         }
 
         this._tempFile = Path.GetTempFileName();
@@ -215,14 +170,75 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         // HACK: scetool doesn't give us result codes, check if the file has been written to instead
         if (new FileInfo(this._tempFile).Length == 0)
         {
-            this.FailVerify("The EBOOT failed to decrypt. Check the log for more information.");
-            return;
+            // before we completely fail, let's check if we're a disc game
+            // some weird betas like LBP HUB require a license despite having a disc titleid
+            if (game.TitleId.StartsWith('B'))
+            {
+                this.DownloadLicenseFile(downloadedFile, game);
+                LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
+            }
+
+            if (new FileInfo(this._tempFile).Length == 0)
+            {
+                this.FailVerify("The EBOOT failed to decrypt. Check the log for more information.");
+                return;
+            }
         }
         
         this.LogMessage($"The EBOOT has been successfully decrypted. It's stored at {this._tempFile}.");
         
         this.Patcher = new EbootPatcher(File.Open(this._tempFile, FileMode.Open, FileAccess.ReadWrite));
         this.Reverify(sender, ev);
+    }
+
+    private void DownloadLicenseFile(string downloadedFile, GameItem game)
+    {
+        string contentId = LibSceToolSharp.GetContentId(downloadedFile).TrimEnd('\0');
+        this._cachedContentIds[game.TitleId] = contentId;
+
+        string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
+        Directory.CreateDirectory(licenseDir);
+
+        foreach (string user in this.Accessor.GetDirectoriesInDirectory(Path.Combine("home")))
+        {
+            bool found = false;
+            
+            Console.WriteLine($"Checking all license files in {user}");
+            foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
+            {
+                //If the license file does not contain the content ID in its path, skip it
+                if (!licenseFile.Contains(contentId))
+                    continue;
+
+                string actDatPath = Path.Combine(user, "exdata", "act.dat");
+                    
+                //If it is a valid content id, lets download that user's act.dat, if its there
+                if (this.Accessor.FileExists(actDatPath))
+                {
+                    string downloadedActDat = this.Accessor.DownloadFile(actDatPath);
+                    LibSceToolSharp.SetActDatFilePath(downloadedActDat);
+                }
+
+                //And the license file
+                string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
+                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+
+                Console.WriteLine($"Downloaded license file {licenseFile}.");
+
+                found = true;
+                break;
+            }
+
+            if (found) 
+                break;
+        }
+            
+        //If we are using the console patch accessor, fill out the IDPS patch file.
+        if (this.Accessor is ConsolePatchAccessor consolePatchAccessor) 
+            LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
+
+        LibSceToolSharp.SetRifPath(licenseDir);
+        LibSceToolSharp.SetRapDirectory(licenseDir);
     }
     
     public override void CompletePatch(object? sender, EventArgs e) {
