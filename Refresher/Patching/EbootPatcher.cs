@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Text;
@@ -40,6 +41,16 @@ public partial class EbootPatcher : IPatcher
     
     [GeneratedRegex(@"lbpk\.ps3\.online\.sce.\.com", RegexOptions.Compiled)]
     private static partial Regex LbpkDomainMatch();
+
+    /// <summary>
+    /// A list of URLs to ignore when finding patchable URLs.
+    /// </summary>
+    private static FrozenSet<string> _ignoredUrls = new List<string>
+    {
+        "http://sdev-hub.dev.lbp.me:8080/",
+        "http://lbp.me/img/sackboy.png",
+        "https://api.twitter.com/oauth/access_token",
+    }.ToFrozenSet();
 
     /// <summary>
     /// Finds a set of URLs and Digest keys in the given file, excluding C printf strings.
@@ -216,6 +227,8 @@ public partial class EbootPatcher : IPatcher
             string str = Encoding.UTF8.GetString(match).TrimEnd('\0');
 
             if (str.Contains('%')) continue; // Ignore printf strings, e.g. %s
+            
+            if(_ignoredUrls.Contains(str)) continue; // Ignore explicitly blacklisted URLs
 
             if (UrlMatch().Matches(str).Count != 0)
                 foundItems.Add(new PatchTargetInfo
