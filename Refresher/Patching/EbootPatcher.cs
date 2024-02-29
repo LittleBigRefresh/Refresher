@@ -45,11 +45,13 @@ public partial class EbootPatcher : IPatcher
     /// <summary>
     /// A list of URLs to ignore when finding patchable URLs.
     /// </summary>
-    private static FrozenSet<string> _ignoredUrls = new List<string>
+    private static readonly FrozenSet<string> _ignoredUrls = new List<string>
     {
         "http://sdev-hub.dev.lbp.me:8080/",
         "http://lbp.me/img/sackboy.png",
         "https://api.twitter.com/oauth/access_token",
+        "https://graph.facebook.com/",
+        "https://api.twitter.com/1.1/statuses/update.json",
     }.ToFrozenSet();
 
     /// <summary>
@@ -231,6 +233,8 @@ public partial class EbootPatcher : IPatcher
             if(_ignoredUrls.Contains(str)) continue; // Ignore explicitly blacklisted URLs
 
             if (UrlMatch().Matches(str).Count != 0)
+            {
+                Console.WriteLine($"Found URL at offset {foundPosition}: '{str}'");
                 foundItems.Add(new PatchTargetInfo
                 {
                     Length = len,
@@ -238,6 +242,7 @@ public partial class EbootPatcher : IPatcher
                     Data = str,
                     Type = PatchTargetType.Url,
                 });
+            }
         }
     }
 
