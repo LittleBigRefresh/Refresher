@@ -130,11 +130,20 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     private void AutoDiscover(object? sender, EventArgs arg)
     {
+        if (!Uri.TryCreate(this.UrlField.Text, UriKind.Absolute, out Uri? autodiscoverUri))
+        {
+            SentrySdk.AddBreadcrumb($"Invalid URL for autodiscover: {this.UrlField.Text}");
+            MessageBox.Show("Server URL could not be parsed correctly. AutoDiscover cannot continue.", "Error", MessageBoxType.Error);
+            return;
+        }
+        
+        Debug.Assert(autodiscoverUri != null);
+        
         SentrySdk.AddBreadcrumb($"Invoking autodiscover on URL '{this.UrlField.Text}'");
         try
         {
             using HttpClient client = new();
-            client.BaseAddress = new Uri(this.UrlField.Text);
+            client.BaseAddress = autodiscoverUri;
 
             HttpResponseMessage response = client.GetAsync("/autodiscover").Result;
             response.EnsureSuccessStatusCode();
