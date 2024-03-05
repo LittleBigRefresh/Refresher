@@ -119,7 +119,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         // based off of https://stackoverflow.com/a/43232486
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            Process.Start(url);
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             Process.Start("xdg-open", url);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
