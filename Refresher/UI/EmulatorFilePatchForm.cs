@@ -40,7 +40,7 @@ public class EmulatorFilePatchForm : IntegratedPatchForm
 
     public override void Guide(object? sender, EventArgs e)
     {
-        this.OpenUrl("https://docs.littlebigrefresh.com/patching/rpcs3");
+        this.OpenUrl("https://docs.littlebigrefresh.com/rpcs3");
     }
 
     protected override void PathChanged(object? sender, EventArgs ev)

@@ -84,7 +84,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
 
     public override void Guide(object? sender, EventArgs e)
     {
-        this.OpenUrl("https://docs.littlebigrefresh.com/patching/psp");
+        this.OpenUrl("https://docs.littlebigrefresh.com/psp");
     }
 
     private void SelectedDriveChange(object? sender, EventArgs e)

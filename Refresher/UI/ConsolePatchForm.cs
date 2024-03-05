@@ -95,7 +95,7 @@ public class ConsolePatchForm : IntegratedPatchForm
     
     public override void Guide(object? sender, EventArgs e)
     {
-        this.OpenUrl("https://docs.littlebigrefresh.com/patching/ps3");
+        this.OpenUrl("https://docs.littlebigrefresh.com/ps3");
     }
 
     protected override bool NeedsResign => true;
