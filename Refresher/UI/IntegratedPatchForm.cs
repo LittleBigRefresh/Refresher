@@ -126,6 +126,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         LibSceToolSharp.Init();
         
         GameItem? game = this.GameDropdown.SelectedValue as GameItem;
+        
         Debug.Assert(game != null);
         Debug.Assert(this.Accessor != null);
         
@@ -161,25 +162,30 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         // if this is a NP game then download the RIF for the right content ID, disc copies don't need anything else
         if (game.TitleId.StartsWith('N'))
         {
+            SentrySdk.AddBreadcrumb("Digital game detected, trying to download license file");
             this.DownloadLicenseFile(downloadedFile, game);
         }
 
         this._tempFile = Path.GetTempFileName();
         
+        SentrySdk.AddBreadcrumb("Decrypting...");
         LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
         // HACK: scetool doesn't give us result codes, check if the file has been written to instead
         if (new FileInfo(this._tempFile).Length == 0)
         {
+            SentrySdk.AddBreadcrumb("Decryption failed on TitleID " + game.TitleId);
             // before we completely fail, let's check if we're a disc game
             // some weird betas like LBP HUB require a license despite having a disc titleid
             if (game.TitleId.StartsWith('B'))
             {
+                SentrySdk.AddBreadcrumb("Disc game detected - trying to gather a license as a workaround for LBP Hub");
                 this.DownloadLicenseFile(downloadedFile, game);
                 LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
             }
 
             if (new FileInfo(this._tempFile).Length == 0)
             {
+                SentrySdk.AddBreadcrumb("Still couldn't decrypt.");
                 this.FailVerify("The EBOOT failed to decrypt. Check the log for more information.");
                 return;
             }
@@ -193,8 +199,11 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
     private void DownloadLicenseFile(string downloadedFile, GameItem game)
     {
+        SentrySdk.AddBreadcrumb($"Downloading license file for TitleID {game.TitleId} (from eboot @ {downloadedFile})");
         string contentId = LibSceToolSharp.GetContentId(downloadedFile).TrimEnd('\0');
         this._cachedContentIds[game.TitleId] = contentId;
+        
+        SentrySdk.AddBreadcrumb($"ContentID for {game.TitleId} is {contentId}");
 
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
