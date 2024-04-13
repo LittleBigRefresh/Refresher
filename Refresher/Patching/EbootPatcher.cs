@@ -349,7 +349,7 @@ public partial class EbootPatcher : IPatcher
         // If we are patching digest, check if we found a digest in the EBOOT
         if (patchDigest && this._targets.Value.Count(x => x.Type == PatchTargetType.Digest) == 0)
             messages.Add(new Message(MessageLevel.Warning,
-                                     "Could not find the digest in the EBOOT. Resulting EBOOT may still work depending on game."));
+                                     "Could not find the digest in the EBOOT. \nThis is either a bug or you have selected the wrong game (did you select the digital manual?). \nResulting EBOOT may still work depending on game. If you continue to have problems, please open an issue."));
 
         if (this.GenerateRpcs3Patch)
         {
