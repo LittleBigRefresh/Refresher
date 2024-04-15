@@ -57,17 +57,18 @@ public class Program
         
         if (args.Length > 0)
         {
-            Program.Log("Launching in CLI mode");
+            Log("Launching in CLI mode");
             Parser.Default.ParseArguments<CommandLineOptions>(args)
                 .WithParsed(CLI.CommandLine.Run);
         }
         else
         {
-            Program.Log("Launching in GUI mode");
+            Log("Launching in GUI mode");
             App = new Application();
-            App.UnhandledException += (sender, eventArgs) =>
+            App.UnhandledException += (_, eventArgs) =>
             {
                 SentrySdk.CaptureException((Exception)eventArgs.ExceptionObject);
+                SentrySdk.Flush();
                 MessageBox.Show($"""
                                  There was an unhandled error in Refresher!
                                  *Please* screenshot this message box and send it to us over GitHub or Discord with details on what you were doing. This is likely a bug in Refresher.
@@ -85,6 +86,7 @@ public class Program
             catch(Exception ex)
             {
                 SentrySdk.CaptureException(ex);
+                SentrySdk.Flush();
                 MessageBox.Show($"""
                                  There was an unhandled error in Refresher!
                                  *Please* screenshot this message box and send it to us over GitHub or Discord with details on what you were doing. This is likely a bug in Refresher.
@@ -93,6 +95,7 @@ public class Program
                                  """, "Critical Error");
             }
             App.Dispose();
+            SentrySdk.Flush();
         }
     }
 }
