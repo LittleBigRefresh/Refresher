@@ -25,7 +25,7 @@ public class CommandLine
         //If the input file does not exist, exit
         if (!File.Exists(options.InputFile))
         {
-            Console.WriteLine("Input file does not exist.");
+            Program.Log("Input file does not exist.");
             Environment.Exit(1);
             return;
         }
@@ -41,7 +41,7 @@ public class CommandLine
         }
         catch (Exception e)
         {
-            Console.WriteLine("Could not create and copy to temporary file.\n" + e);
+            Program.Log("Could not create and copy to temporary file.\n" + e);
 
             DeleteTempFile(tempFile);
             Environment.Exit(1);
@@ -56,7 +56,7 @@ public class CommandLine
         }
         catch (Exception e)
         {
-            Console.WriteLine("Could not read data from the input file.\n" + e);
+            Program.Log("Could not read data from the input file.\n" + e);
             
             DeleteTempFile(tempFile);
             Environment.Exit(1);
@@ -68,12 +68,12 @@ public class CommandLine
         List<Message> messages = ebootPatcher.Verify(options.ServerUrl, options.Digest ?? false).ToList();
 
         //Write the messages to the console
-        foreach (Message message in messages) Console.WriteLine($"{message.Level}: {message.Content}");
+        foreach (Message message in messages) Program.Log($"{message.Level}: {message.Content}");
 
         //If there are any errors, exit
         if (messages.Any(m => m.Level == MessageLevel.Error))
         {
-            Console.WriteLine("\nThe patching operation cannot continue due to errors while verifying. Stopping.");
+            Program.Log("\nThe patching operation cannot continue due to errors while verifying. Stopping.");
 
             mappedFile.Dispose();
             DeleteTempFile(tempFile);
@@ -89,7 +89,7 @@ public class CommandLine
 
             if (key.KeyChar == 'n')
             {
-                Console.WriteLine("Patching cancelled due to warnings.");
+                Program.Log("Patching cancelled due to warnings.");
 
                 mappedFile.Dispose();
                 DeleteTempFile(tempFile);
@@ -98,7 +98,7 @@ public class CommandLine
             }
         }
         
-        Console.WriteLine("Patching...");
+        Program.Log("Patching...");
 
         try
         {
@@ -110,7 +110,7 @@ public class CommandLine
         }
         catch (Exception e)
         {
-            Console.WriteLine("Could not complete patch, stopping.\n" + e);
+            Program.Log("Could not complete patch, stopping.\n" + e);
 
             mappedFile.Dispose();
             DeleteTempFile(tempFile);
@@ -119,6 +119,6 @@ public class CommandLine
         }
         
         DeleteTempFile(tempFile);
-        Console.WriteLine("Successfully patched EBOOT!");
+        Program.Log("Successfully patched EBOOT!");
     }
 }

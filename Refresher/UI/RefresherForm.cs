@@ -34,7 +34,7 @@ public abstract class RefresherForm : Form
         TForm form = new();
         form.Show();
         
-        SentrySdk.AddBreadcrumb($"Showing child form {form.GetType().Name} '{form.Title}'");
+        Program.Log($"Showing child form {form.GetType().Name} '{form.Title}'");
 
         if (close) this.Visible = false;
     }

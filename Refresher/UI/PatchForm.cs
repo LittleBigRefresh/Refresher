@@ -132,14 +132,14 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
     {
         if (!Uri.TryCreate(this.UrlField.Text, UriKind.Absolute, out Uri? autodiscoverUri))
         {
-            SentrySdk.AddBreadcrumb($"Invalid URL for autodiscover: {this.UrlField.Text}");
+            Program.Log($"Invalid URL for autodiscover: {this.UrlField.Text}");
             MessageBox.Show("Server URL could not be parsed correctly. AutoDiscover cannot continue.", "Error", MessageBoxType.Error);
             return;
         }
         
         Debug.Assert(autodiscoverUri != null);
         
-        SentrySdk.AddBreadcrumb($"Invoking autodiscover on URL '{this.UrlField.Text}'");
+        Program.Log($"Invoking autodiscover on URL '{this.UrlField.Text}'");
         try
         {
             using HttpClient client = new();
@@ -250,7 +250,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         if(clear) this._messages.Items.Clear();
         this._messages.Items.Add(reason);
 
-        SentrySdk.AddBreadcrumb(reason, "Verification Failure", level: BreadcrumbLevel.Error);
+        Program.Log(reason, "Verification Failure", level: BreadcrumbLevel.Error);
         MessageBox.Show(reason, "Verification Failed", MessageBoxType.Error);
         this.Reset();
         
@@ -260,13 +260,13 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     protected void LogMessage(string message)
     {
-        SentrySdk.AddBreadcrumb(message, "Log");
+        Program.Log(message, "Log");
         this._messages.Items.Add(message);
     }
 
     protected void Reverify(object? sender, EventArgs e) 
     {
-        SentrySdk.AddBreadcrumb("Reverify triggered");
+        Program.Log("Reverify triggered");
         if (this.Patcher == null) return;
 
         // Cancel the current task, and wait for it to complete

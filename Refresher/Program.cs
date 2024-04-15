@@ -43,6 +43,12 @@ public class Program
             options.AttachStacktrace = true; // send stack traces for *all* breadcrumbs
         });
     }
+
+    public static void Log(string message, string category = "", BreadcrumbLevel level = default)
+    {
+        SentrySdk.AddBreadcrumb(message, category, level: level);
+        Console.WriteLine($"[{level}] [{category}] {message}");
+    }
     
     [STAThread]
     public static void Main(string[] args)
@@ -51,13 +57,13 @@ public class Program
         
         if (args.Length > 0)
         {
-            Console.WriteLine("Launching in CLI mode");
+            Program.Log("Launching in CLI mode");
             Parser.Default.ParseArguments<CommandLineOptions>(args)
                 .WithParsed(CLI.CommandLine.Run);
         }
         else
         {
-            Console.WriteLine("Launching in GUI mode");
+            Program.Log("Launching in GUI mode");
             App = new Application();
             App.UnhandledException += (sender, eventArgs) =>
             {

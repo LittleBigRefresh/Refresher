@@ -31,7 +31,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
 
             try
             {
-                Console.WriteLine($"Checking drive {drive.Name}...");
+                Program.Log($"Checking drive {drive.Name}...");
 
                 // Match for all directories called PSP and PSPEMU
                 // NOTE: we do this because the PSP filesystem is case insensitive, and the .NET STL is case sensitive on linux
@@ -50,7 +50,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
                 // If theres no PSP folder or PSPEMU folder,
                 if (!possiblePspMatches.Any() && !possiblePsVitaMatches.Any())
                 {
-                    Console.WriteLine($"Drive {drive.Name} has no PSP/PSPEMU folder, ignoring...");
+                    Program.Log($"Drive {drive.Name} has no PSP/PSPEMU folder, ignoring...");
                     
                     //Skip this drive
                     continue;
@@ -61,8 +61,8 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
             }
             catch(Exception ex)
             {
-                Console.WriteLine($"Checking drive failed due to exception, see below");
-                Console.WriteLine(ex);
+                Program.Log("Checking drive failed due to exception, see below");
+                Program.Log(ex.ToString());
                 
                 //If we fail to check dir info, its probably not mounted in a safe/accessible way
                 continue;
