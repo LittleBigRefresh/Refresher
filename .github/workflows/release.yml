@@ -79,4 +79,5 @@ jobs:
           prerelease: false
           draft: true
           files: |
-            ${{steps.download.outputs.download-path}}/*.zip
+            ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64.zip
+            ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64.zip
