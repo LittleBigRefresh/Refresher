@@ -52,6 +52,10 @@ public partial class EbootPatcher : IPatcher
         "https://api.twitter.com/oauth/access_token",
         "https://graph.facebook.com/",
         "https://api.twitter.com/1.1/statuses/update.json",
+        "https://78.105.127.75",
+        "http://www.esqsoft.com/javascript_examples/javascript-sprintf.js\"></script>",
+        "http://craftworld.medmol.local/images/",
+        "http://craftworld.medmol.local/picture.png\" border=0></a></td>",
     }.ToFrozenSet();
 
     /// <summary>
