@@ -23,9 +23,8 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Set VERSION variable from tag (for normal commits)
+    - name: Set VERSION variable from tag
       shell: bash
-      if: ${{ !contains(github.ref, 'refs/tags') }}
       run: echo "VERSION=0.0.0" >> $GITHUB_ENV
       
     - name: Publish for Linux x64
