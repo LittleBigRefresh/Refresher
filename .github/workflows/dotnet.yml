@@ -35,7 +35,7 @@ jobs:
     - name: Publish for Windows x64
       if: matrix.os == 'windows-latest'
       shell: bash
-      run: dotnet publish -c Release -r win-x64 --self-contained Refresher /p:Version=${VERSION}
+      run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
       
     - name: Upload Linux x64 build
       if: matrix.os == 'ubuntu-latest'
