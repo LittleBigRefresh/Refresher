@@ -43,7 +43,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v3.1.3
         with:
-            name: "Refresher_for_Linux_x64.zip"
+            name: "Refresher_for_Linux_x64"
             path: "Refresher/bin/Release/net8.0/linux-x64/publish/"
             if-no-files-found: error
             retention-days: 1
@@ -52,7 +52,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v3.1.3
         with:
-            name: "Refresher_for_Windows_x64.zip"
+            name: "Refresher_for_Windows_x64"
             path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/"
             if-no-files-found: error
             retention-days: 1
@@ -64,13 +64,14 @@ jobs:
       - name: Download artifacts
         id: download
         uses: actions/download-artifact@v3.0.2
-    
-      - shell: bash
+
+      - name: Create zip files
         run: |
-          ls -lAh *
-          echo "${{steps.download.outputs.download-path}}"
-          ls -lAh ${{steps.download.outputs.download-path}}
-          find -name "*.zip" -type f
+            cd ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64
+            zip -r "${{steps.download.outputs.download-path}}/Refresh_for_Windows_x64.zip" .
+            
+            cd ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64
+            zip -r "${{steps.download.outputs.download-path}}/Refresh_for_Linux_x64.zip" .
         
       - uses: marvinpinto/action-automatic-releases@latest
         name: "Create release"
@@ -79,5 +80,4 @@ jobs:
           prerelease: false
           draft: true
           files: |
-            ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64.zip
-            ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64.zip
+            *.zip
