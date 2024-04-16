@@ -7,35 +7,67 @@ on:
       - "*"
 
 jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    name: Build, Test, and Upload Builds (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+          
+      - name: Set VERSION variable from tag
+        if: ${{ contains(github.ref, 'refs/tags') }}
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+        
+      - name: Print VERSION variable for debugging
+        shell: bash
+        run: echo "$VERSION"
+        
+      - name: Publish for Linux x64
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION}
+
+      - name: Publish for Windows x64
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: dotnet publish -c Release -r win-x64 --self-contained Refresher /p:Version=${VERSION}
+
+      - name: Upload Linux x64 build
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v3.1.1
+        with:
+            name: "Refresher for Linux x64"
+            path: "Refresher/bin/Release/net8.0/linux-x64/publish/"
+            if-no-files-found: error
+            retention-days: 1
+
+      - name: Upload Windows x64 build
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v3.1.1
+        with:
+            name: "Refresher for Windows x64"
+            path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/"
+            if-no-files-found: error
+            retention-days: 1
   release:
     name: Release Built Artifacts
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for Linux build
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Build, Test, and Upload Builds (ubuntu-latest)'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-      - name: Wait for Windows build
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-            ref: ${{ github.ref }}
-            check-name: 'Build, Test, and Upload Builds (windows-latest)'
-            repo-token: ${{ secrets.GITHUB_TOKEN }}
-            wait-interval: 10
       - name: Download artifacts
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          branch: main
-          workflow: dotnet.yml
-          workflow_conclusion: success
-          if_no_artifact_found: fail
-          skip_unpack: true
-      - uses: "marvinpinto/action-automatic-releases@latest"
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          merge-multiple: true
+      - uses: marvinpinto/action-automatic-releases@latest
+        name: "Create release"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false

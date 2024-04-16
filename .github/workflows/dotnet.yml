@@ -22,23 +22,11 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
-        
-    - name: Set VERSION variable from tag (for tag pushes)
-      if: ${{ contains(github.ref, 'refs/tags') }}
-      shell: bash
-      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
 
     - name: Set VERSION variable from tag (for normal commits)
       shell: bash
       if: ${{ !contains(github.ref, 'refs/tags') }}
       run: echo "VERSION=0.0.0" >> $GITHUB_ENV
-      
-    - name: Print VERSION variable for debugging
-      shell: bash
-      run: echo "$VERSION"
-        
-    - name: Restore
-      run: dotnet restore
       
     - name: Publish for Linux x64
       if: matrix.os == 'ubuntu-latest'
@@ -47,7 +35,7 @@ jobs:
     - name: Publish for Windows x64
       if: matrix.os == 'windows-latest'
       shell: bash
-      run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
+      run: dotnet publish -c Release -r win-x64 --self-contained Refresher /p:Version=${VERSION}
       
     - name: Upload Linux x64 build
       if: matrix.os == 'ubuntu-latest'
