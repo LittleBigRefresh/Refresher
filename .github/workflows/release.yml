@@ -64,9 +64,14 @@ jobs:
       - name: Download artifacts
         id: download
         uses: actions/download-artifact@v3.0.2
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          merge-multiple: true
+    
+      - shell: bash
+        run: |
+          ls -lAh *
+          echo "${{steps.download.outputs.download-path}}"
+          ls -lAh ${{steps.download.outputs.download-path}}
+          find -name "*.zip" -type f
+        
       - uses: marvinpinto/action-automatic-releases@latest
         name: "Create release"
         with:
