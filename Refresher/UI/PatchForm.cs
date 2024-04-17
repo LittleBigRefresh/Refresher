@@ -264,9 +264,9 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         this._messages.Items.Add(message);
     }
 
-    protected void Reverify(object? sender, EventArgs e) 
+    protected void Reverify(object? sender, EventArgs args) 
     {
-        Program.Log("Reverify triggered");
+        Program.Log($"Reverify triggered for patcher {this.Patcher?.GetType().Name}");
         if (this.Patcher == null) return;
 
         // Cancel the current task, and wait for it to complete
@@ -287,21 +287,43 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         // Start a new task to verify the URL
         this._latestTask = Task.Factory.StartNew(delegate 
         {
-            this._latestToken.Value.ThrowIfCancellationRequested();
-            
-            // Verify the URL
-            List<Message> messages = this.Patcher.Verify(url, patchDigest);
-            
-            this._latestToken.Value.ThrowIfCancellationRequested();
-            Program.App.AsyncInvoke(() => 
+            try
             {
-                this._messages.Items.Clear();
-                foreach (Message message in messages) this._messages.Items.Add(message.ToString());
-            
-                this._patchButton.Enabled = messages.All(m => m.Level != MessageLevel.Error);
-                this._patchButton.Text = "Patch!";
-            });
+                this._latestToken.Value.ThrowIfCancellationRequested();
+                
+                // Verify the URL
+                List<Message> messages = this.Patcher.Verify(url, patchDigest);
+                this.ResetAfterPatch(messages);
+                
+                this._latestToken.Value.ThrowIfCancellationRequested();
+            }
+            catch (Exception e)
+            {
+                SentrySdk.CaptureException(e);
+                SentrySdk.Flush();
+                Program.App.AsyncInvoke(() =>
+                {
+                    MessageBox.Show("An exception occured while verifying.\n" + e, "Verification Failed");
+                });
+                List<Message> messages =
+                [
+                    new Message(MessageLevel.Error, "An exception occured while verifying."),
+                ];
+                this.ResetAfterPatch(messages);
+            }
         }, this._latestToken.Value);
+    }
+    
+    private void ResetAfterPatch(List<Message> messages)
+    {
+        Program.App.AsyncInvoke(() =>
+        {
+            this._messages.Items.Clear();
+            foreach (Message message in messages) this.LogMessage(message.ToString());
+            
+            this._patchButton.Enabled = messages.All(m => m.Level != MessageLevel.Error);
+            this._patchButton.Text = "Patch!";
+        });
     }
     
     protected override void OnClosing(CancelEventArgs e)

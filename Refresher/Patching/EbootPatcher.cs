@@ -320,6 +320,7 @@ public partial class EbootPatcher : IPatcher
 
         this.Stream.Position = 0;
 
+        Program.Log($"URL: {url}", "Verify");
         // Check url
         if (url.EndsWith('/'))
             messages.Add(new Message(MessageLevel.Error,
@@ -330,6 +331,8 @@ public partial class EbootPatcher : IPatcher
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
         
         Class output = ELFReader.CheckELFType(this.Stream);
+        
+        Program.Log($"ELF class: {output}", "Verify");
         if (output == Class.NotELF)
         {
             messages.Add(new Message(MessageLevel.Error, "File is not a valid ELF file."));
