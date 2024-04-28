@@ -360,12 +360,6 @@ public partial class EbootPatcher : IPatcher
 
         if (this.GenerateRpcs3Patch)
         {
-            if (string.IsNullOrWhiteSpace(this.GameVersion))
-            {
-                messages.Add(new Message(MessageLevel.Error,
-                    "Missing game version! This is used by RPCS3 to filter patches. If this value is incorrect, the patch may not display in the Patch Manager.")); 
-            }
-
             if (string.IsNullOrWhiteSpace(this.PpuHash))
             {
                 messages.Add(new Message(MessageLevel.Error,
