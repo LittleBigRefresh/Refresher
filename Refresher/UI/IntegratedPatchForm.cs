@@ -106,6 +106,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 }
                 
                 ParamSfo sfo = new(sfoStream);
+                item.Version = sfo.Table["APP_VER"].ToString() ?? "unknown";
                 item.Text = $"{sfo.Table["TITLE"]} [{game}]";
             }
             catch

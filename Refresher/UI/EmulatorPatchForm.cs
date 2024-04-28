@@ -10,7 +10,6 @@ public class EmulatorPatchForm : IntegratedPatchForm
 {
     private FilePicker _folderField = null!;
     private TextBox _ppuHash = null!;
-    private TextBox _gameVersion = null!;
     private Button _filePatchButton = null!;
     
     public EmulatorPatchForm() : base("RPCS3 Patch")
@@ -36,7 +35,6 @@ public class EmulatorPatchForm : IntegratedPatchForm
         }
 
         this._ppuHash.TextChanged += this.UpdateTextFields;
-        this._gameVersion.TextChanged += this.UpdateTextFields; 
     }
     
     private void UpdateTextFields(object? sender, EventArgs args)
@@ -44,18 +42,23 @@ public class EmulatorPatchForm : IntegratedPatchForm
         if (this.Patcher != null)
         {
             this.Patcher.PpuHash = this._ppuHash.Text;
-            this.Patcher.GameVersion = this._gameVersion.Text;
             this.Reverify(null, EventArgs.Empty);
         }
     }
 
     protected override void BeforePatch(object? sender, EventArgs e)
     {
+        if (this.GameDropdown.SelectedValue is not GameItem game)
+        {
+            Program.Log("Game was null before patch, bailing", nameof(EmulatorPatchForm));
+            return;
+        }
+        
         if (this.Patcher != null)
         {
             this.Patcher.GenerateRpcs3Patch = true;
             this.Patcher.PpuHash = this._ppuHash.Text;
-            this.Patcher.GameVersion = this._gameVersion.Text;
+            this.Patcher.GameVersion = game.Version;
             this.Patcher.Rpcs3PatchFolder = Path.Combine(this._folderField.FilePath, "../patches");
             this.Patcher.GameName = ((GameItem)this.GameDropdown.SelectedValue).Text;
             this.Patcher.TitleId = ((GameItem)this.GameDropdown.SelectedValue).TitleId;
@@ -93,7 +96,6 @@ public class EmulatorPatchForm : IntegratedPatchForm
         return new[]
         {
             AddField("Game PPU hash", out this._ppuHash),
-            AddField("Game Version", out this._gameVersion),
             AddField("RPCS3 dev_hdd0 folder", out this._folderField),
             AddField("", out this._filePatchButton),
         };
