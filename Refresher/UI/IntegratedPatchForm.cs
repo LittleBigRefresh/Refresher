@@ -154,7 +154,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             // This is very inconvenient for us and the user.
             if (!this.Accessor.FileExists(ebootPath))
             {
-                this.FailVerify("The EBOOT.BIN file does not exist, nor does the original backup exist. Something has gone horribly wrong.");
+                this.FailVerify("The EBOOT.BIN file does not exist, nor does the original backup exist. This usually means you haven't installed any updates for your game.");
                 return;
             }
         }
