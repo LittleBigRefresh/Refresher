@@ -93,7 +93,13 @@ public class EmulatorPatchForm : IntegratedPatchForm
     {
         base.GameChanged(sender, ev);
         
-        this.Patcher!.GenerateRpcs3Patch = true;
+        if (this.Patcher == null)
+        {
+            Program.Log("Patcher was null, bailing", nameof(EmulatorPatchForm));
+            return;
+        }
+        
+        this.Patcher.GenerateRpcs3Patch = true;
         this.UpdateTextFields(null, EventArgs.Empty);
         this.Reverify(null, EventArgs.Empty);
     }

@@ -127,8 +127,17 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         
         GameItem? game = this.GameDropdown.SelectedValue as GameItem;
         
-        Debug.Assert(game != null);
-        Debug.Assert(this.Accessor != null);
+        if (game == null)
+        {
+            Program.Log("Game was null, bailing", nameof(IntegratedPatchForm));
+            return;
+        }
+        
+        if (this.Accessor == null)
+        {
+            Program.Log("Accessor was null, bailing", nameof(IntegratedPatchForm));
+            return;
+        }
         
         Program.Log($"Game changed to TitleID '{game.TitleId}'");
 
