@@ -125,9 +125,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     {
         LibSceToolSharp.Init();
         
-        GameItem? game = this.GameDropdown.SelectedValue as GameItem;
-        
-        if (game == null)
+        if (this.GameDropdown.SelectedValue is not GameItem game)
         {
             Program.Log("Game was null, bailing", nameof(IntegratedPatchForm));
             return;
