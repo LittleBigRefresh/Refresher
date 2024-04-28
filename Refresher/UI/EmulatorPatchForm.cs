@@ -59,6 +59,16 @@ public class EmulatorPatchForm : IntegratedPatchForm
             this.Patcher.Rpcs3PatchFolder = Path.Combine(this._folderField.FilePath, "../patches");
             this.Patcher.GameName = ((GameItem)this.GameDropdown.SelectedValue).Text;
             this.Patcher.TitleId = ((GameItem)this.GameDropdown.SelectedValue).TitleId;
+            
+            try
+            {
+                if(!Directory.Exists(this.Patcher.Rpcs3PatchFolder))
+                    Directory.CreateDirectory(this.Patcher.Rpcs3PatchFolder);
+            }
+            catch (Exception ex)
+            {
+                Program.Log($"Exception while trying to create RPCS3 patches folder: {ex}", nameof(ConsolePatchAccessor), BreadcrumbLevel.Warning);
+            }
         }
     }
 
