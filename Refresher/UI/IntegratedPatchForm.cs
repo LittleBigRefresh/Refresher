@@ -207,16 +207,21 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         this.Reverify(sender, ev);
     }
 
-    private void DownloadLicenseFile(string downloadedFile, GameItem game)
+    private void DownloadLicenseFile(string ebootPath, GameItem game)
     {
-        Program.Log($"Downloading license file for TitleID {game.TitleId} (from eboot @ {downloadedFile})");
-        string contentId = LibSceToolSharp.GetContentId(downloadedFile).TrimEnd('\0');
+        Program.Log($"Downloading license file for TitleID {game.TitleId} (from eboot @ {ebootPath})");
+        string contentId = LibSceToolSharp.GetContentId(ebootPath).TrimEnd('\0');
         this._cachedContentIds[game.TitleId] = contentId;
         
         Program.Log($"ContentID for {game.TitleId} is {contentId}");
 
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
+        
+        if (this.Accessor == null)
+        {
+            throw new InvalidOperationException("The patch accessor was somehow null while trying to download the game's license.");
+        }
 
         foreach (string user in this.Accessor.GetDirectoriesInDirectory(Path.Combine("home")))
         {
@@ -226,13 +231,15 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
             {
                 //If the license file does not contain the content ID in its path, skip it
-                if (!licenseFile.Contains(contentId))
+                if (!licenseFile.Contains(contentId) || licenseFile.Contains(game.TitleId))
                     continue;
+                
+                Program.Log($"Found compatible rap: {licenseFile}");
 
                 string actDatPath = Path.Combine(user, "exdata", "act.dat");
                     
                 //If it is a valid content id, lets download that user's act.dat, if its there
-                if (this.Accessor.FileExists(actDatPath))
+                if (!found && this.Accessor.FileExists(actDatPath))
                 {
                     string downloadedActDat = this.Accessor.DownloadFile(actDatPath);
                     LibSceToolSharp.SetActDatFilePath(downloadedActDat);
@@ -245,7 +252,6 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 Program.Log($"Downloaded license file {licenseFile}.");
 
                 found = true;
-                break;
             }
 
             if (found) 
