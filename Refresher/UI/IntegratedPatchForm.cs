@@ -231,7 +231,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
             {
                 //If the license file does not contain the content ID in its path, skip it
-                if (!licenseFile.Contains(contentId) || licenseFile.Contains(game.TitleId))
+                if (!licenseFile.Contains(contentId) || !licenseFile.Contains(game.TitleId))
                     continue;
                 
                 Program.Log($"Found compatible rap: {licenseFile}");
