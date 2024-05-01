@@ -85,35 +85,50 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     iconStream.Dispose();
                 }
             }
-            catch
+            catch(Exception e)
             {
-                // don't set any image
+                Program.Log($"Failed to set image for {game}: {e}", level: BreadcrumbLevel.Warning);
+                SentrySdk.CaptureException(e);
             }
 
             string sfoPath = Path.Combine(gamePath, "PARAM.SFO");
+            ParamSfo? sfo = null;
             try
             {
-                Stream sfoStream;
-
-                if (GameCacheAccessor.GameDataExistsInCache(game))
+                if (this.Accessor.FileExists(sfoPath))
                 {
-                    sfoStream = GameCacheAccessor.GetGameDataFromCache(game);
+                    Stream sfoStream = this.Accessor.OpenRead(sfoPath);
+                    
+                    sfo = new ParamSfo(sfoStream);
+                    item.Version = sfo.Table["APP_VER"].ToString() ?? "01.00";
+                    item.Text = $"{sfo.Table["TITLE"]} [{game} {item.Version}]";
+                    
+                    Program.Log($"Processed {game}'s PARAM.SFO file. text:\"{item.Text}\" version:\"{item.Version}", "SFO");
                 }
                 else
                 {
-                    sfoStream = this.Accessor.OpenRead(sfoPath);
-                    GameCacheAccessor.WriteGameDataToCache(game, sfoStream);
+                    Program.Log($"No PARAM.SFO exists for {game} (path should be '{sfoPath}')", "SFO", BreadcrumbLevel.Warning);
+                }
+            }
+            catch(Exception e)
+            {
+                item.Text = $"Unknown PARAM.SFO [{game}]";
+                
+                Program.Log($"Couldn't load {game}'s PARAM.SFO: {e}", "SFO", BreadcrumbLevel.Error);
+                if (sfo != null)
+                {
+                    Program.Log($"PARAM.SFO version:{sfo.Version} dump:", "SFO", BreadcrumbLevel.Debug);
+                    foreach ((string? key, object? value) in sfo.Table)
+                    {
+                        Program.Log($"  '{key}' = '{value}'", "SFO", BreadcrumbLevel.Debug);
+                    }
+                }
+                else
+                {
+                    Program.Log("PARAM.SFO was not read, can't dump", "SFO", BreadcrumbLevel.Warning);
                 }
                 
-                ParamSfo sfo = new(sfoStream);
-                item.Version = sfo.Table["APP_VER"].ToString() ?? "";
-                item.Text = $"{sfo.Table["TITLE"]} [{game}]";
-                
-                Program.Log($"Processed {game}'s param.sfo file. text:\"{item.Text}\" version:\"{item.Version}", "SFO");
-            }
-            catch
-            {
-                item.Text = game;
+                SentrySdk.CaptureException(e);
             }
 
             item.TitleId = game;
