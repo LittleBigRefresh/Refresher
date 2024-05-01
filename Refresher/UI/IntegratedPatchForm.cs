@@ -274,8 +274,20 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         }
             
         //If we are using the console patch accessor, fill out the IDPS patch file.
-        if (this.Accessor is ConsolePatchAccessor consolePatchAccessor) 
-            LibSceToolSharp.SetIdpsKey(consolePatchAccessor.IdpsFile.Value);
+        if (this.Accessor is ConsolePatchAccessor consolePatchAccessor)
+        {
+            byte[]? idps = consolePatchAccessor.IdpsFile.Value;
+            if (idps == null)
+            {
+                Program.Log("Can't set IDPS.", "IDPS", BreadcrumbLevel.Error);
+                this.FailVerify("Couldn't retrieve the IDPS used for encryption from the PS3. The log may have more details.");
+            }
+            else
+            {
+                Program.Log("Got the IDPS.", "IDPS", BreadcrumbLevel.Error);
+                LibSceToolSharp.SetIdpsKey(idps);
+            }
+        }
 
         LibSceToolSharp.SetRifPath(licenseDir);
         LibSceToolSharp.SetRapDirectory(licenseDir);

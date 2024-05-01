@@ -10,7 +10,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     private readonly FtpClient _client;
     private const string BasePath = "/dev_hdd0/";
 
-    public Lazy<byte[]> IdpsFile;
+    public readonly Lazy<byte[]?> IdpsFile;
 
     public ConsolePatchAccessor(string remoteIp)
     {
@@ -21,18 +21,37 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         FtpProfile? profile = this._client.AutoConnect();
         if (profile == null) throw new FTPConnectionFailureException();
 
-        this.IdpsFile = new Lazy<byte[]>(() =>
+        this.IdpsFile = new Lazy<byte[]?>(() =>
         {
+            Program.Log("Getting IDPS...", "IDPS");
             UriBuilder idpsPs3 = new("http", remoteIp, 80, "idps.ps3");
             UriBuilder idpsHex = new("http", remoteIp, 80, "dev_hdd0/idps.hex");
         
             HttpClient httpClient = new();
 
-            //Get the /idps.ps3 path, this creates the idps.hex file we can grab.
-            _ = httpClient.GetAsync(idpsPs3.Uri).Result;
+            // Get the /idps.ps3 path, this creates the idps.hex file we can grab.
+            Program.Log("  Triggering generation of IDPS file", "IDPS");
+            HttpResponseMessage response = httpClient.GetAsync(idpsPs3.Uri).Result;
+            Program.Log($"    {response.StatusCode} {(int)response.StatusCode} (success: {response.IsSuccessStatusCode})", "IDPS");
+            if (!response.IsSuccessStatusCode)
+            {
+                Program.Log("Couldn't fetch the IDPS from the PS3 because of a bad status code.", "IDPS", BreadcrumbLevel.Error);
+                Program.Log(response.Content.ReadAsStringAsync().Result, "IDPS", BreadcrumbLevel.Debug);
+                return null;
+            }
+            
+            Program.Log("  Downloading IDPS hex", "IDPS");
+            response = httpClient.GetAsync(idpsHex.Uri).Result;
+            Program.Log($"    {response.StatusCode} {(int)response.StatusCode} (success: {response.IsSuccessStatusCode})", "IDPS");
+            if (!response.IsSuccessStatusCode)
+            {
+                Program.Log("Couldn't fetch the IDPS from the PS3 because of a bad status code.", "IDPS", BreadcrumbLevel.Error);
+                Program.Log(response.Content.ReadAsStringAsync().Result, "IDPS", BreadcrumbLevel.Debug);
+                return null;
+            }
 
             //Return the IDPS key
-            return httpClient.GetAsync(idpsHex.Uri).Result.Content.ReadAsByteArrayAsync().Result;
+            return response.Content.ReadAsByteArrayAsync().Result;
         });
     }
 
