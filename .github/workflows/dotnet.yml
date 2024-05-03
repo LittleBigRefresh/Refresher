@@ -69,7 +69,7 @@ jobs:
       uses: actions/upload-artifact@v3.1.1
       with:
           name: "Refresher for MacOS x64"
-          path: "Refresher/bin/Release/net8.0/osx-x64/publish/"
+          path: "Refresher/bin/Release/net8.0/osx-x64/publish/Refresher.app/"
           if-no-files-found: error
           retention-days: 30
 
@@ -78,6 +78,6 @@ jobs:
       uses: actions/upload-artifact@v3.1.1
       with:
           name: "Refresher for MacOS ARM64"
-          path: "Refresher/bin/Release/net8.0/osx-arm64/publish/"
+          path: "Refresher/bin/Release/net8.0/osx-arm64/publish/Refresher.app/"
           if-no-files-found: error
           retention-days: 30
