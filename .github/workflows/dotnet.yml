@@ -70,8 +70,7 @@ jobs:
       with:
           name: "Refresher for MacOS x64"
           path: |
-            !Refresher/bin/Release/net8.0/osx-x64/publish/
-            Refresher/bin/Release/net8.0/osx-x64/publish/Refresher.app/
+            Refresher/bin/Release/net8.0/osx-x64/publish/*.app
           if-no-files-found: error
           retention-days: 30
 
@@ -81,7 +80,6 @@ jobs:
       with:
           name: "Refresher for MacOS ARM64"
           path: | 
-            !Refresher/bin/Release/net8.0/osx-arm64/publish/
-            Refresher/bin/Release/net8.0/osx-arm64/publish/Refresher.app/
+            Refresher/bin/Release/net8.0/osx-arm64/publish/*.app
           if-no-files-found: error
           retention-days: 30
