@@ -100,10 +100,20 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     Stream sfoStream = this.Accessor.OpenRead(sfoPath);
                     
                     sfo = new ParamSfo(sfoStream);
-                    item.Version = sfo.Table["APP_VER"].ToString() ?? "01.00";
+                    item.Version = "01.00";
+                    if (sfo.Table.TryGetValue("APP_VER", out object? value))
+                    {
+                        string? appVersion = value.ToString();
+                        if (appVersion != null)
+                            item.Version = appVersion;
+                    }
+                    else
+                    {
+                        Program.Log($"Could not find APP_VER for {game}. Defaulting to 01.00.", "SFO", BreadcrumbLevel.Warning);
+                    }
                     item.Text = $"{sfo.Table["TITLE"]} [{game} {item.Version}]";
                     
-                    Program.Log($"Processed {game}'s PARAM.SFO file. text:\"{item.Text}\" version:\"{item.Version}", "SFO");
+                    Program.Log($"Processed {game}'s PARAM.SFO file. text:\"{item.Text}\" version:\"{item.Version}\"", "SFO");
                 }
                 else
                 {
