@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Sockets;
 using FluentFTP;
 using Refresher.Exceptions;
 
