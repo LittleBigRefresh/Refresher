@@ -117,16 +117,26 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     protected void OpenUrl(string url)
     {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                Process.Start("xdg-open", url);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start("open", url);
+            else
+                throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
+        }
+        catch (Exception e)
+        {
+            Program.Log(e.ToString(), "OpenUrl", BreadcrumbLevel.Error);
+            MessageBox.Show("We couldn't open your browser due to an error.\n" +
+                            $"You can use this link instead: {url}\n\n" +
+                            $"Exception details: {e.GetType().Name} {e.Message}",
+                MessageBoxType.Error);
+        }
         // based off of https://stackoverflow.com/a/43232486
-        
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            Process.Start("xdg-open", url);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            Process.Start("open", url);
-        else
-            throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
     }
 
     private void AutoDiscover(object? sender, EventArgs arg)
