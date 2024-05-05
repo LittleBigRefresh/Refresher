@@ -114,16 +114,24 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     }
                     else
                     {
-                        Program.Log($"Could not find APP_VER for {game}. Defaulting to 01.00.", "SFO", BreadcrumbLevel.Warning);
+                        Program.Log($"Could not find APP_VER for {game}. Defaulting to 01.00.", "SFO",
+                            BreadcrumbLevel.Warning);
                     }
+                    
                     item.Text = $"{sfo.Table["TITLE"]} [{game} {item.Version}]";
                     
-                    Program.Log($"Processed {game}'s PARAM.SFO file. text:\"{item.Text}\" version:\"{item.Version}\"", "SFO");
+                    Program.Log($"Processed {game}'s PARAM.SFO file. text:\"{item.Text}\" version:\"{item.Version}\"",
+                        "SFO");
                 }
                 else
                 {
-                    Program.Log($"No PARAM.SFO exists for {game} (path should be '{sfoPath}')", "SFO", BreadcrumbLevel.Warning);
+                    Program.Log($"No PARAM.SFO exists for {game} (path should be '{sfoPath}')", "SFO",
+                        BreadcrumbLevel.Warning);
                 }
+            }
+            catch (EndOfStreamException)
+            {
+                Program.Log($"Couldn't load {game}'s PARAM.SFO because the file was incomplete.", "SFO", BreadcrumbLevel.Error);
             }
             catch(Exception e)
             {
