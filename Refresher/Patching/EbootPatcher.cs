@@ -316,7 +316,7 @@ public partial class EbootPatcher : IPatcher
     public static string GeneratePpuHash(Stream stream)
     {
         stream.Position = 0;
-        ELF<ulong> elfFile = ELFReader.Load<ulong>(stream, false); // Assuming ELF32. Change to Elf64 if needed.
+        ELF<ulong> elfFile = ELFReader.Load<ulong>(stream, false);
         
         using SHA1 hash = SHA1.Create();
         foreach (Segment<ulong>? segment in elfFile.Segments)
