@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Eto.Drawing;
 using Eto.Forms;
+using FluentFTP.Exceptions;
 using Refresher.Accessors;
 using Refresher.Patching;
 using Refresher.UI.Items;
@@ -44,6 +45,11 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         this.InitializePatcher();
     }
     
+    protected void HandleFtpError(FtpException exception, string action)
+    {
+        this.FailVerify($"An error occurred while {action}: {exception.Message}\n\nTry again in a couple minutes to let things 'cool off'. Sometimes the PS3's kernel just likes to throw a fit.");
+    }
+    
     protected virtual void PathChanged(object? sender, EventArgs ev)
     {
         Debug.Assert(this.Accessor != null);
@@ -84,6 +90,11 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));
                     iconStream.Dispose();
                 }
+            }
+            catch (FtpException e)
+            {
+                this.HandleFtpError(e, "downloading a game's icon");
+                return;
             }
             catch (NotSupportedException)
             {
@@ -128,6 +139,11 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     Program.Log($"No PARAM.SFO exists for {game} (path should be '{sfoPath}')", "SFO",
                         BreadcrumbLevel.Warning);
                 }
+            }
+            catch (FtpException e)
+            {
+                this.HandleFtpError(e, "downloading a game's PARAM.SFO file");
+                return;
             }
             catch (EndOfStreamException)
             {
@@ -183,22 +199,40 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
         string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG"); // Prefer original backup over active copy
         
-        // If the backup doesn't exist, use the EBOOT.BIN
-        if (!this.Accessor.FileExists(ebootPath))
+        try
         {
-            this.LogMessage("Couldn't find an original backup of the EBOOT, using active copy. This is not an error.");
-            ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
-            
-            // If we land here, then we have no valid patch target without any way to recover.
-            // This is very inconvenient for us and the user.
+            // If the backup doesn't exist, use the EBOOT.BIN
             if (!this.Accessor.FileExists(ebootPath))
             {
-                this.FailVerify("The EBOOT.BIN file does not exist, nor does the original backup exist. This usually means you haven't installed any updates for your game.");
-                return;
+                this.LogMessage("Couldn't find an original backup of the EBOOT, using active copy. This is not an error.");
+                ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN");
+                
+                // If we land here, then we have no valid patch target without any way to recover.
+                // This is very inconvenient for us and the user.
+                if (!this.Accessor.FileExists(ebootPath))
+                {
+                    this.FailVerify("The EBOOT.BIN file does not exist, nor does the original backup exist. This usually means you haven't installed any updates for your game.");
+                    return;
+                }
             }
         }
+        catch (FtpException e)
+        {
+            this.HandleFtpError(e, "finding the EBOOT to use");
+            return;
+        }
         
-        string downloadedFile = this.Accessor.DownloadFile(ebootPath);
+        string downloadedFile;
+        
+        try
+        {
+            downloadedFile = this.Accessor.DownloadFile(ebootPath);
+        }
+        catch (FtpException e)
+        {
+            this.HandleFtpError(e, "downloading the game's EBOOT");
+            return;
+        }
         
         this.LogMessage($"Downloaded EBOOT Path: {downloadedFile}");
         if (!File.Exists(downloadedFile))
@@ -206,12 +240,20 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             this.FailVerify("Could not find the EBOOT we downloaded. This is likely a bug. Patching cannot continue.", clear: false);
             return;
         }
-
-        // if this is a NP game then download the RIF for the right content ID, disc copies don't need anything else
-        if (game.TitleId.StartsWith('N'))
+        
+        try
         {
-            Program.Log("Digital game detected, trying to download license file");
-            this.DownloadLicenseFile(downloadedFile, game);
+            // if this is a NP game then download the RIF for the right content ID, disc copies don't need anything else
+            if (game.TitleId.StartsWith('N'))
+            {
+                Program.Log("Digital game detected, trying to download license file");
+                this.DownloadLicenseFile(downloadedFile, game);
+            }
+        }
+        catch (FtpException e)
+        {
+            this.HandleFtpError(e, "downloading the game's license file");
+            return;
         }
 
         this._tempFile = Path.GetTempFileName();
@@ -227,7 +269,17 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             if (game.TitleId.StartsWith('B'))
             {
                 Program.Log("Disc game detected - trying to gather a license as a workaround for LBP Hub");
-                this.DownloadLicenseFile(downloadedFile, game);
+                
+                try
+                {
+                    this.DownloadLicenseFile(downloadedFile, game);
+                }
+                catch (FtpException e)
+                {
+                    this.HandleFtpError(e, "downloading the game's license file (with Hub workaround)");
+                    return;
+                }
+                
                 LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
             }
 
@@ -354,17 +406,43 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         if (this.ShouldReplaceExecutable)
         {
             string backup = destination + ".ORIG";
-            if (!this.Accessor.FileExists(backup))
-                this.Accessor.CopyFile(destination, backup);
+            
+            try
+            {
+                if (!this.Accessor.FileExists(backup))
+                    this.Accessor.CopyFile(destination, backup);
+            }
+            catch (FtpException exception)
+            {
+                this.HandleFtpError(exception, "making a backup of the EBOOT");
+                return;
+            }
         }
-
-        if (this.Accessor.FileExists(destination))
-            this.Accessor.RemoveFile(destination);
+        
+        try
+        {
+            if (this.Accessor.FileExists(destination))
+                this.Accessor.RemoveFile(destination);
+        }
+        catch (FtpException exception)
+        {
+            this.HandleFtpError(exception, "removing the original EBOOT");
+            return;
+        }
 
         // wait a second for the ps3 to calm down
         Thread.Sleep(1000); // TODO: don't. block. the. main. thread.
         
-        this.Accessor.UploadFile(fileToUpload, destination);
+        try
+        {
+            this.Accessor.UploadFile(fileToUpload, destination);
+        }
+        catch (FtpException exception)
+        {
+            this.HandleFtpError(exception, "applying the EBOOT patch");
+            return;
+        }
+        
         MessageBox.Show(this, $"Successfully patched EBOOT! It was saved to '{destination}'.", "Success!");
 
         // Re-initialize patcher so we can patch with the same parameters again
