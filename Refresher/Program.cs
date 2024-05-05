@@ -70,10 +70,10 @@ public class Program
                 SentrySdk.CaptureException((Exception)eventArgs.ExceptionObject);
                 SentrySdk.Flush();
                 MessageBox.Show($"""
-                                 There was an unhandled error in Refresher!
-                                 *Please* screenshot this message box and send it to us over GitHub or Discord with details on what you were doing. This is likely a bug in Refresher.
+                                 There was an unhandled error in Refresher.
+                                 This has been automatically reported to us. The exception details has been displayed for further debugging:
 
-                                 Exception details: {eventArgs.ExceptionObject}
+                                 {eventArgs.ExceptionObject}
                                  """,
                     "Critical Error");
                 
@@ -88,10 +88,10 @@ public class Program
                 SentrySdk.CaptureException(ex);
                 SentrySdk.Flush();
                 MessageBox.Show($"""
-                                 There was an unhandled error in Refresher!
-                                 *Please* screenshot this message box and send it to us over GitHub or Discord with details on what you were doing. This is likely a bug in Refresher.
+                                 There was an unhandled error in Refresher.
+                                 This has been automatically reported to us. The exception details has been displayed for further debugging:
 
-                                 Exception details: {ex}
+                                 {ex}
                                  """, "Critical Error");
             }
             App.Dispose();
