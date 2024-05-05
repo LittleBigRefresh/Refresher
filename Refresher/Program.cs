@@ -2,6 +2,7 @@
 using CommandLine;
 using Eto.Forms;
 using Refresher.CLI;
+using Refresher.Patching;
 using Refresher.UI;
 using Sentry;
 
