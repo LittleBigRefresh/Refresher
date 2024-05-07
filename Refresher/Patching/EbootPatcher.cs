@@ -1,9 +1,12 @@
+using System.Buffers.Binary;
 using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using ELFSharp.ELF;
+using ELFSharp.ELF.Segments;
 using Refresher.Verification;
 
 namespace Refresher.Patching;
@@ -11,10 +14,10 @@ namespace Refresher.Patching;
 public partial class EbootPatcher : IPatcher
 {
     private readonly Lazy<List<PatchTargetInfo>> _targets;
+    private readonly Lazy<string?> _ppuHash = null;
 
     public bool GenerateRpcs3Patch = false;
     public string? Rpcs3PatchFolder = null;
-    public string? PpuHash = null;
     public string? GameVersion = null;
     public string? GameName;
     public string? TitleId;
@@ -29,6 +32,7 @@ public partial class EbootPatcher : IPatcher
         this.Stream.Position = 0;
 
         this._targets = new Lazy<List<PatchTargetInfo>>(() => FindPatchableElements(stream));
+        this._ppuHash = new Lazy<string?>(() => GeneratePpuHash(stream));
     }
 
     public Stream Stream { get; }
@@ -308,6 +312,38 @@ public partial class EbootPatcher : IPatcher
             }
         }
     }
+    
+    public static string GeneratePpuHash(Stream stream)
+    {
+        stream.Position = 0;
+        ELF<ulong> elfFile = ELFReader.Load<ulong>(stream, false);
+        
+        using SHA1 hash = SHA1.Create();
+        foreach (Segment<ulong>? segment in elfFile.Segments)
+        {
+            hash.TransformBlock(BitConverter.GetBytes(BinaryPrimitives.ReverseEndianness((uint)segment.Type)), 0, 4, null, 0);
+            hash.TransformBlock(BitConverter.GetBytes(BinaryPrimitives.ReverseEndianness((uint)segment.Flags)), 0, 4, null, 0);
+            
+            if (segment.Type != SegmentType.Load || segment.Size == 0) continue;
+            
+            hash.TransformBlock(BitConverter.GetBytes(BinaryPrimitives.ReverseEndianness(segment.Address)), 0, 8, null, 0);
+            hash.TransformBlock(BitConverter.GetBytes(BinaryPrimitives.ReverseEndianness(segment.Size)), 0, 8, null, 0);
+            
+            byte[]? segmentData = segment.GetFileContents();
+            
+            hash.TransformBlock(segmentData, 0, segmentData.Length, null, 0);
+        }
+        
+        // trigger generation of hash after reading segments
+        hash.TransformFinalBlock([], 0, 0);
+        
+        stream.Position = 0;
+        
+        string ppuHash = BitConverter.ToString(hash.Hash!).Replace("-", "").ToLower();
+        
+        Program.Log($"PPU hash: PPU-{ppuHash}", "PPU", BreadcrumbLevel.Debug);
+        return ppuHash;
+    }
 
     /// <summary>
     ///     Checks the contents of the EBOOT to verify that it is patchable.
@@ -360,10 +396,10 @@ public partial class EbootPatcher : IPatcher
 
         if (this.GenerateRpcs3Patch)
         {
-            if (string.IsNullOrWhiteSpace(this.PpuHash))
+            if (string.IsNullOrWhiteSpace(this._ppuHash.Value))
             {
                 messages.Add(new Message(MessageLevel.Error,
-                    "Missing PPU hash! This is used by RPCS3 to know which game the patch is used for, please read the RPCS3 patching guide to learn how to get this value.")); 
+                    "Couldn't determine the PPU hash. This is used by RPCS3 to know which game the patch is used for. Without it, we cannot continue patching.")); 
             }
         }
         
@@ -377,7 +413,6 @@ public partial class EbootPatcher : IPatcher
             Debug.Assert(this.Rpcs3PatchFolder != null);
             Debug.Assert(this.GameName != null);
             Debug.Assert(this.TitleId != null);
-            Debug.Assert(!string.IsNullOrEmpty(this.PpuHash));
             Debug.Assert(!string.IsNullOrEmpty(this.GameVersion));
 
             string patchesFile = Path.Combine(this.Rpcs3PatchFolder, "imported_patch.yml");
@@ -385,13 +420,9 @@ public partial class EbootPatcher : IPatcher
             if (!File.Exists(patchesFile))
                 //Write the header to the patches file
                 File.WriteAllText(patchesFile, "Version: 1.2\n\n");
-
-            //Trim the PPU- prefix, if its there
-            if (this.PpuHash.StartsWith("PPU-"))
-                this.PpuHash = this.PpuHash[4..];
             
             string template = $"""
-                               PPU-{this.PpuHash}:
+                               PPU-{this._ppuHash}:
                                  "Refresher Patch ({url})":
                                    Games:
                                      "{this.GameName}":

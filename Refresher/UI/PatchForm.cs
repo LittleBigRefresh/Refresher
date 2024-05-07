@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using Eto.Drawing;
 using Eto.Forms;
@@ -116,16 +117,26 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     protected void OpenUrl(string url)
     {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                Process.Start("xdg-open", url);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start("open", url);
+            else
+                throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
+        }
+        catch (Exception e)
+        {
+            Program.Log(e.ToString(), "OpenUrl", BreadcrumbLevel.Error);
+            MessageBox.Show("We couldn't open your browser due to an error.\n" +
+                            $"You can use this link instead: {url}\n\n" +
+                            $"Exception details: {e.GetType().Name} {e.Message}",
+                MessageBoxType.Error);
+        }
         // based off of https://stackoverflow.com/a/43232486
-        
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            Process.Start("xdg-open", url);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            Process.Start("open", url);
-        else
-            throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
     }
 
     private void AutoDiscover(object? sender, EventArgs arg)
@@ -144,41 +155,66 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         {
             using HttpClient client = new();
             client.BaseAddress = autodiscoverUri;
-
+            
             HttpResponseMessage response = client.GetAsync("/autodiscover").Result;
             response.EnsureSuccessStatusCode();
-
+            
             Stream stream = response.Content.ReadAsStream();
-
+            
             JsonSerializer serializer = new();
             using StreamReader streamReader = new(stream);
             using JsonTextReader jsonReader = new(streamReader);
-
+            
             AutodiscoverResponse? autodiscover = serializer.Deserialize<AutodiscoverResponse>(jsonReader);
             if (autodiscover == null) throw new InvalidOperationException("autoresponse was null");
-
+            
             string text = $"Successfully found a '{autodiscover.ServerBrand}' server at the given URL!\n\n" +
                           $"Server's recommended patch URL: {autodiscover.Url}\n" +
                           $"Custom digest key?: {(autodiscover.UsesCustomDigestKey.GetValueOrDefault() ? "Yes" : "No")}\n\n" +
                           $"Use this server's configuration?";
-
+            
             DialogResult result = MessageBox.Show(text, MessageBoxButtons.YesNo);
             if (result != DialogResult.Yes) return;
-
+            
             this.UrlField.Text = autodiscover.Url;
             this.PatchDigest = autodiscover.UsesCustomDigestKey ?? false;
             this._usedAutoDiscover = true;
         }
-        catch (HttpRequestException e)
+        catch (AggregateException aggregate)
         {
-            if (e.StatusCode == null) throw;
-            MessageBox.Show($"AutoDiscover failed, because the server responded with {(int)e.StatusCode} {e.StatusCode}.");
+            aggregate.Handle(HandleAutoDiscoverError);
         }
         catch(Exception e)
         {
-            SentrySdk.CaptureException(e);
-            MessageBox.Show($"AutoDiscover failed: {e}", MessageBoxType.Error);
+            if (!HandleAutoDiscoverError(e))
+            {
+                SentrySdk.CaptureException(e);
+                MessageBox.Show($"AutoDiscover failed: {e}", MessageBoxType.Error);
+            }
         }
+    }
+    
+    private static bool HandleAutoDiscoverError(Exception inner)
+    {
+        if (inner is HttpRequestException httpException)
+        {
+            if (httpException.StatusCode == null)
+            {
+                MessageBox.Show($"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
+                return true;
+            }
+            
+            MessageBox.Show($"AutoDiscover failed, because the server responded with {(int)httpException.StatusCode} {httpException.StatusCode}.");
+            return true;
+        }
+        
+        if (inner is SocketException)
+        {
+            MessageBox.Show($"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
+            return true;
+        }
+        
+        return false;
     }
 
     /// <summary>

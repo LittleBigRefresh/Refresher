@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Sockets;
 using FluentFTP;
 using Refresher.Exceptions;
 
@@ -48,8 +46,24 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     
     private HttpResponseMessage? IdpsRequestStep(ReadOnlySpan<char> stepName, HttpClient client, Uri uri)
     {
+        HttpResponseMessage response;
+        
         Program.Log($"  {stepName} ({uri.AbsolutePath})", "IDPS");
-        HttpResponseMessage response = client.GetAsync(uri).Result;
+        try
+        {
+            response = client.GetAsync(uri).Result;
+        }
+        catch (HttpRequestException e)
+        {
+            Program.Log($"Couldn't fetch the IDPS from the PS3 because we couldn't make the request: {e.Message}", "IDPS", BreadcrumbLevel.Error);
+            return null;
+        }
+        catch (Exception e)
+        {
+            Program.Log($"Couldn't fetch the IDPS from the PS3 because of an unknown error: {e}", "IDPS", BreadcrumbLevel.Error);
+            SentrySdk.CaptureException(e);
+            return null;
+        }
         Program.Log($"    {(int)response.StatusCode} {response.StatusCode} (success: {response.IsSuccessStatusCode})", "IDPS");
         
         if (!response.IsSuccessStatusCode)
