@@ -36,22 +36,34 @@ jobs:
       shell: bash
       run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
 
-    - name: Publish for MacOS x64
+    - name: Publish for macOS x64
       if: matrix.os == 'macos-latest'
       shell: bash
       run: dotnet publish -c Release -r osx-x64 --self-contained Refresher /p:Version=${VERSION}
 
-    - name: Publish for MacOS ARM64
+    - name: Publish for macOS ARM64
       if: matrix.os == 'macos-latest'
       shell: bash
       run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
+      
+    # We need to tarball our macOS and Linux builds, since the ZIP files created by upload-artifact do not retain extended unix file permissions, 
+    # which means the executable bit is lost, which is un-ideal for end users, who will hit weird errors (especially relating to code signing on macOS)
+    - name: 'Tar macOS x64 build'
+      if: matrix.os == 'macos-latest'
+      run: tar -cvf Refresher-x64.tar Refresher/bin/Release/net8.0/osx-x64/publish/*.app
+    - name: 'Tar macOS ARM64 build'
+      if: matrix.os == 'macos-latest'
+      run: tar -cvf Refresher-arm64.tar Refresher/bin/Release/net8.0/osx-arm64/publish/*.app
+    - name: 'Tar Linux x64'
+      if: matrix.os == 'ubuntu-latest'
+      run: tar -cvf Refresher.tar Refresher/bin/Release/net8.0/linux-x64/publish/*
       
     - name: Upload Linux x64 build
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v3.1.1
       with:
           name: "Refresher for Linux x64"
-          path: "Refresher/bin/Release/net8.0/linux-x64/publish/"
+          path: "Refresher.tar"
           if-no-files-found: error
           retention-days: 30
           
@@ -64,22 +76,20 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           
-    - name: Upload MacOS x64 build
+    - name: Upload macOS x64 build
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v3.1.1
       with:
-          name: "Refresher for MacOS x64"
-          path: |
-            Refresher/bin/Release/net8.0/osx-x64/publish/*.app
+          name: "Refresher for macOS x64"
+          path: "Refresher-x64.tar"
           if-no-files-found: error
           retention-days: 30
 
-    - name: Upload MacOS ARM64 build
+    - name: Upload macOS ARM64 build
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v3.1.1
       with:
-          name: "Refresher for MacOS ARM64"
-          path: | 
-            Refresher/bin/Release/net8.0/osx-arm64/publish/*.app
+          name: "Refresher for macOS ARM64"
+          path: "Refresher-arm64.tar"
           if-no-files-found: error
           retention-days: 30
