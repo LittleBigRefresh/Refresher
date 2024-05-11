@@ -50,13 +50,13 @@ jobs:
     # which means the executable bit is lost, which is un-ideal for end users, who will hit weird errors (especially relating to code signing on macOS)
     - name: 'Tar macOS x64 build'
       if: matrix.os == 'macos-latest'
-      run: tar -cvf Refresher-x64.tar -C Refresher/bin/Release/net8.0/osx-x64/publish/ Refresher/bin/Release/net8.0/osx-x64/publish/*.app 
+      run: tar -cvf Refresher-x64.tar -C Refresher/bin/Release/net8.0/osx-x64/publish/ *.app 
     - name: 'Tar macOS ARM64 build'
       if: matrix.os == 'macos-latest'
-      run: tar -cvf Refresher-arm64.tar -C Refresher/bin/Release/net8.0/osx-arm64/publish/ Refresher/bin/Release/net8.0/osx-arm64/publish/*.app 
+      run: tar -cvf Refresher-arm64.tar -C Refresher/bin/Release/net8.0/osx-arm64/publish/ *.app 
     - name: 'Tar Linux x64'
       if: matrix.os == 'ubuntu-latest'
-      run: tar -cvf Refresher.tar -C Refresher/bin/Release/net8.0/linux-x64/publish/ Refresher/bin/Release/net8.0/linux-x64/publish/* 
+      run: tar -cvf Refresher.tar -C Refresher/bin/Release/net8.0/linux-x64/publish/ * 
       
     - name: Upload Linux x64 build
       if: matrix.os == 'ubuntu-latest'
