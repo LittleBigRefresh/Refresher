@@ -32,7 +32,8 @@
         <TargetFramework Condition="!$(IsWindows)">net8.0</TargetFramework>
         <TargetFramework Condition="$(IsWindows)">net8.0-windows</TargetFramework>
         <RuntimeIdentifiers Condition="$(IsOSX)">osx-x64;osx-arm64</RuntimeIdentifiers>
-        <ApplicationIcon>Resources\refresher.ico</ApplicationIcon>
+        <ApplicationIcon Condition="!$(IsOSX)">Resources\refresher.ico</ApplicationIcon>
+        <ApplicationIcon Condition="$(IsOSX)">Resources\refresher.icns</ApplicationIcon>
         <BuiltInComInteropSupport Condition="'$(TargetFramework)' == 'net8.0-windows'">true</BuiltInComInteropSupport>
     </PropertyGroup>
 
