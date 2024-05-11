@@ -32,8 +32,7 @@
         <TargetFramework Condition="!$(IsWindows)">net8.0</TargetFramework>
         <TargetFramework Condition="$(IsWindows)">net8.0-windows</TargetFramework>
         <RuntimeIdentifiers Condition="$(IsOSX)">osx-x64;osx-arm64</RuntimeIdentifiers>
-        <ApplicationIcon Condition="!$(IsOSX)">Resources\refresher.ico</ApplicationIcon>
-        <ApplicationIcon Condition="$(IsOSX)">Resources\refresher.icns</ApplicationIcon>
+        <ApplicationIcon>Resources\refresher.ico</ApplicationIcon>
         <BuiltInComInteropSupport Condition="'$(TargetFramework)' == 'net8.0-windows'">true</BuiltInComInteropSupport>
     </PropertyGroup>
 
@@ -55,6 +54,8 @@
       <PackageReference Include="SCEToolSharp" Version="1.1.5" />
       <EmbeddedResource Include="Resources\Allefresher.prx" />
       <PackageReference Include="Sentry" Version="4.4.0" />
+
+      <Content Include="Resources\refresher.icns" Link="Icon.icns" Condition="$(IsOSX)" />
     </ItemGroup>
 
 
