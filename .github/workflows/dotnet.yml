@@ -45,6 +45,18 @@ jobs:
       if: matrix.os == 'macos-latest'
       shell: bash
       run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
+
+    - name: Remove duplicate .app for macOS x64
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      working-directory: Refresher/bin/Release/net8.0/osx-x64/publish/
+      run: rm -rfv ./*.app/Contents/MacOS/*.app && codesign -fs - --deep *.app
+
+    - name: Remove duplicate .app for macOS ARM64
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      working-directory: Refresher/bin/Release/net8.0/osx-arm64/publish/
+      run: rm -rfv ./*.app/Contents/MacOS/*.app && codesign -fs - --deep *.app
       
     # We need to tarball our macOS and Linux builds, since the ZIP files created by upload-artifact do not retain extended unix file permissions, 
     # which means the executable bit is lost, which is un-ideal for end users, who will hit weird errors (especially relating to code signing on macOS)
