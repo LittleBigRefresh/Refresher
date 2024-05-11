@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>org.littlebig.refresh</string>
+	<string>com.littlebigrefresh.refresher</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2024 LittleBigRefresh</string>
 	<key>CFBundleShortVersionString</key>
