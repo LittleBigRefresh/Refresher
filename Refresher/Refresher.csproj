@@ -54,13 +54,6 @@
       <PackageReference Include="SCEToolSharp" Version="1.1.5" />
       <EmbeddedResource Include="Resources\Allefresher.prx" />
       <PackageReference Include="Sentry" Version="4.4.0" />
+      <Content Include="Resources/refresher.icns" Link="refresher.icns" Condition="$(IsOSX)" />
     </ItemGroup>
-
-    <ItemGroup Condition="$(IsOSX)">
-      <ContentWithTargetPath Include="Resources/refresher.icns">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <TargetPath>Icon.icns</TargetPath>
-      </ContentWithTargetPath>
-    </ItemGroup>
-
 </Project>
