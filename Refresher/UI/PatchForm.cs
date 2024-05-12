@@ -155,6 +155,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         {
             using HttpClient client = new();
             client.BaseAddress = autodiscoverUri;
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Refresher/3");
             
             HttpResponseMessage response = client.GetAsync("/autodiscover").Result;
             response.EnsureSuccessStatusCode();
