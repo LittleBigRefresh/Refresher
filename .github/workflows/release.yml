@@ -80,7 +80,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v3.1.3
         with:
-            name: "refresher-linux-x64"
+            name: "Refresher_for_Linux_x64"
             path: "Refresher.tar"
             if-no-files-found: error
             retention-days: 1
@@ -89,7 +89,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v3.1.3
         with:
-            name: "refresher-win-x64"
+            name: "Refresher_for_Windows_x64"
             path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/"
             if-no-files-found: error
             retention-days: 1
@@ -98,7 +98,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v3.1.1
         with:
-            name: "refresher-macos-x64"
+            name: "Refresher_for_macOS_x64"
             path: "Refresher-x64.tar"
             if-no-files-found: error
             retention-days: 30
@@ -107,7 +107,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v3.1.1
         with:
-            name: "refresher-macos-arm64"
+            name: "Refresher_for_macOS_ARM64"
             path: "Refresher-arm64.tar"
             if-no-files-found: error
             retention-days: 1
@@ -125,17 +125,17 @@ jobs:
 
       - name: Create zip files
         run: |
-            cd ${{steps.download.outputs.download-path}}/refresher-win-x64
-            zip -r "${{steps.download.outputs.download-path}}/refresher-win-x64.zip" .
+            cd ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64
+            zip -r "${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64.zip" .
             
-            cd ${{steps.download.outputs.download-path}}/refresher-linux-x64
-            zip -r "${{steps.download.outputs.download-path}}/refresher-linux-x64.zip" .
+            cd ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64
+            zip -r "${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64.zip" .
 
-            cd ${{steps.download.outputs.download-path}}/refresher-macos-x64
-            zip -r "${{steps.download.outputs.download-path}}/refresher-macos-x64.zip" .
+            cd ${{steps.download.outputs.download-path}}/Refresher_for_macOS_x64
+            zip -r "${{steps.download.outputs.download-path}}/Refresher_for_macOS_x64.zip" .
 
-            cd ${{steps.download.outputs.download-path}}/refresher-macos-arm64
-            zip -r "${{steps.download.outputs.download-path}}/refresher-macos-arm64.zip" .
+            cd ${{steps.download.outputs.download-path}}/Refresher_for_macOS_ARM64
+            zip -r "${{steps.download.outputs.download-path}}/Refresher_for_macOS_ARM64.zip" .
         
       - uses: ncipollo/release-action@v1.14.0
         name: "Create release"
