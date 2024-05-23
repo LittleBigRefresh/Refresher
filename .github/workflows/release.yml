@@ -101,7 +101,7 @@ jobs:
             name: "Refresher_for_macOS_x64"
             path: "Refresher-x64.tar"
             if-no-files-found: error
-            retention-days: 30
+            retention-days: 1
   
       - name: Upload macOS ARM64 build
         if: matrix.os == 'macos-latest'
