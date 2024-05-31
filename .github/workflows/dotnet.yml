@@ -46,28 +46,28 @@ jobs:
       shell: bash
       run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
 
-    - name: Remove duplicate .app for macOS x64
+    - name: Create macOS universal2 binary
       if: matrix.os == 'macos-latest'
       shell: bash
-      working-directory: Refresher/bin/Release/net8.0/osx-x64/publish/
-      run: rm -rfv ./*.app/Contents/MacOS/*.app && codesign -fs - --deep *.app
-
-    - name: Remove duplicate .app for macOS ARM64
-      if: matrix.os == 'macos-latest'
-      shell: bash
-      working-directory: Refresher/bin/Release/net8.0/osx-arm64/publish/
-      run: rm -rfv ./*.app/Contents/MacOS/*.app && codesign -fs - --deep *.app
+      working-directory: Refresher/bin/Release/net8.0/
+      run: |
+        mkdir -p osx-universal2/publish/Refresher.app/Contents/MacOS
+        cp -r osx-arm64/publish/*.app/Contents/ osx-universal2/publish/Refresher.app/Contents/
+        for file in $(find osx-arm64/publish/*.app/Contents/MacOS); do
+          if [[ "$(file $file)" == *"Mach-O"* ]]; then
+              if [[ "$(lipo -archs $file)" != *"x86_64 arm64"* ]]; then
+                lipo -create osx-arm64/publish/*.app/Contents/MacOS/$(basename $file) osx-x64/publish/*.app/Contents/MacOS/$(basename $file) -output osx-universal2/publish/Refresher.app/Contents/MacOS/$(basename $file);
+              fi;
+          fi;
+        done
+        codesign -fs - --deep osx-universal2/publish/Refresher.app
       
     # We need to tarball our macOS and Linux builds, since the ZIP files created by upload-artifact do not retain extended unix file permissions, 
     # which means the executable bit is lost, which is un-ideal for end users, who will hit weird errors (especially relating to code signing on macOS)
-    - name: 'Tar macOS x64 build'
+    - name: 'Tar macOS universal2 build'
       if: matrix.os == 'macos-latest'
-      working-directory: Refresher/bin/Release/net8.0/osx-x64/publish/
-      run: tar -cvf ../../../../../../Refresher-x64.tar *.app
-    - name: 'Tar macOS ARM64 build'
-      if: matrix.os == 'macos-latest'
-      working-directory: Refresher/bin/Release/net8.0/osx-arm64/publish/
-      run: tar -cvf ../../../../../../Refresher-arm64.tar *.app 
+      working-directory: Refresher/bin/Release/net8.0/osx-universal2/publish/
+      run: tar -cvf ../../../../../../Refresher-macOS.tar *.app 
     - name: 'Tar Linux x64'
       if: matrix.os == 'ubuntu-latest'
       working-directory: Refresher/bin/Release/net8.0/linux-x64/publish/
@@ -91,20 +91,11 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           
-    - name: Upload macOS x64 build
+    - name: Upload macOS universal2 build
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v3.1.1
       with:
-          name: "Refresher for macOS x64"
-          path: "Refresher-x64.tar"
-          if-no-files-found: error
-          retention-days: 30
-
-    - name: Upload macOS ARM64 build
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v3.1.1
-      with:
-          name: "Refresher for macOS ARM64"
-          path: "Refresher-arm64.tar"
+          name: "Refresher for macOS universal2"
+          path: "Refresher-macOS.tar"
           if-no-files-found: error
           retention-days: 30
