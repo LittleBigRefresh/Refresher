@@ -60,6 +60,7 @@ jobs:
               fi;
           fi;
         done
+        rm -rfv osx-universal2/publish/Refresher.app/Contents/MacOS/*.app
         codesign -fs - --deep osx-universal2/publish/Refresher.app
       
     # We need to tarball our macOS and Linux builds, since the ZIP files created by upload-artifact do not retain extended unix file permissions, 
