@@ -63,6 +63,7 @@ jobs:
                 fi;
             fi;
           done
+          rm -rfv osx-universal2/publish/Refresher.app/Contents/MacOS/*.app
           codesign -fs - --deep osx-universal2/publish/Refresher.app
   
       - name: 'Tar macOS universal2 build'
