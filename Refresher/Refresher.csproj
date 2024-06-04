@@ -1,11 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <!-- Horrible code wart to detect the target, there does not seem to be a proper way to do this in dotnet... -->
+    
+    <!-- OS Detection default values  -->
+    <PropertyGroup>
+        <IsWindows>False</IsWindows>
+        <IsOSX>False</IsOSX>
+        <IsLinux>False</IsLinux>
+    </PropertyGroup>
+
+    <!-- Check if we are targetting windows -->
+    <PropertyGroup Condition="($(RuntimeIdentifier.StartsWith('win')) And !$(RuntimeIdentifier.Equals('')) ) Or ( $(OS.Equals('Windows_NT')) And $(RuntimeIdentifier.Equals('')) ) ">
+        <IsWindows>True</IsWindows>
+    </PropertyGroup>
+
+    <!-- Check if we are targetting OSX -->
+    <PropertyGroup Condition="($(RuntimeIdentifier.StartsWith('osx')) And !$(RuntimeIdentifier.Equals('')) ) Or ( $([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX))) And $(RuntimeIdentifier.Equals('')) ) ">
+        <IsOSX>True</IsOSX>
+    </PropertyGroup>
+
+    <!-- Check if we target Linux (Too many names to check, so we base it off the previous two checks) -->
+    <PropertyGroup Condition=" !$(IsWindows) And !$(IsOSX)">
+        <IsLinux>True</IsLinux>
+    </PropertyGroup>
+    
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net8.0</TargetFramework>
-        <TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net8.0-windows</TargetFramework>
+        <ApplicationId>Refresher</ApplicationId>  
+        <TargetFramework Condition="!$(IsWindows)">net8.0</TargetFramework>
+        <TargetFramework Condition="$(IsWindows)">net8.0-windows</TargetFramework>
+        <RuntimeIdentifiers Condition="$(IsOSX)">osx-x64;osx-arm64</RuntimeIdentifiers>
         <ApplicationIcon>Resources\refresher.ico</ApplicationIcon>
         <BuiltInComInteropSupport Condition="'$(TargetFramework)' == 'net8.0-windows'">true</BuiltInComInteropSupport>
     </PropertyGroup>
@@ -18,15 +44,16 @@
       <PackageReference Include="CommandLineParser" Version="2.9.1" />
       <PackageReference Include="ELFSharp" Version="2.17.3" />
       <PackageReference Include="Eto.Forms" Version="2.8.3" />
-      <PackageReference Condition="'$(TargetFramework)' != 'net8.0-windows'" Include="Eto.Platform.Gtk" Version="2.8.3" />
-      <PackageReference Condition="'$(TargetFramework)' == 'net8.0-windows'" Include="Eto.Platform.Wpf" Version="2.8.3" />
+      <!-- This could be IsLinux, but GTK is available on basically everything, so might as well use it as the true default -->
+      <PackageReference Condition="!$(IsWindows) And !$(IsOSX)" Include="Eto.Platform.Gtk" Version="2.8.3" />
+      <PackageReference Condition="$(IsOSX)" Include="Eto.Platform.Mac64" Version="2.8.3" />
+      <PackageReference Condition="$(IsWindows)" Include="Eto.Platform.Wpf" Version="2.8.3" />
       <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
       <PackageReference Include="FluentFTP" Version="49.0.2" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="SCEToolSharp" Version="1.1.5" />
       <EmbeddedResource Include="Resources\Allefresher.prx" />
       <PackageReference Include="Sentry" Version="4.4.0" />
+      <Content Include="Resources/refresher.icns" Link="refresher.icns" Condition="$(IsOSX)" />
     </ItemGroup>
-
-
 </Project>

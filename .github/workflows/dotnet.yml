@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
     name: Build, Test, and Upload Builds (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
@@ -35,13 +35,51 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: bash
       run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
+
+    - name: Publish for macOS x64
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: dotnet publish -c Release -r osx-x64 --self-contained Refresher /p:Version=${VERSION}
+
+    - name: Publish for macOS ARM64
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
+
+    - name: Create macOS universal2 binary
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      working-directory: Refresher/bin/Release/net8.0/
+      run: |
+        mkdir -p osx-universal2/publish/Refresher.app/Contents/MacOS
+        cp -r osx-arm64/publish/*.app/Contents/ osx-universal2/publish/Refresher.app/Contents/
+        for file in $(find osx-arm64/publish/*.app/Contents/MacOS); do
+          if [[ "$(file $file)" == *"Mach-O"* ]]; then
+              if [[ "$(lipo -archs $file)" != *"x86_64 arm64"* ]]; then
+                lipo -create osx-arm64/publish/*.app/Contents/MacOS/$(basename $file) osx-x64/publish/*.app/Contents/MacOS/$(basename $file) -output osx-universal2/publish/Refresher.app/Contents/MacOS/$(basename $file);
+              fi;
+          fi;
+        done
+        rm -rfv osx-universal2/publish/Refresher.app/Contents/MacOS/*.app
+        codesign -fs - --deep osx-universal2/publish/Refresher.app
+      
+    # We need to tarball our macOS and Linux builds, since the ZIP files created by upload-artifact do not retain extended unix file permissions, 
+    # which means the executable bit is lost, which is un-ideal for end users, who will hit weird errors (especially relating to code signing on macOS)
+    - name: 'Tar macOS universal2 build'
+      if: matrix.os == 'macos-latest'
+      working-directory: Refresher/bin/Release/net8.0/osx-universal2/publish/
+      run: tar -cvf ../../../../../../Refresher-macOS.tar *.app 
+    - name: 'Tar Linux x64'
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: Refresher/bin/Release/net8.0/linux-x64/publish/
+      run: tar -cvf ../../../../../../Refresher.tar * 
       
     - name: Upload Linux x64 build
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v3.1.1
       with:
           name: "Refresher for Linux x64"
-          path: "Refresher/bin/Release/net8.0/linux-x64/publish/"
+          path: "Refresher.tar"
           if-no-files-found: error
           retention-days: 30
           
@@ -51,5 +89,14 @@ jobs:
       with:
           name: "Refresher for Windows x64"
           path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/"
+          if-no-files-found: error
+          retention-days: 30
+          
+    - name: Upload macOS universal2 build
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v3.1.1
+      with:
+          name: "Refresher for macOS universal2"
+          path: "Refresher-macOS.tar"
           if-no-files-found: error
           retention-days: 30

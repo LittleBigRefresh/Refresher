@@ -1,6 +1,7 @@
 using Eto.Drawing;
 using Eto.Forms;
 using Sentry;
+using System.Runtime.InteropServices;
 
 namespace Refresher.UI;
 
@@ -22,6 +23,9 @@ public abstract class RefresherForm : Form
         this.Padding = new Padding(10, 10, 10, padBottom ? 10 : 0);
         
         this.Icon = Icon.FromResource("refresher.ico");
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            Menu = new RefresherMenuBar();
     }
 
     /// <summary>
@@ -37,5 +41,13 @@ public abstract class RefresherForm : Form
         Program.Log($"Showing child form {form.GetType().Name} '{form.Title}'");
 
         if (close) this.Visible = false;
+    }
+
+    public class RefresherMenuBar : MenuBar
+    {
+        public RefresherMenuBar() {
+            Style = "MenuBar";
+            IncludeSystemItems = MenuBarSystemItems.All;
+        }
     }
 }

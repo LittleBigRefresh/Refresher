@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
     name: Build, Test, and Upload Builds (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
@@ -39,12 +39,48 @@ jobs:
         shell: bash
         run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
 
+      - name: Publish for macOS x64
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: dotnet publish -c Release -r osx-x64 --self-contained Refresher /p:Version=${VERSION}
+  
+      - name: Publish for macOS ARM64
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
+      
+      - name: Create macOS universal2 binary
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        working-directory: Refresher/bin/Release/net8.0/
+        run: |
+          mkdir -p osx-universal2/publish/Refresher.app/Contents/MacOS
+          cp -r osx-arm64/publish/*.app/Contents/ osx-universal2/publish/Refresher.app/Contents/
+          for file in $(find osx-arm64/publish/*.app/Contents/MacOS); do
+            if [[ "$(file $file)" == *"Mach-O"* ]]; then
+                if [[ "$(lipo -archs $file)" != *"x86_64 arm64"* ]]; then
+                  lipo -create osx-arm64/publish/*.app/Contents/MacOS/$(basename $file) osx-x64/publish/*.app/Contents/MacOS/$(basename $file) -output osx-universal2/publish/Refresher.app/Contents/MacOS/$(basename $file);
+                fi;
+            fi;
+          done
+          rm -rfv osx-universal2/publish/Refresher.app/Contents/MacOS/*.app
+          codesign -fs - --deep osx-universal2/publish/Refresher.app
+  
+      - name: 'Tar macOS universal2 build'
+        if: matrix.os == 'macos-latest'
+        working-directory: Refresher/bin/Release/net8.0/osx-universal2/publish/
+        run: tar -czvf ../../../../../../Refresher_for_macOS.tar.gz *.app 
+      - name: 'Tar Linux x64'
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: Refresher/bin/Release/net8.0/linux-x64/publish/
+        run: tar -czvf ../../../../../../Refresher_for_Linux_x64.tar.gz * 
+
       - name: Upload Linux x64 build
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v3.1.3
         with:
             name: "Refresher_for_Linux_x64"
-            path: "Refresher/bin/Release/net8.0/linux-x64/publish/"
+            path: "Refresher_for_Linux_x64.tar.gz"
             if-no-files-found: error
             retention-days: 1
 
@@ -56,11 +92,22 @@ jobs:
             path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/"
             if-no-files-found: error
             retention-days: 1
+
+      - name: Upload macOS universal2 build
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v3.1.1
+        with:
+            name: "Refresher_for_macOS"
+            path: "Refresher_for_macOS.tar.gz"
+            if-no-files-found: error
+            retention-days: 1
   release:
     name: Release Built Artifacts
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: Download artifacts
         id: download
         uses: actions/download-artifact@v3.0.2
@@ -68,16 +115,20 @@ jobs:
       - name: Create zip files
         run: |
             cd ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64
-            zip -r "${{steps.download.outputs.download-path}}/Refresh_for_Windows_x64.zip" .
-            
-            cd ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64
-            zip -r "${{steps.download.outputs.download-path}}/Refresh_for_Linux_x64.zip" .
+            zip -r "${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64.zip" .
+
+            cd ${{steps.download.outputs.download-path}}
+            mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64/*.tar.gz .
+            mv ${{steps.download.outputs.download-path}}/Refresher_for_macOS/*.tar.gz .
         
-      - uses: marvinpinto/action-automatic-releases@latest
+      - uses: ncipollo/release-action@v1.14.0
         name: "Create release"
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           draft: true
-          files: |
+          generateReleaseNotes: true
+          bodyFile: "RELEASE_NOTES.md"
+          artifacts: |
             *.zip
+            *.tar.gz
