@@ -220,7 +220,10 @@ public partial class EbootPatcher : IPatcher
             }
 
             if (tooLong) continue;
-
+            
+            //Seek back to first null byte
+            reader.BaseStream.Position = foundPosition + len;
+            
             //Keep reading until we arent at a null byte
             while (reader.ReadByte() == 0) len++;
 
