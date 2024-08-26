@@ -68,13 +68,37 @@ public class Program
             App = new Application();
             App.UnhandledException += (_, eventArgs) =>
             {
-                SentrySdk.CaptureException((Exception)eventArgs.ExceptionObject);
+                Exception ex = (Exception)eventArgs.ExceptionObject;
+
+                if (ex is DllNotFoundException)
+                {
+                    string msg = $"""
+                                  Refresher is apparently missing critical components that are required to run.
+                                  We believe that this is a problem with your OS. If you find out what exactly this is, please let us know on GitHub or Discord.
+                                  The exception details are printed below:
+
+                                  {ex}
+                                  """;
+
+                    Console.WriteLine(msg); // print the error to stdout
+                    try
+                    {
+                        MessageBox.Show(msg, "Critical Error");
+                    }
+                    catch
+                    {
+                        Console.ReadKey(); // try to pause the command window to show the error if we cant show the messagebox
+                    }
+                    return;
+                }
+                
+                SentrySdk.CaptureException(ex);
                 SentrySdk.Flush();
                 MessageBox.Show($"""
                                  There was an unhandled error in Refresher.
                                  This has been automatically reported to us. The exception details has been displayed for further debugging:
 
-                                 {eventArgs.ExceptionObject}
+                                 {ex}
                                  """,
                     "Critical Error");
                 
