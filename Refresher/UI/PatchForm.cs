@@ -224,6 +224,12 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             MessageBox.Show("AutoDiscover failed, because the server sent invalid data. There might be an outage; please try again in a few moments.");
             return true;
         }
+
+        if (inner is NotSupportedException)
+        {
+            MessageBox.Show($"AutoDiscover failed due to something we couldn't support: {inner.Message}");
+            return true;
+        }
         
         return false;
     }
