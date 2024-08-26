@@ -318,7 +318,15 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             bool found = false;
             
             Program.Log($"Checking all license files in {user}");
-            foreach (string licenseFile in this.Accessor.GetFilesInDirectory(Path.Combine(user, "exdata")))
+            string exdataFolder = Path.Combine(user, "exdata");
+
+            if (!this.Accessor.DirectoryExists(exdataFolder))
+            {
+                Program.Log($"Exdata folder doesn't exist for user {user}, skipping...");
+                continue;
+            }
+            
+            foreach (string licenseFile in this.Accessor.GetFilesInDirectory(exdataFolder))
             {
                 //If the license file does not contain the content ID in its path, skip it
                 if (!licenseFile.Contains(contentId) && !licenseFile.Contains(game.TitleId))
