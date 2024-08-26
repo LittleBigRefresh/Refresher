@@ -343,12 +343,16 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             try
             {
                 this._latestToken.Value.ThrowIfCancellationRequested();
-                
+
                 // Verify the URL
                 List<Message> messages = this.Patcher.Verify(url, patchDigest);
                 this.ResetAfterPatch(messages);
-                
+
                 this._latestToken.Value.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException)
+            {
+                // ignored
             }
             catch (Exception e)
             {
