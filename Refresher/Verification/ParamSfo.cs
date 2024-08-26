@@ -28,7 +28,9 @@ public class ParamSfo
             if (header[i] == headerToMatch[i])
                 continue;
 
-            throw new InvalidDataException("Magic header does not match the expected data from a typical PARAM.SFO file!");
+            string headerToMatchStr = Encoding.ASCII.GetString(header);
+            string headerStr = Encoding.ASCII.GetString(header);
+            throw new InvalidDataException($"Magic header does not match the expected data from a typical PARAM.SFO file! Expected '{headerToMatchStr}', got '{headerStr}'");
         }
 
         this.Version = reader.ReadUInt32();
