@@ -380,7 +380,7 @@ public partial class EbootPatcher : IPatcher
                 return messages; // Early return, since here on out we check for valid patchables.
             }
         }
-        catch (IndexOutOfRangeException)
+        catch (Exception e) when (e is IndexOutOfRangeException or EndOfStreamException)
         {
             messages.Add(new Message(MessageLevel.Error, "The EBOOT wasn't big enough to be valid."));
             return messages;
