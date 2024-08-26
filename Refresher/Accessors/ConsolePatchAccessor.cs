@@ -96,6 +96,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         return BasePath + path;
     }
 
+    public override bool Available => this._client?.IsAuthenticated ?? false;
     public override bool DirectoryExists(string path) => this._client.DirectoryExists(GetPath(path));
 
     public override bool FileExists(string path) => this._client.FileExists(GetPath(path));

@@ -15,6 +15,7 @@ public class EmulatorPatchAccessor : PatchAccessor
         return Path.Join(this.BasePath, path);
     }
 
+    public override bool Available => true;
     public override bool DirectoryExists(string path) => Directory.Exists(this.GetPath(path));
     public override bool FileExists(string path) => File.Exists(this.GetPath(path));
     

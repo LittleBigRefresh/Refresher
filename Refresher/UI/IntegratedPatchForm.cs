@@ -52,7 +52,12 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     
     protected virtual void PathChanged(object? sender, EventArgs ev)
     {
-        Debug.Assert(this.Accessor != null);
+        if (!(this.Accessor?.Available ?? false))
+        {
+            Program.Log("Suppressing path change because accessor is unavailable");
+            return;
+        }
+
         Program.Log($"Path changed, using accessor {this.Accessor.GetType().Name}");
         this.GameDropdown.Items.Clear();
         
@@ -377,7 +382,12 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     }
     
     public override void CompletePatch(object? sender, EventArgs e) {
-        Debug.Assert(this.Accessor != null);
+        if (!(this.Accessor?.Available ?? false))
+        {
+            Program.Log("Suppressing patch completion because accessor is unavailable");
+            MessageBox.Show("Couldn't complete the patch because we couldn't reach the console. Try restarting Refresher.", MessageBoxType.Warning);
+            return;
+        }
         
         string? identifier = string.IsNullOrWhiteSpace(this.OutputField?.Text) ? this.OutputField?.PlaceholderText : this.OutputField?.Text;
         identifier ??= "";

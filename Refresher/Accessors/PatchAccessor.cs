@@ -2,6 +2,8 @@ namespace Refresher.Accessors;
 
 public abstract class PatchAccessor
 {
+    public abstract bool Available { get; }
+    
     public abstract bool DirectoryExists(string path);
     public abstract bool FileExists(string path);
     public abstract IEnumerable<string> GetDirectoriesInDirectory(string path);
