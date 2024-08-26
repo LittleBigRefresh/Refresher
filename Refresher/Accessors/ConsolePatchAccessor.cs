@@ -53,15 +53,18 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         {
             response = client.GetAsync(uri).Result;
         }
-        catch (HttpRequestException e)
+        catch (AggregateException aggregate)
         {
-            Program.Log($"Couldn't fetch the IDPS from the PS3 because we couldn't make the request: {e.Message}", "IDPS", BreadcrumbLevel.Error);
+            aggregate.Handle(HandleIdpsRequestError);
             return null;
         }
         catch (Exception e)
         {
-            Program.Log($"Couldn't fetch the IDPS from the PS3 because of an unknown error: {e}", "IDPS", BreadcrumbLevel.Error);
-            SentrySdk.CaptureException(e);
+            if (!HandleIdpsRequestError(e))
+            {
+                Program.Log($"Couldn't fetch the IDPS from the PS3 because of an unknown error: {e}", "IDPS", BreadcrumbLevel.Error);
+                SentrySdk.CaptureException(e);
+            }
             return null;
         }
         Program.Log($"    {(int)response.StatusCode} {response.StatusCode} (success: {response.IsSuccessStatusCode})", "IDPS");
@@ -74,6 +77,17 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         }
         
         return response;
+    }
+
+    private static bool HandleIdpsRequestError(Exception inner)
+    {
+        if (inner is HttpRequestException httpException)
+        {
+            Program.Log($"Couldn't fetch the IDPS from the PS3 because we couldn't make the request: {httpException.Message}", "IDPS", BreadcrumbLevel.Error);
+            return true;
+        }
+
+        return false;
     }
 
     private static string GetPath(string path)
