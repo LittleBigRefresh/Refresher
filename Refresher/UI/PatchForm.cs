@@ -141,16 +141,20 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     private void AutoDiscover(object? sender, EventArgs arg)
     {
-        if (!Uri.TryCreate(this.UrlField.Text, UriKind.Absolute, out Uri? autodiscoverUri))
+        string url = this.UrlField.Text;
+        if(!url.StartsWith("http"))
+            url = "https://" + url; // prefer HTTPS by default if there's no scheme set.
+        
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? autodiscoverUri))
         {
-            Program.Log($"Invalid URL for autodiscover: {this.UrlField.Text}");
+            Program.Log($"Invalid URL for autodiscover: {url}");
             MessageBox.Show("Server URL could not be parsed correctly. AutoDiscover cannot continue.", "Error", MessageBoxType.Error);
             return;
         }
         
         Debug.Assert(autodiscoverUri != null);
         
-        Program.Log($"Invoking autodiscover on URL '{this.UrlField.Text}'");
+        Program.Log($"Invoking autodiscover on URL '{url}'");
         try
         {
             using HttpClient client = new();
