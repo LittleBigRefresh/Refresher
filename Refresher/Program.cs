@@ -70,6 +70,17 @@ public class Program
             {
                 Exception ex = (Exception)eventArgs.ExceptionObject;
 
+                if (ex is TypeInitializationException { TypeName: "SCEToolSharp.LibSceToolSharp" })
+                {
+                    const string msg = """
+                                       libscetool, a critical component of Refresher, failed to initialize.
+                                       Please ensure you are using the latest version of Refresher, and that you've picked the correct version for your architecture.
+                                       """;
+
+                    MessageBox.Show(msg, "Critical Error");
+                    return;
+                }
+
                 if (ex is DllNotFoundException)
                 {
                     string msg = $"""
