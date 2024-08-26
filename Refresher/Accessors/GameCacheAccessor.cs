@@ -1,3 +1,5 @@
+using Eto.Forms;
+
 namespace Refresher.Accessors;
 
 public static class GameCacheAccessor
@@ -10,7 +12,17 @@ public static class GameCacheAccessor
     {
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         FullCacheDirectory = Path.Combine(appData, ApplicationDirectory, CacheDirectory);
-        Directory.CreateDirectory(FullCacheDirectory);
+
+        try
+        {
+            Directory.CreateDirectory(FullCacheDirectory);
+        }
+        catch (IOException e)
+        {
+            MessageBox.Show($"Couldn't create the directory for the games cache: {e.Message}\n" +
+                            $"This error is rare and I don't know how to cleanly handle this scenario so Refresher is just gonna exit.");
+            Environment.Exit(1); // shrug
+        }
     }
 
     private static string GetIconPath(string titleId) => Path.Combine(FullCacheDirectory, $"{titleId}.png");
