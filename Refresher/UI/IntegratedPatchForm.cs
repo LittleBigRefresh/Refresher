@@ -473,16 +473,25 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         string eboot = Path.Combine(this._usrDir, "EBOOT.BIN");
         string ebootOrig = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG");
 
-        if (!this.Accessor.FileExists(ebootOrig))
+        try
         {
-            MessageBox.Show("Cannot revert EBOOT since the original EBOOT does not exist. We're sorry for your loss.", MessageBoxType.Error);
-            return;
+            if (!this.Accessor.FileExists(ebootOrig))
+            {
+                MessageBox.Show("Cannot revert EBOOT since the original EBOOT does not exist. We're sorry for your loss.", MessageBoxType.Error);
+                return;
+            }
+
+            if (this.Accessor.FileExists(eboot))
+                this.Accessor.RemoveFile(eboot);
+
+            this.Accessor.CopyFile(ebootOrig, eboot);
         }
-        
-        if(this.Accessor.FileExists(eboot))
-            this.Accessor.RemoveFile(eboot);
-        
-        this.Accessor.CopyFile(ebootOrig, eboot);
+        catch (Exception exception) when (exception is IOException or FtpException)
+        {
+            this.HandleFtpError(exception, "reverting the EBOOT");
+            return;   
+        }
+
         MessageBox.Show("The EBOOT has successfully been reverted to its original backup.");
         this.GameChanged(this, EventArgs.Empty);
     }
