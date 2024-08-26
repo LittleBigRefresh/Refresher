@@ -79,7 +79,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             try
             {
                 Stream? iconStream = null;
-                
+
                 if (GameCacheAccessor.IconExistsInCache(game))
                 {
                     iconStream = GameCacheAccessor.GetIconFromCache(game);
@@ -89,7 +89,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     iconStream = this.Accessor.OpenRead(iconPath);
                     GameCacheAccessor.WriteIconToCache(game, iconStream);
                 }
-                
+
                 if (iconStream != null)
                 {
                     item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));
@@ -105,6 +105,14 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             {
                 // Failed to set image for NPEB01899: System.NotSupportedException: No imaging component suitable to complete this operation was found.
                 // ignore for now
+            }
+            catch (FormatException)
+            {
+                // Failed to set image for BLUS31426: System.IO.FileFormatException: The image format is unrecognized.
+                // also ignore for now
+
+                // FileFormatException seems to not exist, but this page mentions it extending FormatException:
+                // https://learn.microsoft.com/en-us/dotnet/api/system.io.fileformatexception
             }
             catch(Exception e)
             {
