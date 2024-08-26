@@ -96,7 +96,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     iconStream.Dispose();
                 }
             }
-            catch (Exception e) when (e is IOException or FtpException)
+            catch (Exception e) when (e is IOException or FtpException or TimeoutException)
             {
                 this.HandleFtpError(e, "downloading a game's icon");
                 return;
@@ -145,7 +145,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                         BreadcrumbLevel.Warning);
                 }
             }
-            catch (Exception e) when (e is IOException or FtpException)
+            catch (Exception e) when (e is IOException or FtpException or TimeoutException)
             {
                 this.HandleFtpError(e, "downloading a game's PARAM.SFO file");
                 return;
@@ -221,7 +221,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 }
             }
         }
-        catch (Exception e) when (e is IOException or FtpException)
+        catch (Exception e) when (e is IOException or FtpException or TimeoutException)
         {
             this.HandleFtpError(e, "finding the EBOOT to use");
             return;
@@ -233,7 +233,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         {
             downloadedFile = this.Accessor.DownloadFile(ebootPath);
         }
-        catch (Exception e) when (e is IOException or FtpException)
+        catch (Exception e) when (e is IOException or FtpException or TimeoutException)
         {
             this.HandleFtpError(e, "downloading the game's EBOOT");
             return;
@@ -255,7 +255,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 this.DownloadLicenseFile(downloadedFile, game);
             }
         }
-        catch (Exception e) when (e is IOException or FtpException)
+        catch (Exception e) when (e is IOException or FtpException or TimeoutException)
         {
             this.HandleFtpError(e, "downloading the game's license file");
             return;
@@ -279,7 +279,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 {
                     this.DownloadLicenseFile(downloadedFile, game);
                 }
-                catch (Exception e) when (e is IOException or FtpException)
+                catch (Exception e) when (e is IOException or FtpException or TimeoutException)
                 {
                     this.HandleFtpError(e, "downloading the game's license file (with Hub workaround)");
                     return;
