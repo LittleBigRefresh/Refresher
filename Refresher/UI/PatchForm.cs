@@ -218,6 +218,12 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             MessageBox.Show($"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
             return true;
         }
+
+        if (inner is JsonReaderException)
+        {
+            MessageBox.Show("AutoDiscover failed, because the server sent invalid data. There might be an outage; please try again in a few moments.");
+            return true;
+        }
         
         return false;
     }
