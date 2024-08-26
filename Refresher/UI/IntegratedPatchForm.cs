@@ -45,7 +45,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         this.InitializePatcher();
     }
     
-    protected void HandleFtpError(FtpException exception, string action)
+    protected void HandleFtpError(Exception exception, string action)
     {
         this.FailVerify($"An error occurred while {action}: {exception.Message}\n\nTry again in a couple minutes to let things 'cool off'. Sometimes the PS3's kernel just likes to throw a fit.");
     }
@@ -91,7 +91,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     iconStream.Dispose();
                 }
             }
-            catch (FtpException e)
+            catch (Exception e) when (e is IOException or FtpException)
             {
                 this.HandleFtpError(e, "downloading a game's icon");
                 return;
@@ -140,7 +140,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                         BreadcrumbLevel.Warning);
                 }
             }
-            catch (FtpException e)
+            catch (Exception e) when (e is IOException or FtpException)
             {
                 this.HandleFtpError(e, "downloading a game's PARAM.SFO file");
                 return;
@@ -216,7 +216,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 }
             }
         }
-        catch (FtpException e)
+        catch (Exception e) when (e is IOException or FtpException)
         {
             this.HandleFtpError(e, "finding the EBOOT to use");
             return;
@@ -228,7 +228,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         {
             downloadedFile = this.Accessor.DownloadFile(ebootPath);
         }
-        catch (FtpException e)
+        catch (Exception e) when (e is IOException or FtpException)
         {
             this.HandleFtpError(e, "downloading the game's EBOOT");
             return;
@@ -250,7 +250,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 this.DownloadLicenseFile(downloadedFile, game);
             }
         }
-        catch (FtpException e)
+        catch (Exception e) when (e is IOException or FtpException)
         {
             this.HandleFtpError(e, "downloading the game's license file");
             return;
@@ -274,7 +274,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 {
                     this.DownloadLicenseFile(downloadedFile, game);
                 }
-                catch (FtpException e)
+                catch (Exception e) when (e is IOException or FtpException)
                 {
                     this.HandleFtpError(e, "downloading the game's license file (with Hub workaround)");
                     return;
@@ -412,7 +412,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 if (!this.Accessor.FileExists(backup))
                     this.Accessor.CopyFile(destination, backup);
             }
-            catch (FtpException exception)
+            catch (Exception exception) when (exception is IOException or FtpException)
             {
                 this.HandleFtpError(exception, "making a backup of the EBOOT");
                 return;
@@ -424,7 +424,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             if (this.Accessor.FileExists(destination))
                 this.Accessor.RemoveFile(destination);
         }
-        catch (FtpException exception)
+        catch (Exception exception) when (exception is IOException or FtpException)
         {
             this.HandleFtpError(exception, "removing the original EBOOT");
             return;
@@ -437,7 +437,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         {
             this.Accessor.UploadFile(fileToUpload, destination);
         }
-        catch (FtpException exception)
+        catch (Exception exception) when (exception is IOException or FtpException)
         {
             this.HandleFtpError(exception, "applying the EBOOT patch");
             return;
