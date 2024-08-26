@@ -368,14 +368,22 @@ public partial class EbootPatcher : IPatcher
         //Try to create an absolute URI, if it fails, its not a valid URI
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
             messages.Add(new Message(MessageLevel.Error, "URI is not valid"));
-        
-        Class output = ELFReader.CheckELFType(this.Stream);
-        
-        Program.Log($"ELF class: {output}", "Verify");
-        if (output == Class.NotELF)
+
+        try
         {
-            messages.Add(new Message(MessageLevel.Error, "File is not a valid ELF file."));
-            return messages; // Early return, since here on out we check for valid patchables.
+            Class output = ELFReader.CheckELFType(this.Stream);
+
+            Program.Log($"ELF class: {output}", "Verify");
+            if (output == Class.NotELF)
+            {
+                messages.Add(new Message(MessageLevel.Error, "EBOOT is not a valid ELF file."));
+                return messages; // Early return, since here on out we check for valid patchables.
+            }
+        }
+        catch (IndexOutOfRangeException)
+        {
+            messages.Add(new Message(MessageLevel.Error, "The EBOOT wasn't big enough to be valid."));
+            return messages;
         }
 
         // If there are no Url or Host targets, we cant patch
