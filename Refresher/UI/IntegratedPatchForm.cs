@@ -18,7 +18,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     protected readonly TextBox? OutputField;
     
     private string _tempFile;
-    private string _usrDir;
+    private string? _usrDir;
 
     protected PatchAccessor? Accessor;
     
@@ -418,7 +418,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         }
 
         string destinationFile = this.ShouldReplaceExecutable ? "EBOOT.BIN" : this.NeedsResign ? $"EBOOT.{identifier}.BIN" : $"EBOOT.{identifier}.elf";
-        string destination = Path.Combine(this._usrDir, destinationFile);
+        string destination = Path.Combine(this._usrDir!, destinationFile);
 
         // if we're replacing the executable, back it up to EBOOT.BIN.ORIG before we do so
         if (this.ShouldReplaceExecutable)
@@ -479,6 +479,11 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     protected virtual void RevertToOriginalExecutable(object? sender, EventArgs e)
     {
         if (this.Accessor == null) return;
+        if (this._usrDir == null)
+        {
+            MessageBox.Show("Please select a game before trying to revert the EBOOT.", "Game not selected", MessageBoxType.Error);
+            return;
+        }
 
         string eboot = Path.Combine(this._usrDir, "EBOOT.BIN");
         string ebootOrig = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG");
