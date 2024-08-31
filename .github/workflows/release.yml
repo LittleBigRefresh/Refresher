@@ -103,6 +103,24 @@ jobs:
             if-no-files-found: error
             retention-days: 1
 
+      - name: Upload Linux ARM build
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v3.1.3
+        with:
+            name: "Refresher_for_Linux_arm"
+            path: "Refresher_for_Linux_arm.tar.gz"
+            if-no-files-found: error
+            retention-days: 1
+
+      - name: Upload Linux ARM64 build
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v3.1.3
+        with:
+            name: "Refresher_for_Linux_arm64"
+            path: "Refresher_for_Linux_arm64.tar.gz"
+            if-no-files-found: error
+            retention-days: 1
+
       - name: Upload Windows x64 build
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v3.1.3
