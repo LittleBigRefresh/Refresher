@@ -8,6 +8,7 @@ public class ExamplePipeline : Pipeline
     public override string Name => "Example Pipeline";
     protected override List<Type> StepTypes { get; } =
     [
+        typeof(ExampleInputStep),
         typeof(ExampleStep),
         typeof(ExampleStep),
         typeof(ExampleStep),

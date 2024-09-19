@@ -1,6 +1,5 @@
+using System.Collections.Frozen;
 using System.Diagnostics;
-using System.Reflection;
-using NotEnoughLogs;
 
 using GlobalState = Refresher.Core.State;
 
@@ -10,6 +9,9 @@ public abstract class Pipeline
 {
     public abstract string Id { get; }
     public abstract string Name { get; }
+    
+    public Dictionary<string, string> Inputs = [];
+    public FrozenSet<StepInput> RequiredInputs { get; private set; }
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     
@@ -33,13 +35,20 @@ public abstract class Pipeline
 
     public void Initialize()
     {
+        List<StepInput> requiredInputs = [];
+        
         this._steps = new List<Step>(this.StepTypes.Count);
         foreach (Type type in this.StepTypes)
         {
             Debug.Assert(type.IsAssignableTo(typeof(Step)));
+
             Step step = (Step)Activator.CreateInstance(type, this)!;
+
             this._steps.Add(step);
+            requiredInputs.AddRange(step.Inputs);
         }
+        
+        this.RequiredInputs = requiredInputs.DistinctBy(i => i.Id).ToFrozenSet();
     }
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
@@ -48,6 +57,12 @@ public abstract class Pipeline
         {
             this.State = PipelineState.Error;
             throw new InvalidOperationException("Pipeline must be restarted before it can be executed again.");
+        }
+        
+        foreach (StepInput input in this.RequiredInputs)
+        {
+            if(!this.Inputs.ContainsKey(input.Id))
+                throw new InvalidOperationException($"Input {input.Id} was not provided to the pipeline before execution.");
         }
 
         this.State = PipelineState.Running;

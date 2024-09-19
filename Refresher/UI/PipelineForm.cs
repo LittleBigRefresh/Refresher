@@ -13,6 +13,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private readonly Button _button;
     private readonly ProgressBar _progressBar;
     private readonly ListBox _messages;
+    
+    private readonly TableLayout _formLayout;
 
     private CancellationTokenSource? _cts;
     
@@ -21,7 +23,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this.Content = new Splitter
         {
             Orientation = Orientation.Vertical,
-            Panel1 = new Label { Text = "test" },
+            Panel1 = this._formLayout = new TableLayout
+            {
+                Spacing = new Size(5, 5),
+                Padding = new Padding(0, 0, 0, 10),
+            },
             Panel2 = new StackLayout([
                 this._messages = new ListBox { Height = 200 },
                 this._button = new Button(this.OnButtonClick) { Text = "Execute" },
@@ -64,9 +70,14 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
         this._pipeline = new TPipeline();
         this._pipeline.Initialize();
+        
+        this._formLayout.Rows.Clear();
+        foreach (StepInput input in this._pipeline.RequiredInputs)
+        {
+            this._formLayout.Rows.Add(AddField<TextBox>(input));
+        }
 
         this.UpdateSubtitle(this._pipeline.Name);
-
         this.UpdateFormState();
     }
 
@@ -95,6 +106,14 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             return;
         }
         
+        foreach (TableRow row in this._formLayout.Rows)
+        {
+            string id = row.Cells[0].Control.ToolTip;
+            string value = ((TextControl)row.Cells[1].Control).Text;
+            
+            this._pipeline.Inputs.Add(id, value);
+        }
+        
         Task.Run(async () =>
         {
             try
@@ -103,11 +122,24 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex}");
+                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex.Message}");
             }
         }, this._cts?.Token ?? default);
         
         this.UpdateFormState();
+    }
+    
+    private static TableRow AddField<TControl>(StepInput input) where TControl : Control, new()
+    {
+        Label label = new()
+        {
+            Text = input.Name + ':',
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = input.Id,
+        };
+
+        Control control = new TControl();
+        return new TableRow(label, control);
     }
     
     private void OnLog(RefresherLog log)
