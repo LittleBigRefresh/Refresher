@@ -10,8 +10,6 @@ using Refresher.Core;
 using Refresher.Core.Patching;
 using Refresher.Core.Verification;
 using Refresher.Core.Verification.Autodiscover;
-using Refresher.Core.Patching;
-using Sentry;
 using Task = System.Threading.Tasks.Task;
 
 namespace Refresher.UI;

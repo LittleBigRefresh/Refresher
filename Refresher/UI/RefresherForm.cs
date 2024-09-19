@@ -13,14 +13,10 @@ public abstract class RefresherForm : Form
 {
     protected RefresherForm(string subtitle, Size size, bool padBottom = true)
     {
-        this.Title = "Refresher";
-        if (!string.IsNullOrWhiteSpace(subtitle))
-        {
-            this.Title += " - " + subtitle;
-        }
+        UpdateSubtitle(subtitle);
 
         this.ClientSize = size;
-        this.AutoSize = true;
+        // this.AutoSize = true;
         this.Padding = new Padding(10, 10, 10, padBottom ? 10 : 0);
         
         this.Icon = Icon.FromResource("refresher.ico");
@@ -44,11 +40,20 @@ public abstract class RefresherForm : Form
         if (close) this.Visible = false;
     }
 
-    public class RefresherMenuBar : MenuBar
+    protected void UpdateSubtitle(string subtitle)
+    {
+        this.Title = "Refresher";
+        if (!string.IsNullOrWhiteSpace(subtitle))
+        {
+            this.Title += " - " + subtitle;
+        }
+    }
+
+    private class RefresherMenuBar : MenuBar
     {
         public RefresherMenuBar() {
-            Style = "MenuBar";
-            IncludeSystemItems = MenuBarSystemItems.All;
+            this.Style = "MenuBar";
+            this.IncludeSystemItems = MenuBarSystemItems.All;
         }
     }
 }

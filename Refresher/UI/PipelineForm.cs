@@ -1,5 +1,6 @@
 using Eto.Drawing;
 using Eto.Forms;
+using Refresher.Core;
 using Refresher.Core.Pipelines;
 
 namespace Refresher.UI;
@@ -7,26 +8,67 @@ namespace Refresher.UI;
 public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline, new()
 {
     private TPipeline? _pipeline;
-    
-    private readonly Label _stateLabel;
+
+    private readonly Button _button;
     private readonly ProgressBar _progressBar;
+    private readonly ListBox _messages;
+
+    private CancellationTokenSource? _cts;
     
-    public PipelineForm() : base(typeof(TPipeline).Name, new Size(700, 1), false)
+    public PipelineForm() : base(typeof(TPipeline).Name, new Size(700, -1), false)
     {
-        this.Content = new StackLayout([
-            this._stateLabel = new Label(),
-            new Button(this.ExecutePipeline) { Text = "Execute" },
-            this._progressBar = new ProgressBar(),
-        ])
+        this.Content = new Splitter
         {
-            Padding = new Padding(0, 10, 0, 0),
-            Spacing = 5,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            VerticalContentAlignment = VerticalAlignment.Bottom,
+            Orientation = Orientation.Vertical,
+            Panel1 = new Label { Text = "test" },
+            Panel2 = new StackLayout([
+                this._messages = new ListBox { Height = 200 },
+                this._button = new Button(this.OnButtonClick) { Text = "Execute" },
+                this._progressBar = new ProgressBar(),
+            ])
+            {
+                Padding = new Padding(0, 10, 0, 0),
+                Spacing = 5,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Bottom,
+            },
         };
         
         this.InitializePipeline();
+        this.InitializeFormStateUpdater();
+    }
 
+    private void UpdateFormState()
+    {
+        this._progressBar.Value = (int)((this._pipeline?.Progress ?? 0) * 100);
+        this._progressBar.Enabled = this._pipeline?.State == PipelineState.Running;
+        this._progressBar.ToolTip = this._pipeline?.State.ToString() ?? "Uninitialized";
+
+        this._button.Text = this._pipeline?.State switch
+        {
+            PipelineState.NotStarted => "Execute",
+            PipelineState.Running => "Cancel",
+            PipelineState.Finished => "Retry",
+            PipelineState.Cancelled => "Execute",
+            PipelineState.Error => "Retry",
+            _ => throw new ArgumentOutOfRangeException(),
+        };
+    }
+
+    private void InitializePipeline()
+    {
+        this._cts = new CancellationTokenSource();
+
+        this._pipeline = new TPipeline();
+        this._pipeline.Initialize();
+
+        this.UpdateSubtitle(this._pipeline.Name);
+
+        this.UpdateFormState();
+    }
+
+    private void InitializeFormStateUpdater()
+    {
         Thread progressThread = new(() =>
         {
             while (!this.IsDisposed && !Application.Instance.IsDisposed)
@@ -39,30 +81,28 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         progressThread.Start();
     }
 
-    private void UpdateFormState()
-    {
-        this._progressBar.Value = (int)((this._pipeline?.Progress ?? 0) * 100);
-        this._progressBar.Enabled = this._pipeline?.State == PipelineState.Running;
-        this._stateLabel.Text = this._pipeline?.State.ToString() ?? "Uninitialized";
-    }
-
-    private void InitializePipeline()
-    {
-        this._pipeline = new TPipeline();
-        this._pipeline.Initialize();
-        
-        this.UpdateFormState();
-    }
-
-    private void ExecutePipeline(object? sender, EventArgs e)
+    private void OnButtonClick(object? sender, EventArgs e)
     {
         if (this._pipeline == null)
             return;
+
+        if (this._pipeline.State == PipelineState.Running)
+        {
+            this._cts?.Cancel();
+            return;
+        }
         
         Task.Run(async () =>
         {
-            await this._pipeline.ExecuteAsync();
-        });
+            try
+            {
+                await this._pipeline.ExecuteAsync(this._cts?.Token ?? default);
+            }
+            catch (Exception ex)
+            {
+                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex}");
+            }
+        }, this._cts?.Token ?? default);
         
         this.UpdateFormState();
     }

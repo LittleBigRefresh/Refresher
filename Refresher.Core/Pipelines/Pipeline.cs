@@ -64,13 +64,14 @@ public abstract class Pipeline
                 await step.ExecuteAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
             }
-            catch (Exception ex)
+            catch (TaskCanceledException)
             {
-                if (ex is OperationCanceledException)
-                    this.State = PipelineState.Cancelled;
-                else
-                    this.State = PipelineState.Error;
-
+                this.State = PipelineState.Cancelled;
+                return;
+            }
+            catch (Exception)
+            {
+                this.State = PipelineState.Error;
                 throw;
             }
 
