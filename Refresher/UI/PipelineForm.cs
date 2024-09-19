@@ -1,6 +1,7 @@
 using Eto.Drawing;
 using Eto.Forms;
 using Refresher.Core;
+using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
 
 namespace Refresher.UI;
@@ -36,6 +37,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         this.InitializePipeline();
         this.InitializeFormStateUpdater();
+        
+        State.Log += this.OnLog;
     }
 
     private void UpdateFormState()
@@ -105,5 +108,10 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         }, this._cts?.Token ?? default);
         
         this.UpdateFormState();
+    }
+    
+    private void OnLog(RefresherLog log)
+    {
+        this._messages.Items.Add($"[{log.Level}] [{log.Category}] {log.Content}");
     }
 }
