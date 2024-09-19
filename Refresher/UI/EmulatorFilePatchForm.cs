@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Eto;
 using Eto.Forms;
-using Refresher.Accessors;
+using Refresher.Core.Accessors;
 using Refresher.UI.Items;
 
 namespace Refresher.UI;

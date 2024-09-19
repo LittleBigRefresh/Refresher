@@ -1,7 +1,8 @@
 using System.IO.MemoryMappedFiles;
 using Eto;
 using Eto.Forms;
-using Refresher.Patching;
+using Refresher.Core.Patching;
+using Refresher.Core.Patching;
 
 namespace Refresher.UI;
 

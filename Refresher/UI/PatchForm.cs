@@ -1,13 +1,16 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using Eto.Drawing;
 using Eto.Forms;
-using Newtonsoft.Json;
-using Refresher.Patching;
-using Refresher.Verification;
-using Refresher.Verification.Autodiscover;
+using Refresher.Core;
+using Refresher.Core.Patching;
+using Refresher.Core.Verification;
+using Refresher.Core.Verification.Autodiscover;
+using Refresher.Core.Patching;
 using Sentry;
 using Task = System.Threading.Tasks.Task;
 
@@ -57,7 +60,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             {
                 this._messages,
                 new Button(this.Guide) { Text = "View guide" },
-                new Button(this.AutoDiscover) { Text = "AutoDiscover" },
+                new Button(this.InvokeAutoDiscover) { Text = "AutoDiscover" },
                 this._patchButton,
             })
             {
@@ -130,7 +133,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         }
         catch (Exception e)
         {
-            Program.Log(e.ToString(), "OpenUrl", BreadcrumbLevel.Error);
+            State.Logger.LogError(OSIntegration, e.ToString());
             MessageBox.Show("We couldn't open your browser due to an error.\n" +
                             $"You can use this link instead: {url}\n\n" +
                             $"Exception details: {e.GetType().Name} {e.Message}",
@@ -139,7 +142,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         // based off of https://stackoverflow.com/a/43232486
     }
 
-    private void AutoDiscover(object? sender, EventArgs arg)
+    private void InvokeAutoDiscover(object? sender, EventArgs arg)
     {
         string url = this.UrlField.Text;
         if(!url.StartsWith("http"))
@@ -147,14 +150,14 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? autodiscoverUri))
         {
-            Program.Log($"Invalid URL for autodiscover: {url}");
+            State.Logger.LogWarning(AutoDiscover, $"Invalid URL for autodiscover: {url}");
             MessageBox.Show("Server URL could not be parsed correctly. AutoDiscover cannot continue.", "Error", MessageBoxType.Error);
             return;
         }
         
         Debug.Assert(autodiscoverUri != null);
         
-        Program.Log($"Invoking autodiscover on URL '{url}'");
+        State.Logger.LogInfo(AutoDiscover, $"Invoking autodiscover on URL '{url}'");
         try
         {
             using HttpClient client = new();
@@ -163,14 +166,8 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             
             HttpResponseMessage response = client.GetAsync("/autodiscover").Result;
             response.EnsureSuccessStatusCode();
-            
-            Stream stream = response.Content.ReadAsStream();
-            
-            JsonSerializer serializer = new();
-            using StreamReader streamReader = new(stream);
-            using JsonTextReader jsonReader = new(streamReader);
-            
-            AutodiscoverResponse? autodiscover = serializer.Deserialize<AutodiscoverResponse>(jsonReader);
+
+            AutodiscoverResponse? autodiscover = response.Content.ReadFromJsonAsync<AutodiscoverResponse>().Result;
             if (autodiscover == null) throw new InvalidOperationException("autoresponse was null");
             
             string text = $"Successfully found a '{autodiscover.ServerBrand}' server at the given URL!\n\n" +
@@ -219,7 +216,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             return true;
         }
 
-        if (inner is JsonReaderException)
+        if (inner is JsonException)
         {
             MessageBox.Show("AutoDiscover failed, because the server sent invalid data. There might be an outage; please try again in a few moments.");
             return true;
@@ -272,7 +269,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             switch (result)
             {
                 case DialogResult.Yes:
-                    this.AutoDiscover(this, EventArgs.Empty);
+                    this.InvokeAutoDiscover(this, EventArgs.Empty);
                     break;
                 case DialogResult.No:
                     MessageBox.Show("Okay, AutoDiscover won't be used. If you have issues with this patch, try using it next time.\n" +
@@ -303,7 +300,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         if(clear) this._messages.Items.Clear();
         this._messages.Items.Add(reason);
 
-        Program.Log(reason, "Verification Failure", level: BreadcrumbLevel.Error);
+        State.Logger.LogError(Verify, reason);
         MessageBox.Show(reason, "Verification Failed", MessageBoxType.Error);
         this.Reset();
         
@@ -313,13 +310,13 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     protected void LogMessage(string message)
     {
-        Program.Log(message, "Log");
+        State.Logger.LogInfo(PatchForm, message);
         this._messages.Items.Add(message);
     }
 
     protected void Reverify(object? sender, EventArgs args) 
     {
-        Program.Log($"Reverify triggered for patcher {this.Patcher?.GetType().Name}");
+        State.Logger.LogDebug(PatchForm, $"Reverify triggered for patcher {this.Patcher?.GetType().Name}");
         if (this.Patcher == null) return;
 
         // Cancel the current task, and wait for it to complete

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Refresher.Verification;
+namespace Refresher.Core.Verification;
 
 // TODO: Move to separate repository with its own nuget package
 // Maybe combine with NPTicket?

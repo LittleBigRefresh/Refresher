@@ -1,8 +1,9 @@
 using System.Net.Sockets;
 using System.Reflection;
 using Eto.Forms;
-using Refresher.Accessors;
-using Refresher.Exceptions;
+using Refresher.Core;
+using Refresher.Core.Accessors;
+using Refresher.Core.Exceptions;
 
 namespace Refresher.UI;
 
@@ -54,7 +55,7 @@ public class ConsolePatchForm : IntegratedPatchForm
     private bool InitializePatchAccessor()
     {
         this.DisposePatchAccessor();
-        Program.Log("Making a new patch accessor", "Accessor");
+        State.Logger.LogTrace(LogType.PatchAccessor, "Making a new patch accessor");
         try
         {
             this.Accessor = new ConsolePatchAccessor(this._remoteAddress.Text.Trim());
@@ -85,14 +86,14 @@ public class ConsolePatchForm : IntegratedPatchForm
 
     private void DisposePatchAccessor()
     {
-        Program.Log("Disposing patch accessor", "Accessor");
+        State.Logger.LogTrace(LogType.PatchAccessor, "Disposing patch accessor");
         if (this.Accessor is IDisposable disposable)
             disposable.Dispose();
     }
 
     protected override IEnumerable<TableRow> AddFields()
     {
-        return new[] { AddField("PS3's IP", out this._remoteAddress, new Button(this.PathChanged) { Text = "Connect" }) };
+        return [AddField("PS3's IP", out this._remoteAddress, new Button(this.PathChanged) { Text = "Connect" })];
     }
     
     public override void Guide(object? sender, EventArgs e)

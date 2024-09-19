@@ -1,6 +1,4 @@
-using Eto.Forms;
-
-namespace Refresher.Accessors;
+namespace Refresher.Core.Accessors;
 
 public static class GameCacheAccessor
 {
@@ -19,8 +17,9 @@ public static class GameCacheAccessor
         }
         catch (IOException e)
         {
-            MessageBox.Show($"Couldn't create the directory for the games cache: {e.Message}\n" +
-                            $"This error is rare and I don't know how to cleanly handle this scenario so Refresher is just gonna exit.");
+            // FIXME: no native MessageBox in Refresher.Core
+            // MessageBox.Show($"Couldn't create the directory for the games cache: {e.Message}\n" +
+            //                 $"This error is rare and I don't know how to cleanly handle this scenario so Refresher is just gonna exit.");
             Environment.Exit(1); // shrug
         }
     }

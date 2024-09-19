@@ -2,6 +2,7 @@ using Eto.Drawing;
 using Eto.Forms;
 using Sentry;
 using System.Runtime.InteropServices;
+using Refresher.Core;
 
 namespace Refresher.UI;
 
@@ -38,7 +39,7 @@ public abstract class RefresherForm : Form
         TForm form = new();
         form.Show();
         
-        Program.Log($"Showing child form {form.GetType().Name} '{form.Title}'");
+        State.Logger.LogDebug(OSIntegration, $"Showing child form {form.GetType().Name} '{form.Title}'");
 
         if (close) this.Visible = false;
     }

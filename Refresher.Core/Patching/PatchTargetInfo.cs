@@ -1,4 +1,4 @@
-namespace Refresher.Patching;
+namespace Refresher.Core.Patching;
 
 public struct PatchTargetInfo
 {

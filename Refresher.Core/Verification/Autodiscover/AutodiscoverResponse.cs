@@ -1,6 +1,6 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
-namespace Refresher.Verification.Autodiscover;
+namespace Refresher.Core.Verification.Autodiscover;
 
 #nullable disable
 
@@ -8,15 +8,15 @@ public class AutodiscoverResponse
 {
     private const int SupportedVersion = 2;
 
-    [JsonProperty("version")]
+    [JsonPropertyName("version")]
     public int Version { get; set; }
 
-    [JsonProperty("serverBrand")]
+    [JsonPropertyName("serverBrand")]
     public string ServerBrand { get; set; }
         
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     public string Url { get; set; }
 
-    [JsonProperty("usesCustomDigestKey")]
+    [JsonPropertyName("usesCustomDigestKey")]
     public bool? UsesCustomDigestKey { get; set; } = false; // We mark as nullable, as this was added in version 2
 }

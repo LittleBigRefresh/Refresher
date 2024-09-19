@@ -1,5 +1,7 @@
 using Eto.Forms;
-using Refresher.Patching;
+using Refresher.Core;
+using Refresher.Core.Patching;
+using Refresher.Core.Patching;
 
 namespace Refresher.UI;
 
@@ -31,7 +33,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
 
             try
             {
-                Program.Log($"Checking drive {drive.Name}...");
+                State.Logger.LogInfo(PSP, $"Checking drive {drive.Name}...");
 
                 // Match for all directories called PSP and PSPEMU
                 // NOTE: we do this because the PSP filesystem is case insensitive, and the .NET STL is case sensitive on linux
@@ -50,7 +52,7 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
                 // If theres no PSP folder or PSPEMU folder,
                 if (!possiblePspMatches.Any() && !possiblePsVitaMatches.Any())
                 {
-                    Program.Log($"Drive {drive.Name} has no PSP/PSPEMU folder, ignoring...");
+                    State.Logger.LogInfo(PSP, $"Drive {drive.Name} has no PSP/PSPEMU folder, ignoring...");
                     
                     //Skip this drive
                     continue;
@@ -61,10 +63,8 @@ public class PSPSetupForm : PatchForm<PSPPatcher>
             }
             catch(Exception ex)
             {
-                Program.Log("Checking drive failed due to exception, see below");
-                Program.Log(ex.ToString());
-                
-                //If we fail to check dir info, its probably not mounted in a safe/accessible way
+                State.Logger.LogError(PSP, $"Couldn't check the drive due to an exception: {ex}");
+                // If we fail to check dir info, it's probably not mounted in a safe/accessible way
                 continue;
             }
             

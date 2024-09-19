@@ -42,18 +42,18 @@
 
     <ItemGroup>
       <PackageReference Include="CommandLineParser" Version="2.9.1" />
-      <PackageReference Include="ELFSharp" Version="2.17.3" />
       <PackageReference Include="Eto.Forms" Version="2.8.3" />
       <!-- This could be IsLinux, but GTK is available on basically everything, so might as well use it as the true default -->
       <PackageReference Condition="!$(IsWindows) And !$(IsOSX)" Include="Eto.Platform.Gtk" Version="2.8.3" />
       <PackageReference Condition="$(IsOSX)" Include="Eto.Platform.Mac64" Version="2.8.3" />
       <PackageReference Condition="$(IsWindows)" Include="Eto.Platform.Wpf" Version="2.8.3" />
       <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
-      <PackageReference Include="FluentFTP" Version="49.0.2" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-      <PackageReference Include="SCEToolSharp" Version="1.2.2" />
       <EmbeddedResource Include="Resources\Allefresher.prx" />
       <PackageReference Include="Sentry" Version="4.4.0" />
       <Content Include="Resources/refresher.icns" Link="refresher.icns" Condition="$(IsOSX)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Refresher.Core\Refresher.Core.csproj" />
     </ItemGroup>
 </Project>
