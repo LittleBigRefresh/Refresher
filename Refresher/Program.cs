@@ -3,6 +3,7 @@ using System.Reflection;
 using CommandLine;
 using Eto.Forms;
 using Refresher.CLI;
+using Refresher.Core;
 using Refresher.UI;
 
 namespace Refresher;
@@ -57,7 +58,7 @@ public class Program
         
         if (args.Length > 0)
         {
-            Log("Launching in CLI mode");
+            State.Logger.LogInfo(OSIntegration, "Launching in CLI mode");
             
             AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
             {
@@ -70,7 +71,7 @@ public class Program
         }
         else
         {
-            Log("Launching in GUI mode");
+            State.Logger.LogInfo(OSIntegration, "Launching in GUI mode");
             try
             {
                 App = new Application();

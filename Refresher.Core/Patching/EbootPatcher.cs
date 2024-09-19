@@ -7,9 +7,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ELFSharp.ELF;
 using ELFSharp.ELF.Segments;
-using Refresher.Verification;
+using Refresher.Core.Verification;
 
-namespace Refresher.Patching;
+namespace Refresher.Core.Patching;
 
 public partial class EbootPatcher : IPatcher
 {
@@ -141,7 +141,7 @@ public partial class EbootPatcher : IPatcher
         FindLbpkDomains(reader, lbpkPositions, foundItems);
 
         long end = Stopwatch.GetTimestamp();
-        Program.Log($"Detecting patchables took {(double)(end - start) / (double)Stopwatch.Frequency} seconds!");
+        State.Logger.LogDebug(Patcher, $"Detecting patchables took {(end - start) / (double)Stopwatch.Frequency} seconds!");
         return foundItems;
     }
     
@@ -245,7 +245,7 @@ public partial class EbootPatcher : IPatcher
 
             if (UrlMatch().Matches(str).Count != 0)
             {
-                Program.Log($"Found URL at offset {foundPosition}: '{str}'");
+                State.Logger.LogTrace(Patcher, $"Found URL at offset {foundPosition}: '{str}'");
                 foundItems.Add(new PatchTargetInfo
                 {
                     Length = len,
@@ -344,7 +344,7 @@ public partial class EbootPatcher : IPatcher
         
         string ppuHash = BitConverter.ToString(hash.Hash!).Replace("-", "").ToLower();
         
-        Program.Log($"PPU hash: PPU-{ppuHash}", "PPU", BreadcrumbLevel.Debug);
+        State.Logger.LogDebug(PPU, $"PPU hash: PPU-{ppuHash}");
         return ppuHash;
     }
 
@@ -359,7 +359,7 @@ public partial class EbootPatcher : IPatcher
 
         this.Stream.Position = 0;
 
-        Program.Log($"URL: {url}", "Verify");
+        State.Logger.LogInfo(LogType.Verify, $"Verifying EBOOT against URL: {url}");
         // Check url
         if (url.EndsWith('/'))
             messages.Add(new Message(MessageLevel.Error,
@@ -373,7 +373,7 @@ public partial class EbootPatcher : IPatcher
         {
             Class output = ELFReader.CheckELFType(this.Stream);
 
-            Program.Log($"ELF class: {output}", "Verify");
+            State.Logger.LogDebug(LogType.Verify, $"ELF class: {output}");
             if (output == Class.NotELF)
             {
                 messages.Add(new Message(MessageLevel.Error, "EBOOT is not a valid ELF file."));

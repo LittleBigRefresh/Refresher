@@ -3,10 +3,12 @@ using System.Diagnostics.CodeAnalysis;
 using Eto.Drawing;
 using Eto.Forms;
 using FluentFTP.Exceptions;
-using Refresher.Accessors;
-using Refresher.Patching;
+using Refresher.Core;
+using Refresher.Core.Accessors;
+using Refresher.Core.Patching;
+using Refresher.Core.Verification;
+using Refresher.Core.Patching;
 using Refresher.UI.Items;
-using Refresher.Verification;
 using SCEToolSharp;
 using Sentry;
 
@@ -54,11 +56,11 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     {
         if (!(this.Accessor?.Available ?? false))
         {
-            Program.Log("Suppressing path change because accessor is unavailable");
+            State.Logger.LogWarning(LogType.IntegratedPatchForm, "Suppressing path change because accessor is unavailable");
             return;
         }
 
-        Program.Log($"Path changed, using accessor {this.Accessor.GetType().Name}");
+        State.Logger.LogDebug(LogType.IntegratedPatchForm, $"Path changed, using accessor {this.Accessor.GetType().Name}");
         this.GameDropdown.Items.Clear();
         
         if (!this.Accessor.DirectoryExists("game")) return;
@@ -116,7 +118,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             }
             catch(Exception e)
             {
-                Program.Log($"Failed to set image for {game}: {e}", level: BreadcrumbLevel.Warning);
+                State.Logger.LogWarning(InfoRetrieval, $"Failed to set image for {game}: {e}");
                 SentrySdk.CaptureException(e);
             }
 
@@ -138,19 +140,16 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                     }
                     else
                     {
-                        Program.Log($"Could not find APP_VER for {game}. Defaulting to 01.00.", "SFO",
-                            BreadcrumbLevel.Warning);
+                        State.Logger.LogWarning(InfoRetrieval, $"Could not find APP_VER for {game}. Defaulting to 01.00.");
                     }
                     
                     item.Text = $"{sfo.Table["TITLE"]} [{game} {item.Version}]";
                     
-                    Program.Log($"Processed {game}'s PARAM.SFO file. text:\"{item.Text}\" version:\"{item.Version}\"",
-                        "SFO");
+                    State.Logger.LogDebug(InfoRetrieval, $"Processed {game}'s PARAM.SFO file. text:\"{item.Text}\" version:\"{item.Version}\"");
                 }
                 else
                 {
-                    Program.Log($"No PARAM.SFO exists for {game} (path should be '{sfoPath}')", "SFO",
-                        BreadcrumbLevel.Warning);
+                    State.Logger.LogWarning(InfoRetrieval, $"No PARAM.SFO exists for {game} (path should be '{sfoPath}')");
                 }
             }
             catch (Exception e) when (e is IOException or FtpException or TimeoutException)
@@ -160,24 +159,24 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             }
             catch (EndOfStreamException)
             {
-                Program.Log($"Couldn't load {game}'s PARAM.SFO because the file was incomplete.", "SFO", BreadcrumbLevel.Error);
+                State.Logger.LogError(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO because the file was incomplete.");
             }
             catch(Exception e)
             {
                 item.Text = $"Unknown PARAM.SFO [{game}]";
                 
-                Program.Log($"Couldn't load {game}'s PARAM.SFO: {e}", "SFO", BreadcrumbLevel.Error);
+                State.Logger.LogError(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO: {e}");
                 if (sfo != null)
                 {
-                    Program.Log($"PARAM.SFO version:{sfo.Version} dump:", "SFO", BreadcrumbLevel.Debug);
+                    State.Logger.LogDebug(InfoRetrieval, $"PARAM.SFO version:{sfo.Version} dump:");
                     foreach ((string? key, object? value) in sfo.Table)
                     {
-                        Program.Log($"  '{key}' = '{value}'", "SFO", BreadcrumbLevel.Debug);
+                        State.Logger.LogDebug(InfoRetrieval, $"  '{key}' = '{value}'");
                     }
                 }
                 else
                 {
-                    Program.Log("PARAM.SFO was not read, can't dump", "SFO", BreadcrumbLevel.Warning);
+                    State.Logger.LogWarning(InfoRetrieval, "PARAM.SFO was not read, can't dump");
                 }
                 
                 SentrySdk.CaptureException(e);
@@ -197,17 +196,17 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         
         if (this.GameDropdown.SelectedValue is not GameItem game)
         {
-            Program.Log("Game was null, bailing", nameof(IntegratedPatchForm));
+            State.Logger.LogWarning(LogType.IntegratedPatchForm, "Game was null, bailing");
             return;
         }
         
         if (this.Accessor == null)
         {
-            Program.Log("Accessor was null, bailing", nameof(IntegratedPatchForm));
+            State.Logger.LogWarning(LogType.IntegratedPatchForm, "Accessor was null, bailing");
             return;
         }
         
-        Program.Log($"Game changed to TitleID '{game.TitleId}'");
+        State.Logger.LogInfo(LogType.IntegratedPatchForm, $"Game changed to TitleID '{game.TitleId}'");
 
         this._usrDir = Path.Combine("game", game.TitleId, "USRDIR");
         string ebootPath = Path.Combine(this._usrDir, "EBOOT.BIN.ORIG"); // Prefer original backup over active copy
@@ -259,7 +258,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             // if this is a NP game then download the RIF for the right content ID, disc copies don't need anything else
             if (game.TitleId.StartsWith('N'))
             {
-                Program.Log("Digital game detected, trying to download license file");
+                State.Logger.LogInfo(LogType.IntegratedPatchForm, "Digital game detected, trying to download license file");
                 this.DownloadLicenseFile(downloadedFile, game);
             }
         }
@@ -271,17 +270,17 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
         this._tempFile = Path.GetTempFileName();
         
-        Program.Log("Decrypting...");
+        State.Logger.LogInfo(Crypto, "Decrypting...");
         LibSceToolSharp.Decrypt(downloadedFile, this._tempFile);
         // HACK: scetool doesn't give us result codes, check if the file has been written to instead
         if (new FileInfo(this._tempFile).Length == 0)
         {
-            Program.Log("Decryption failed on TitleID " + game.TitleId);
+            State.Logger.LogWarning(LogType.IntegratedPatchForm, "Decryption failed on TitleID " + game.TitleId);
             // before we completely fail, let's check if we're a disc game
             // some weird betas like LBP HUB require a license despite having a disc titleid
             if (game.TitleId.StartsWith('B'))
             {
-                Program.Log("Disc game detected - trying to gather a license as a workaround for LBP Hub");
+                State.Logger.LogInfo(Crypto, "Disc game detected - trying to gather a license as a workaround for LBP Hub");
                 
                 try
                 {
@@ -298,7 +297,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
             if (new FileInfo(this._tempFile).Length == 0)
             {
-                Program.Log("Still couldn't decrypt.");
+                State.Logger.LogError(Crypto, "Still couldn't decrypt.");
                 this.FailVerify("The EBOOT failed to decrypt. Check the log for more information.");
                 return;
             }
@@ -312,11 +311,18 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
 
     private void DownloadLicenseFile(string ebootPath, GameItem game)
     {
-        Program.Log($"Downloading license file for TitleID {game.TitleId} (from eboot @ {ebootPath})");
-        string contentId = LibSceToolSharp.GetContentId(ebootPath).TrimEnd('\0');
+        State.Logger.LogInfo(Crypto, $"Downloading license file for TitleID {game.TitleId} (from eboot @ {ebootPath})");
+        string? contentId = LibSceToolSharp.GetContentId(ebootPath)?.TrimEnd('\0');
+
+        if (contentId == null)
+        {
+            State.Logger.LogWarning(Crypto, "Couldn't get the content ID from the EBOOT.");
+            return;
+        }
+        
         this._cachedContentIds[game.TitleId] = contentId;
         
-        Program.Log($"ContentID for {game.TitleId} is {contentId}");
+        State.Logger.LogDebug(Crypto, $"ContentID for {game.TitleId} is {contentId}");
 
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
@@ -330,12 +336,12 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
         {
             bool found = false;
             
-            Program.Log($"Checking all license files in {user}");
+            State.Logger.LogDebug(Crypto, $"Checking all license files in {user}");
             string exdataFolder = Path.Combine(user, "exdata");
 
             if (!this.Accessor.DirectoryExists(exdataFolder))
             {
-                Program.Log($"Exdata folder doesn't exist for user {user}, skipping...");
+                State.Logger.LogDebug(Crypto, $"Exdata folder doesn't exist for user {user}, skipping...");
                 continue;
             }
             
@@ -345,7 +351,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 if (!licenseFile.Contains(contentId) && !licenseFile.Contains(game.TitleId))
                     continue;
                 
-                Program.Log($"Found compatible rap: {licenseFile}");
+                State.Logger.LogDebug(Crypto, $"Found compatible rap: {licenseFile}");
 
                 string actDatPath = Path.Combine(user, "exdata", "act.dat");
                     
@@ -360,7 +366,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
                 string downloadedLicenseFile = this.Accessor.DownloadFile(licenseFile);
                 File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
 
-                Program.Log($"Downloaded license file {licenseFile}.");
+                State.Logger.LogInfo(Crypto, $"Downloaded compatible license file {licenseFile}.");
 
                 found = true;
             }
@@ -375,12 +381,12 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
             byte[]? idps = consolePatchAccessor.IdpsFile.Value;
             if (idps == null)
             {
-                Program.Log("Can't set IDPS.", "IDPS", BreadcrumbLevel.Error);
+                State.Logger.LogError(IDPS, "Can't set IDPS.");
                 this.FailVerify("Couldn't retrieve the IDPS used for encryption from the PS3. The log may have more details.");
             }
             else
             {
-                Program.Log("Got the IDPS.", "IDPS", BreadcrumbLevel.Error);
+                State.Logger.LogInfo(IDPS, "Got the IDPS.");
                 LibSceToolSharp.SetIdpsKey(idps);
             }
         }
@@ -392,7 +398,7 @@ public abstract class IntegratedPatchForm : PatchForm<EbootPatcher>
     public override void CompletePatch(object? sender, EventArgs e) {
         if (!(this.Accessor?.Available ?? false))
         {
-            Program.Log("Suppressing patch completion because accessor is unavailable");
+            State.Logger.LogWarning(LogType.IntegratedPatchForm, "Suppressing patch completion because accessor is unavailable");
             MessageBox.Show("Couldn't complete the patch because we couldn't reach the console. Try restarting Refresher.", MessageBoxType.Warning);
             return;
         }

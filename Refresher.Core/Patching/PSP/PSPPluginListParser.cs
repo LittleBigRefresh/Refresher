@@ -1,4 +1,4 @@
-namespace Refresher.Patching.PSP;
+namespace Refresher.Core.Patching.PSP;
 
 public static class PSPPluginListParser
 {

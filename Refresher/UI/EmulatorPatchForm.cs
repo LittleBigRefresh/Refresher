@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using Eto;
 using Eto.Forms;
-using Refresher.Accessors;
+using Refresher.Core;
+using Refresher.Core.Accessors;
 using Refresher.UI.Items;
 
 namespace Refresher.UI;
@@ -38,7 +39,7 @@ public class EmulatorPatchForm : IntegratedPatchForm
     {
         if (this.GameDropdown.SelectedValue is not GameItem game)
         {
-            Program.Log("Game was null before patch, bailing", nameof(EmulatorPatchForm));
+            State.Logger.LogError(PatchForm, "Game was null before patch, bailing");
             return;
         }
         
@@ -57,7 +58,7 @@ public class EmulatorPatchForm : IntegratedPatchForm
             }
             catch (Exception ex)
             {
-                Program.Log($"Exception while trying to create RPCS3 patches folder: {ex}", nameof(ConsolePatchAccessor), BreadcrumbLevel.Warning);
+                State.Logger.LogError(PatchForm, $"Exception while trying to create RPCS3 patches folder: {ex}");
             }
         }
     }
@@ -93,7 +94,7 @@ public class EmulatorPatchForm : IntegratedPatchForm
         
         if (this.Patcher == null)
         {
-            Program.Log("Patcher was null, bailing", nameof(EmulatorPatchForm));
+            State.Logger.LogError(PatchForm, "Patcher was null, bailing");
             return;
         }
         

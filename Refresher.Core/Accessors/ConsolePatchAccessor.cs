@@ -1,7 +1,7 @@
 using FluentFTP;
-using Refresher.Exceptions;
+using Refresher.Core.Exceptions;
 
-namespace Refresher.Accessors;
+namespace Refresher.Core.Accessors;
 
 public class ConsolePatchAccessor : PatchAccessor, IDisposable
 {
@@ -27,7 +27,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     
     private byte[]? GetIdps()
     {
-        Program.Log("Getting IDPS...", "IDPS");
+        State.Logger.LogInfo(IDPS, "Getting IDPS from the console...");
         UriBuilder idpsPs3 = new("http", this._remoteIp, 80, "idps.ps3");
         UriBuilder idpsHex = new("http", this._remoteIp, 80, "dev_hdd0/idps.hex");
         UriBuilder idpsHexUsb = new("http", this._remoteIp, 80, "dev_usb000/idps.hex");
@@ -48,7 +48,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     {
         HttpResponseMessage response;
         
-        Program.Log($"  {stepName} ({uri.AbsolutePath})", "IDPS");
+        State.Logger.LogDebug(IDPS, $"  {stepName} ({uri.AbsolutePath})");
         try
         {
             response = client.GetAsync(uri).Result;
@@ -62,17 +62,17 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         {
             if (!HandleIdpsRequestError(e))
             {
-                Program.Log($"Couldn't fetch the IDPS from the PS3 because of an unknown error: {e}", "IDPS", BreadcrumbLevel.Error);
+                State.Logger.LogError(IDPS, $"Couldn't fetch the IDPS from the PS3 because of an unknown error: {e}");
                 SentrySdk.CaptureException(e);
             }
             return null;
         }
-        Program.Log($"    {(int)response.StatusCode} {response.StatusCode} (success: {response.IsSuccessStatusCode})", "IDPS");
+        State.Logger.LogDebug(IDPS, $"    {(int)response.StatusCode} {response.StatusCode} (success: {response.IsSuccessStatusCode})");
         
         if (!response.IsSuccessStatusCode)
         {
-            Program.Log("Couldn't fetch the IDPS from the PS3 because of a bad status code.", "IDPS", BreadcrumbLevel.Error);
-            Program.Log(response.Content.ReadAsStringAsync().Result, "IDPS", BreadcrumbLevel.Debug);
+            State.Logger.LogError(IDPS, "Couldn't fetch the IDPS from the PS3 because of a bad status code.");
+            State.Logger.LogDebug(IDPS, response.Content.ReadAsStringAsync().Result);
             return null;
         }
         
@@ -83,7 +83,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     {
         if (inner is HttpRequestException httpException)
         {
-            Program.Log($"Couldn't fetch the IDPS from the PS3 because we couldn't make the request: {httpException.Message}", "IDPS", BreadcrumbLevel.Error);
+            State.Logger.LogError(IDPS, $"Couldn't fetch the IDPS from the PS3 because we couldn't make the request: {httpException.Message}");
             return true;
         }
 

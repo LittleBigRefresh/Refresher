@@ -1,4 +1,4 @@
-namespace Refresher.Accessors;
+namespace Refresher.Core.Accessors;
 
 public abstract class PatchAccessor
 {

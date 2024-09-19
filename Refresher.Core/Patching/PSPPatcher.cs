@@ -1,8 +1,8 @@
 using System.Reflection;
-using Refresher.Patching.PSP;
-using Refresher.Verification;
+using Refresher.Core.Patching.PSP;
+using Refresher.Core.Verification;
 
-namespace Refresher.Patching;
+namespace Refresher.Core.Patching;
 
 public class PSPPatcher : IPatcher
 {

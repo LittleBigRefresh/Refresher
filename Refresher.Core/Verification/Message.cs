@@ -1,4 +1,4 @@
-namespace Refresher.Verification;
+namespace Refresher.Core.Verification;
 
 public readonly struct Message
 {

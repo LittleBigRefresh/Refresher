@@ -1,6 +1,8 @@
 using System.IO.MemoryMappedFiles;
-using Refresher.Patching;
-using Refresher.Verification;
+using Refresher.Core;
+using Refresher.Core.Patching;
+using Refresher.Core.Verification;
+using Refresher.Core.Patching;
 
 namespace Refresher.CLI;
 
@@ -25,7 +27,7 @@ public class CommandLine
         //If the input file does not exist, exit
         if (!File.Exists(options.InputFile))
         {
-            Program.Log("Input file does not exist.");
+            State.Logger.LogCritical(LogType.CLI, "Input file does not exist.");
             Environment.Exit(1);
             return;
         }
@@ -41,7 +43,7 @@ public class CommandLine
         }
         catch (Exception e)
         {
-            Program.Log("Could not create and copy to temporary file.\n" + e);
+            State.Logger.LogCritical(LogType.CLI, "Could not create and copy to temporary file.\n" + e);
 
             DeleteTempFile(tempFile);
             Environment.Exit(1);
@@ -56,7 +58,7 @@ public class CommandLine
         }
         catch (Exception e)
         {
-            Program.Log("Could not read data from the input file.\n" + e);
+            State.Logger.LogCritical(LogType.CLI, "Could not read data from the input file.\n" + e);
             
             DeleteTempFile(tempFile);
             Environment.Exit(1);
@@ -68,12 +70,12 @@ public class CommandLine
         List<Message> messages = ebootPatcher.Verify(options.ServerUrl, options.Digest ?? false).ToList();
 
         //Write the messages to the console
-        foreach (Message message in messages) Program.Log($"{message.Level}: {message.Content}");
+        foreach (Message message in messages) State.Logger.LogInfo(Verify, $"{message.Level}: {message.Content}");
 
         //If there are any errors, exit
         if (messages.Any(m => m.Level == MessageLevel.Error))
         {
-            Program.Log("\nThe patching operation cannot continue due to errors while verifying. Stopping.");
+            State.Logger.LogCritical(Verify, "\nThe patching operation cannot continue due to errors while verifying. Stopping.");
 
             mappedFile.Dispose();
             DeleteTempFile(tempFile);
@@ -89,7 +91,7 @@ public class CommandLine
 
             if (key.KeyChar == 'n')
             {
-                Program.Log("Patching cancelled due to warnings.");
+                State.Logger.LogCritical(Verify, "Patching cancelled due to warnings.");
 
                 mappedFile.Dispose();
                 DeleteTempFile(tempFile);
@@ -98,7 +100,7 @@ public class CommandLine
             }
         }
         
-        Program.Log("Patching...");
+        State.Logger.LogInfo(LogType.CLI, "Patching...");
 
         try
         {
@@ -110,7 +112,7 @@ public class CommandLine
         }
         catch (Exception e)
         {
-            Program.Log("Could not complete patch, stopping.\n" + e);
+            State.Logger.LogCritical(LogType.CLI, "Could not complete patch, stopping.\n" + e);
 
             mappedFile.Dispose();
             DeleteTempFile(tempFile);
@@ -119,6 +121,6 @@ public class CommandLine
         }
         
         DeleteTempFile(tempFile);
-        Program.Log("Successfully patched EBOOT!");
+        State.Logger.LogInfo(LogType.CLI, "Successfully patched EBOOT!");
     }
 }

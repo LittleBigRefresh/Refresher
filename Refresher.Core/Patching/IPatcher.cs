@@ -1,6 +1,6 @@
-using Refresher.Verification;
+using Refresher.Core.Verification;
 
-namespace Refresher.Patching;
+namespace Refresher.Core.Patching;
 
 public interface IPatcher
 {
