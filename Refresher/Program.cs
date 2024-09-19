@@ -55,11 +55,6 @@ public class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        ExamplePipeline pipeline = new ExamplePipeline();
-        pipeline.Initialize();
-
-        pipeline.ExecuteAsync().Wait();
-        return;
         InitializeSentry();
         
         if (args.Length > 0)
