@@ -15,4 +15,5 @@ public enum LogType : byte
     OSIntegration,
     AutoDiscover,
     PSP,
+    Pipeline
 }
