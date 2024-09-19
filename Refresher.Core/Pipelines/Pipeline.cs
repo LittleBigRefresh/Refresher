@@ -44,8 +44,11 @@ public abstract class Pipeline
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        if(this.State != PipelineState.NotStarted)
+        if (this.State != PipelineState.NotStarted)
+        {
+            this.State = PipelineState.Error;
             throw new InvalidOperationException("Pipeline must be restarted before it can be executed again.");
+        }
 
         this.State = PipelineState.Running;
         
