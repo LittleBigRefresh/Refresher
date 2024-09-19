@@ -18,9 +18,9 @@ public class MainForm : RefresherForm
             new Button((_, _) => this.ShowChild<FilePatchForm>()) { Text = "File Patch (using a .ELF)" },
             new Button((_, _) => this.ShowChild<EmulatorPatchForm>()) { Text = "RPCS3 Patch" },
             new Button((_, _) => this.ShowChild<ConsolePatchForm>()) { Text = "PS3 Patch" },
-            new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" },
+            new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" }
             #if DEBUG
-            this.PipelineButton<ExamplePipeline>()
+            ,this.PipelineButton<ExamplePipeline>()
             #endif
         );
 
