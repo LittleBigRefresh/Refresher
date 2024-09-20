@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Refresher.Core.Pipelines.Steps;
 
 public class DelayOneSecondStep : Step
@@ -10,6 +12,11 @@ public class DelayOneSecondStep : Step
 
     public override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await Task.Delay(1000, cancellationToken);
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds <= 1000)
+        {
+            this.Progress = stopwatch.ElapsedMilliseconds / 1000.0f;
+            await Task.Delay(10, cancellationToken);
+        }
     }
 }
