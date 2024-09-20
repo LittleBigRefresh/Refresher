@@ -9,10 +9,10 @@ public class ExamplePipeline : Pipeline
     protected override List<Type> StepTypes { get; } =
     [
         typeof(ExampleInputStep),
-        typeof(ExampleStep),
-        typeof(ExampleStep),
-        typeof(ExampleStep),
-        typeof(ExampleStep),
-        typeof(ExampleStep),
+        typeof(DelayOneSecondStep),
+        typeof(DelayOneSecondStep),
+        typeof(DelayOneSecondStep),
+        typeof(DelayOneSecondStep),
+        typeof(DelayOneSecondStep),
     ];
 }
