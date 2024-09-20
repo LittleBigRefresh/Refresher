@@ -1,8 +1,8 @@
 namespace Refresher.Core.Pipelines.Steps;
 
-public class ExampleStep : Step
+public class DelayOneSecondStep : Step
 {
-    public ExampleStep(Pipeline pipeline) : base(pipeline)
+    public DelayOneSecondStep(Pipeline pipeline) : base(pipeline)
     {
     }
 
