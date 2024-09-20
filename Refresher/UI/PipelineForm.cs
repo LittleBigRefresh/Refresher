@@ -1,6 +1,8 @@
+using Eto;
 using Eto.Drawing;
 using Eto.Forms;
 using Refresher.Core;
+using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
 
@@ -74,7 +76,21 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this._formLayout.Rows.Clear();
         foreach (StepInput input in this._pipeline.RequiredInputs)
         {
-            this._formLayout.Rows.Add(AddField<TextBox>(input));
+            TableRow row;
+            switch (input.Type)
+            {
+                case StepInputType.Game:
+                case StepInputType.Text:
+                    row = AddField<TextBox>(input);
+                    break;
+                case StepInputType.Directory:
+                    row = AddField<FilePicker>(input);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            this._formLayout.Rows.Add(row);
         }
 
         this.UpdateSubtitle(this._pipeline.Name);
@@ -109,7 +125,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         foreach (TableRow row in this._formLayout.Rows)
         {
             string id = row.Cells[0].Control.ToolTip;
-            string value = ((TextControl)row.Cells[1].Control).Text;
+            string value = row.Cells[1].Control.GetUserInput();
             
             this._pipeline.Inputs.Add(id, value);
         }
@@ -139,6 +155,29 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         };
 
         Control control = new TControl();
+        TextBox? textBox = control as TextBox;
+
+        string? newValue = input.DetermineDefaultValue?.Invoke();
+
+        if (textBox != null)
+        {
+            textBox.Text = newValue;
+            textBox.PlaceholderText = input.Placeholder;
+        }
+        else if (control is FilePicker filePicker)
+        {
+            filePicker.FilePath = newValue;
+
+            // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+            filePicker.FileAction = input.Type switch
+            {
+                StepInputType.Directory => FileAction.SelectFolder,
+                StepInputType.OpenFile => FileAction.OpenFile,
+                StepInputType.SaveFile => FileAction.SaveFile,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+        }
+
         return new TableRow(label, control);
     }
     

@@ -20,8 +20,9 @@ public class MainForm : RefresherForm
             new Button((_, _) => this.ShowChild<ConsolePatchForm>()) { Text = "PS3 Patch" },
             new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" }
             #if DEBUG
-            ,this.PipelineButton<ExamplePipeline>()
+            ,this.PipelineButton<ExamplePipeline>(),
             #endif
+            this.PipelineButton<RPCS3PatchPipeline>()
         );
 
         layout.Spacing = 5;
