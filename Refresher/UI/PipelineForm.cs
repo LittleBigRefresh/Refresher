@@ -13,6 +13,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private TPipeline? _pipeline;
 
     private readonly Button _button;
+    private readonly ProgressBar _currentProgressBar;
     private readonly ProgressBar _progressBar;
     private readonly ListBox _messages;
     
@@ -33,6 +34,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             Panel2 = new StackLayout([
                 this._messages = new ListBox { Height = 200 },
                 this._button = new Button(this.OnButtonClick) { Text = "Execute" },
+                this._currentProgressBar = new ProgressBar(),
                 this._progressBar = new ProgressBar(),
             ])
             {
@@ -52,7 +54,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private void UpdateFormState()
     {
         this._progressBar.Value = (int)((this._pipeline?.Progress ?? 0) * 100);
-        this._progressBar.Enabled = this._pipeline?.State == PipelineState.Running;
+        this._currentProgressBar.Value = (int)(this._pipeline?.CurrentProgress * 100 ?? 0);
+        this._currentProgressBar.Enabled = this._progressBar.Enabled = this._pipeline?.State == PipelineState.Running;
         this._progressBar.ToolTip = this._pipeline?.State.ToString() ?? "Uninitialized";
 
         this._button.Text = this._pipeline?.State switch
