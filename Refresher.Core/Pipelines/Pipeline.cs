@@ -23,7 +23,7 @@ public abstract class Pipeline
     {
         get
         {
-            float completed = this._currentStepIndex / (float)this._steps.Count;
+            float completed = (this._currentStepIndex - 1) / (float)this._steps.Count;
             float currentStep = this._currentStep?.Progress ?? 0f;
             float stepWeight = 1f / this._steps.Count;
             
