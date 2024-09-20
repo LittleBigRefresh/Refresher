@@ -27,6 +27,8 @@ public abstract class Pipeline
         }
     }
 
+    public float CurrentProgress => this._currentStep?.Progress ?? 0;
+
     protected abstract List<Type> StepTypes { get; }
     private List<Step> _steps = [];
     
