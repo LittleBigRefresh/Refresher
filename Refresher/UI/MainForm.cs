@@ -13,17 +13,18 @@ public class MainForm : RefresherForm
     {
         StackLayout layout;
         this.Content = layout = new StackLayout
-        (
+        // ReSharper disable once RedundantExplicitParamsArrayCreation
+        ([
             new Label { Text = "Welcome to Refresher! Please pick a patching method to continue." },
             new Button((_, _) => this.ShowChild<FilePatchForm>()) { Text = "File Patch (using a .ELF)" },
             new Button((_, _) => this.ShowChild<EmulatorPatchForm>()) { Text = "RPCS3 Patch" },
             new Button((_, _) => this.ShowChild<ConsolePatchForm>()) { Text = "PS3 Patch" },
-            new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" }
+            new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" },
             #if DEBUG
-            ,this.PipelineButton<ExamplePipeline>(),
+            this.PipelineButton<ExamplePipeline>(),
             #endif
-            this.PipelineButton<RPCS3PatchPipeline>()
-        );
+            this.PipelineButton<RPCS3PatchPipeline>(),
+        ]);
 
         layout.Spacing = 5;
         layout.HorizontalContentAlignment = HorizontalAlignment.Stretch;
