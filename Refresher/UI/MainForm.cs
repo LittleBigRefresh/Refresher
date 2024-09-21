@@ -1,5 +1,6 @@
 using Eto.Drawing;
 using Eto.Forms;
+using Refresher.Core.Pipelines;
 
 namespace Refresher.UI;
 
@@ -18,9 +19,17 @@ public class MainForm : RefresherForm
             new Button((_, _) => this.ShowChild<EmulatorPatchForm>()) { Text = "RPCS3 Patch" },
             new Button((_, _) => this.ShowChild<ConsolePatchForm>()) { Text = "PS3 Patch" },
             new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" }
+            #if DEBUG
+            ,this.PipelineButton<ExamplePipeline>()
+            #endif
         );
 
         layout.Spacing = 5;
         layout.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+    }
+
+    private Button PipelineButton<TPipeline>() where TPipeline : Pipeline, new()
+    {
+        return new Button((_, _) => this.ShowChild<PipelineForm<TPipeline>>()) { Text = typeof(TPipeline).Name };
     }
 }

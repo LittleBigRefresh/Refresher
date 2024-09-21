@@ -7,7 +7,10 @@ namespace Refresher.Core;
 
 public static class State
 {
-    public static readonly Logger Logger = InitializeLogger([new ConsoleSink(), new SentryBreadcrumbSink()]);
+    public static readonly Logger Logger = InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
+
+    public delegate void RefresherLogHandler(RefresherLog log);
+    public static event RefresherLogHandler? Log;
 
     private static Logger InitializeLogger(IEnumerable<ILoggerSink> sinks)
     {
@@ -19,5 +22,10 @@ public static class State
             Behaviour = new DirectLoggingBehaviour(),
             MaxLevel = LogLevel.Trace,
         });
+    }
+
+    internal static void InvokeOnLog(LogLevel level, ReadOnlySpan<char> category, ReadOnlySpan<char> content)
+    {
+        Log?.Invoke(new RefresherLog(level, category.ToString(), content.ToString()));
     }
 }

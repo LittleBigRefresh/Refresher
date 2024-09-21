@@ -4,6 +4,7 @@ using CommandLine;
 using Eto.Forms;
 using Refresher.CLI;
 using Refresher.Core;
+using Refresher.Core.Pipelines;
 using Refresher.UI;
 
 namespace Refresher;
