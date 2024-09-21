@@ -109,6 +109,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             return;
         }
         
+        if (this._pipeline.State is PipelineState.Cancelled or PipelineState.Error or PipelineState.Finished)
+        {
+            this.InitializePipeline();
+        }
+        
         foreach (TableRow row in this._formLayout.Rows)
         {
             string id = row.Cells[0].Control.ToolTip;
