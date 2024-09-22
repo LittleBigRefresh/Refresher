@@ -6,11 +6,22 @@ namespace Refresher.AndroidApp;
 [Activity]
 public class PipelineActivity : Activity
 {
+    private Pipeline? _pipeline;
+    
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         this.SetContentView(ResourceConstant.Layout.activity_pipeline);
+
+        this.InitializePipeline();
         
+        TextView textView = new(this);
+        textView.Text = $"{this._pipeline!.Name}";
+        this.SetContentView(textView);
+    }
+
+    private void InitializePipeline()
+    {
         string? pipelineTypeName = this.Intent?.GetStringExtra("PipelineType");
         if(pipelineTypeName == null)
             throw new Exception("Pipeline type not specified");
@@ -20,9 +31,6 @@ public class PipelineActivity : Activity
             throw new Exception("Pipeline was not found");
 
         Pipeline pipeline = (Pipeline)Activator.CreateInstance(pipelineType)!;
-        
-        TextView textView = new(this);
-        textView.Text = $"{pipeline.Name}";
-        this.SetContentView(textView);
+        this._pipeline = pipeline;
     }
 }
