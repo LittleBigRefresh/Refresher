@@ -34,6 +34,13 @@ public class PipelineActivity : Activity
         Pipeline pipeline = (Pipeline)Activator.CreateInstance(pipelineType)!;
         this._pipeline = pipeline;
         
-        this.Title = "Refresher - " + pipeline.Name;
+        if (this.ActionBar != null)
+        {
+            this.ActionBar.Subtitle = pipeline.Name;
+        }
+        else
+        {
+            this.Title = "Refresher - " + pipeline.Name;
+        }
     }
 }
