@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Refresher</string>
     <string name="welcome_text">Welcome to Refresher!\nPlease pick a patching method to continue.</string>
+    <string name="pipeline_execute">Execute</string>
 </resources>

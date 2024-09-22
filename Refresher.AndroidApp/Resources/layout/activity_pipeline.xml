@@ -4,4 +4,16 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+    />
+    <TextView android:id="@+id/PipelineState"
+        android:text="TextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <Button android:id="@+id/ExecutePipelineButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 </LinearLayout>

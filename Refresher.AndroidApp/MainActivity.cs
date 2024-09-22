@@ -11,13 +11,11 @@ using ConditionalAttribute = System.Diagnostics.ConditionalAttribute;
 namespace Refresher.AndroidApp;
 
 [Activity(Label = "@string/app_name", MainLauncher = true)]
-public class MainActivity : Activity
+public class MainActivity : RefresherActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
-        
-        State.InitializeLogger([new AndroidSink(), new EventSink(), new SentryBreadcrumbSink()]);
 
         // Set our view from the "main" layout resource
         this.SetContentView(ResourceConstant.Layout.activity_main);
@@ -37,11 +35,8 @@ public class MainActivity : Activity
 
         button.Click += (_, _) =>
         {
-            Toast.MakeText(this, button.Text, ToastLength.Short)?.Show();
             Intent intent = new(this, typeof(PipelineActivity));
-            
             intent.PutExtra("PipelineType", typeof(TPipeline).FullName);
-
             this.StartActivity(intent);
         };
 
