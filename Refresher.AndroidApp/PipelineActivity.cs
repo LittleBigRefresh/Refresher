@@ -1,4 +1,5 @@
 using _Microsoft.Android.Resource.Designer;
+using Android.Graphics;
 using Refresher.Core.Pipelines;
 
 namespace Refresher.AndroidApp;
@@ -32,5 +33,7 @@ public class PipelineActivity : Activity
 
         Pipeline pipeline = (Pipeline)Activator.CreateInstance(pipelineType)!;
         this._pipeline = pipeline;
+        
+        this.Title = "Refresher - " + pipeline.Name;
     }
 }
