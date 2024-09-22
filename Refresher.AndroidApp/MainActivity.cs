@@ -1,6 +1,9 @@
+using System.Diagnostics;
 using _Microsoft.Android.Resource.Designer;
 using Android.Content;
 using Refresher.Core.Pipelines;
+using SCEToolSharp;
+using Activity = Android.App.Activity;
 
 namespace Refresher.AndroidApp;
 
@@ -19,6 +22,7 @@ public class MainActivity : Activity
             throw new Exception("Main content not found");
 
         this.AddButtonForPipeline<ExamplePipeline>(mainContent);
+        this.AddSceToolSharpTestButton(mainContent);
     }
 
     private void AddButtonForPipeline<TPipeline>(LinearLayout layout) where TPipeline : Pipeline
@@ -34,6 +38,36 @@ public class MainActivity : Activity
             intent.PutExtra("PipelineType", typeof(TPipeline).FullName);
 
             this.StartActivity(intent);
+        };
+
+        layout.AddView(button);
+    }
+
+    [Conditional("DEBUG")]
+    private void AddSceToolSharpTestButton(LinearLayout layout)
+    {
+        Button button = new(this);
+        button.Text = "DEBUG: Test LibSceToolSharp";
+
+        button.Click += (_, _) =>
+        {
+            string initReturn;
+
+            try
+            {
+                initReturn = LibSceToolSharp.Init().ToString();
+            }
+            catch (Exception ex)
+            {
+                initReturn = ex.ToString();
+            }
+            
+            new AlertDialog.Builder(this)
+                .SetTitle("LibSceToolSharp.Init() returns")?
+                .SetMessage(initReturn)?
+                .SetPositiveButton("Hell yeah", (_, _) => {})?
+                .SetNegativeButton("FUCK", (_, _) => {})?
+                .Show();
         };
 
         layout.AddView(button);
