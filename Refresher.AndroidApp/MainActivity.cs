@@ -1,9 +1,12 @@
-using System.Diagnostics;
 using _Microsoft.Android.Resource.Designer;
 using Android.Content;
+using Refresher.AndroidApp.Logging;
+using Refresher.Core;
+using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
 using SCEToolSharp;
-using Activity = Android.App.Activity;
+
+using ConditionalAttribute = System.Diagnostics.ConditionalAttribute;
 
 namespace Refresher.AndroidApp;
 
@@ -13,11 +16,13 @@ public class MainActivity : Activity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        
+        State.InitializeLogger([new AndroidSink(), new EventSink(), new SentryBreadcrumbSink()]);
 
         // Set our view from the "main" layout resource
         this.SetContentView(ResourceConstant.Layout.activity_main);
 
-        LinearLayout? mainContent = this.FindViewById<LinearLayout>(Resource.Id.MainContent);
+        LinearLayout? mainContent = this.FindViewById<LinearLayout>(ResourceConstant.Id.MainContent);
         if (mainContent == null)
             throw new Exception("Main content not found");
 

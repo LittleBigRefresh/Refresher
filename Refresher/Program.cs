@@ -2,8 +2,10 @@
 using System.Reflection;
 using CommandLine;
 using Eto.Forms;
+using NotEnoughLogs.Sinks;
 using Refresher.CLI;
 using Refresher.Core;
+using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
 using Refresher.UI;
 
@@ -45,17 +47,13 @@ public class Program
             options.AttachStacktrace = true; // send stack traces for *all* breadcrumbs
         });
     }
-
-    public static void Log(string message, string category = "", BreadcrumbLevel level = default)
-    {
-        SentrySdk.AddBreadcrumb(message, category, level: level);
-        Console.WriteLine($"[{level}] [{category}] {message}");
-    }
     
     [STAThread]
     public static void Main(string[] args)
     {
         InitializeSentry();
+
+        State.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
         
         if (args.Length > 0)
         {
