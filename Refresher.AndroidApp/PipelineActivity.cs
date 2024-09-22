@@ -29,6 +29,8 @@ public class PipelineActivity : RefresherActivity
 
     private void InitializePipeline()
     {
+        this._cts = new CancellationTokenSource();
+        
         string? pipelineTypeName = this.Intent?.GetStringExtra("PipelineType");
         if(pipelineTypeName == null)
             throw new Exception("Pipeline type not specified");
@@ -38,6 +40,7 @@ public class PipelineActivity : RefresherActivity
             throw new Exception("Pipeline was not found");
 
         Pipeline pipeline = (Pipeline)Activator.CreateInstance(pipelineType)!;
+        pipeline.Initialize();
         this._pipeline = pipeline;
         
         if (this.ActionBar != null)
