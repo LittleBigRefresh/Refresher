@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Refresher</string>
-    <string name="app_text">Hello, Android!</string>
+    <string name="welcome_text">Welcome to Refresher!\nPlease pick a patching method to continue.</string>
 </resources>
