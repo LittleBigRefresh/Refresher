@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refresher", "Refresher\Refr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refresher.Core", "Refresher.Core\Refresher.Core.csproj", "{49CE141A-8BD7-4CD5-BE86-257BDA5C5796}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refresher.AndroidApp", "Refresher.AndroidApp\Refresher.AndroidApp.csproj", "{ADE97BEF-7886-496A-AA8F-7B7504ED931C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{49CE141A-8BD7-4CD5-BE86-257BDA5C5796}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49CE141A-8BD7-4CD5-BE86-257BDA5C5796}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49CE141A-8BD7-4CD5-BE86-257BDA5C5796}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADE97BEF-7886-496A-AA8F-7B7504ED931C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADE97BEF-7886-496A-AA8F-7B7504ED931C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADE97BEF-7886-496A-AA8F-7B7504ED931C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADE97BEF-7886-496A-AA8F-7B7504ED931C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
