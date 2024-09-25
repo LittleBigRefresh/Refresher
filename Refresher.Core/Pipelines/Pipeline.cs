@@ -63,8 +63,11 @@ public abstract class Pipeline
         
         foreach (StepInput input in this.RequiredInputs)
         {
-            if(!this.Inputs.ContainsKey(input.Id))
+            if (!this.Inputs.ContainsKey(input.Id))
+            {
+                this.State = PipelineState.Error;
                 throw new InvalidOperationException($"Input {input.Id} was not provided to the pipeline before execution.");
+            }
         }
 
         this.State = PipelineState.Running;

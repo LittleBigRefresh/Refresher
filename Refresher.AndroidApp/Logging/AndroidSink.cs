@@ -7,7 +7,7 @@ namespace Refresher.AndroidApp.Logging;
 
 public class AndroidSink : ILoggerSink
 {
-    private Handler _handler = new(Looper.MainLooper!);
+    private readonly Handler _handler = new(Looper.MainLooper!);
     
     public void Log(LogLevel level, ReadOnlySpan<char> category, ReadOnlySpan<char> content)
     {
@@ -35,7 +35,7 @@ public class AndroidSink : ILoggerSink
                     .SetNeutralButton("OK", (_, _) => {})?
                     .Show();
             }
-            else
+            else if(priority == LogPriority.Warn)
             {
                 Toast.MakeText(PipelineActivity.Instance, contentStr, ToastLength.Short)?.Show();
             }

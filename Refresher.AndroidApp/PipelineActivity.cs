@@ -1,6 +1,8 @@
 using _Microsoft.Android.Resource.Designer;
 using Android.OS;
+using Android.Views;
 using Refresher.Core;
+using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
 
 namespace Refresher.AndroidApp;
@@ -13,8 +15,12 @@ public class PipelineActivity : RefresherActivity
     private Pipeline? _pipeline;
     private CancellationTokenSource? _cts;
     
-    private Button _button = null!;
     private TextView _pipelineState = null!;
+    private ScrollView _logScroll = null!;
+    private TextView _log = null!;
+    private Button _button = null!;
+    private ProgressBar _progressBar = null!;
+    private ProgressBar _currentProgressBar = null!;
     
     private readonly Handler _handler = new(Looper.MainLooper!);
 
@@ -35,7 +41,14 @@ public class PipelineActivity : RefresherActivity
         
         this._pipelineState = this.FindViewById<TextView>(ResourceConstant.Id.PipelineState)!;
         
+        this._progressBar = this.FindViewById<ProgressBar>(ResourceConstant.Id.ProgressBar)!;
+        this._currentProgressBar = this.FindViewById<ProgressBar>(ResourceConstant.Id.CurrentProgressBar)!;
+
         this.UpdateFormStateLoop();
+
+        this._logScroll = this.FindViewById<ScrollView>(ResourceConstant.Id.GlobalLogScroll)!;
+        this._log = this.FindViewById<TextView>(ResourceConstant.Id.GlobalLog)!;
+        State.Log += this.OnLog;
     }
 
     private void InitializePipeline()
@@ -62,6 +75,13 @@ public class PipelineActivity : RefresherActivity
         {
             this.Title = "Refresher - " + pipeline.Name;
         }
+        
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if(this._log != null)
+            this._handler.Post(() =>
+            {
+                this._log.Text = string.Empty;
+            });
     }
     
     private void ExecutePipeline(object? sender, EventArgs e)
@@ -101,11 +121,28 @@ public class PipelineActivity : RefresherActivity
     private void UpdateFormState()
     {
         this._pipelineState.Text = this._pipeline?.State.ToString();
+        // this._pipelineState.Text = DateTimeOffset.Now.Ticks.ToString();
+        
+        this._progressBar.Progress = (int)(this._pipeline?.Progress ?? 0 * 100);
+        this._currentProgressBar.Progress = (int)(this._pipeline?.CurrentProgress ?? 0 * 100);
     }
 
     private void UpdateFormStateLoop()
     {
         this.UpdateFormState();
-        this._handler.PostDelayed(this.UpdateFormStateLoop, 250);
+        this._handler.PostDelayed(this.UpdateFormStateLoop, this._pipeline?.State == PipelineState.Running ? 250 : 1000);
+    }
+    
+    private void OnLog(RefresherLog log)
+    {
+        this._handler.Post(() =>
+        {
+            this._log.Text += $"[{log.Level}] [{log.Category}] {log.Content}\n";
+
+            this._logScroll.Post(() =>
+            {
+                this._logScroll.FullScroll(FocusSearchDirection.Down);
+            });
+        });
     }
 }

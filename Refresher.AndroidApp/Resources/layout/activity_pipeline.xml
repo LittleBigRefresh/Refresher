@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+              android:padding="15dp">
 
     <View
         android:layout_width="match_parent"
@@ -10,10 +11,31 @@
         android:background="?android:attr/listDivider"
     />
     <TextView android:id="@+id/PipelineState"
-        android:text="TextView"
+              android:text="Loading..."
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"/>
+
+    <ScrollView android:id="@+id/GlobalLogScroll"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="0dp"
+        android:layout_weight="1" android:background="@color/container_high">
+        <TextView android:id="@+id/GlobalLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textIsSelectable="true"
+            android:textSize="14sp"/>
+    </ScrollView>
+
+    <ProgressBar android:id="@+id/ProgressBar"
+                 style="?android:attr/progressBarStyleHorizontal"
+                 android:layout_width="match_parent"
+                 android:layout_height="wrap_content"/>
+    <ProgressBar android:id="@+id/CurrentProgressBar"
+                 style="?android:attr/progressBarStyleHorizontal"
+                 android:layout_width="match_parent"
+                 android:layout_height="wrap_content"/>
+    
     <Button android:id="@+id/ExecutePipelineButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content" android:text="@string/pipeline_execute"/>
 </LinearLayout>
