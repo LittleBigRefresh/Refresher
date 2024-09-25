@@ -23,10 +23,22 @@ public class AndroidSink : ILoggerSink
         };
         
         Android.Util.Log.WriteLine(priority, "Refresher." + category.ToString(), content.ToString());
+        string categoryStr = category.ToString();
         string contentStr = content.ToString();
         this._handler.Post(() =>
         {
-            Toast.MakeText(Application.Context, contentStr, ToastLength.Short)?.Show();
+            if (priority == LogPriority.Error)
+            {
+                new AlertDialog.Builder(PipelineActivity.Instance)
+                    .SetTitle($"{categoryStr} Error")?
+                    .SetMessage(contentStr)?
+                    .SetNeutralButton("OK", (_, _) => {})?
+                    .Show();
+            }
+            else
+            {
+                Toast.MakeText(PipelineActivity.Instance, contentStr, ToastLength.Short)?.Show();
+            }
         });
     }
 

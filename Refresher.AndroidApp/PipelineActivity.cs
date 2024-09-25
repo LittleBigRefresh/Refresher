@@ -1,5 +1,5 @@
 using _Microsoft.Android.Resource.Designer;
-using Android.Graphics;
+using Android.OS;
 using Refresher.Core;
 using Refresher.Core.Pipelines;
 
@@ -8,11 +8,20 @@ namespace Refresher.AndroidApp;
 [Activity]
 public class PipelineActivity : RefresherActivity
 {
+    internal static PipelineActivity Instance { get; private set; }
+    
     private Pipeline? _pipeline;
     private CancellationTokenSource? _cts;
     
     private Button _button = null!;
     private TextView _pipelineState = null!;
+    
+    private readonly Handler _handler = new(Looper.MainLooper!);
+
+    public PipelineActivity()
+    {
+        Instance = this;
+    }
     
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -25,6 +34,8 @@ public class PipelineActivity : RefresherActivity
         this._button.Click += this.ExecutePipeline;
         
         this._pipelineState = this.FindViewById<TextView>(ResourceConstant.Id.PipelineState)!;
+        
+        this.UpdateFormStateLoop();
     }
 
     private void InitializePipeline()
@@ -55,12 +66,8 @@ public class PipelineActivity : RefresherActivity
     
     private void ExecutePipeline(object? sender, EventArgs e)
     {
-        this._pipelineState.Text = "Null";
-
         if (this._pipeline == null)
             return;
-        
-        this._pipelineState.Text = this._pipeline.State.ToString();
         
         if (this._pipeline.State == PipelineState.Running)
         {
@@ -73,6 +80,8 @@ public class PipelineActivity : RefresherActivity
             this.InitializePipeline();
         }
         
+        this.UpdateFormState();
+        
         // State.Logger.LogInfo(LogType.Pipeline, "Starting pipeline task...");
         Task.Run(async () =>
         {
@@ -80,11 +89,23 @@ public class PipelineActivity : RefresherActivity
             {
                 State.Logger.LogInfo(LogType.Pipeline, "Executing Pipeline...");
                 await this._pipeline.ExecuteAsync(this._cts?.Token ?? default);
+                this.UpdateFormState();
             }
             catch (Exception ex)
             {
                 State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex.Message}");
             }
         }, this._cts?.Token ?? default);
+    }
+
+    private void UpdateFormState()
+    {
+        this._pipelineState.Text = this._pipeline?.State.ToString();
+    }
+
+    private void UpdateFormStateLoop()
+    {
+        this.UpdateFormState();
+        this._handler.PostDelayed(this.UpdateFormStateLoop, 250);
     }
 }
