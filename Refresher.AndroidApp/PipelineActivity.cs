@@ -1,9 +1,11 @@
 using _Microsoft.Android.Resource.Designer;
 using Android.OS;
+using Android.Text;
 using Android.Views;
 using Refresher.Core;
 using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
+using static Android.Views.ViewGroup.LayoutParams;
 
 namespace Refresher.AndroidApp;
 
@@ -16,6 +18,7 @@ public class PipelineActivity : RefresherActivity
     private CancellationTokenSource? _cts;
     
     private TextView _pipelineState = null!;
+    private LinearLayout _pipelineInputs = null!;
     private ScrollView _logScroll = null!;
     private TextView _log = null!;
     private Button _button = null!;
@@ -33,9 +36,7 @@ public class PipelineActivity : RefresherActivity
     {
         base.OnCreate(savedInstanceState);
         this.SetContentView(ResourceConstant.Layout.activity_pipeline);
-
-        this.InitializePipeline();
-
+        
         this._button = this.FindViewById<Button>(ResourceConstant.Id.ExecutePipelineButton)!;
         this._button.Click += this.ExecutePipeline;
         
@@ -43,12 +44,15 @@ public class PipelineActivity : RefresherActivity
         
         this._progressBar = this.FindViewById<ProgressBar>(ResourceConstant.Id.ProgressBar)!;
         this._currentProgressBar = this.FindViewById<ProgressBar>(ResourceConstant.Id.CurrentProgressBar)!;
-
-        this.UpdateFormStateLoop();
-
+        
         this._logScroll = this.FindViewById<ScrollView>(ResourceConstant.Id.GlobalLogScroll)!;
         this._log = this.FindViewById<TextView>(ResourceConstant.Id.GlobalLog)!;
         State.Log += this.OnLog;
+        
+        this._pipelineInputs = this.FindViewById<LinearLayout>(ResourceConstant.Id.PipelineInputs)!;
+
+        this.InitializePipeline();
+        this.UpdateFormStateLoop();
     }
 
     private void InitializePipeline()
@@ -75,13 +79,20 @@ public class PipelineActivity : RefresherActivity
         {
             this.Title = "Refresher - " + pipeline.Name;
         }
-        
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if(this._log != null)
-            this._handler.Post(() =>
-            {
-                this._log.Text = string.Empty;
-            });
+
+        this._log.Text = string.Empty;
+
+        ViewGroup.LayoutParams layoutParams = new(MatchParent, WrapContent);
+        foreach (StepInput input in pipeline.RequiredInputs)
+        {
+            EditText view = new(this);
+            view.Hint = input.Name;
+            view.Tag = input.Id;
+            view.LayoutParameters = layoutParams;
+            view.InputType = InputTypes.ClassText | InputTypes.TextVariationNormal;
+            
+            this._pipelineInputs.AddView(view);
+        }
     }
     
     private void ExecutePipeline(object? sender, EventArgs e)
@@ -101,6 +112,16 @@ public class PipelineActivity : RefresherActivity
         }
         
         this.UpdateFormState();
+
+        int inputCount = this._pipelineInputs.ChildCount;
+        for (int i = 0; i < inputCount; i++)
+        {
+            EditText child = (EditText)this._pipelineInputs.GetChildAt(i)!;
+            string id = (string)child.Tag!;
+            string value = child.Text!;
+            
+            this._pipeline.Inputs.Add(id, value);
+        }
         
         // State.Logger.LogInfo(LogType.Pipeline, "Starting pipeline task...");
         Task.Run(async () =>
@@ -123,14 +144,14 @@ public class PipelineActivity : RefresherActivity
         this._pipelineState.Text = this._pipeline?.State.ToString();
         // this._pipelineState.Text = DateTimeOffset.Now.Ticks.ToString();
         
-        this._progressBar.Progress = (int)(this._pipeline?.Progress ?? 0 * 100);
-        this._currentProgressBar.Progress = (int)(this._pipeline?.CurrentProgress ?? 0 * 100);
+        this._progressBar.Progress = (int)((this._pipeline?.Progress ?? 0) * 100);
+        this._currentProgressBar.Progress = (int)((this._pipeline?.CurrentProgress ?? 0) * 100);
     }
 
     private void UpdateFormStateLoop()
     {
         this.UpdateFormState();
-        this._handler.PostDelayed(this.UpdateFormStateLoop, this._pipeline?.State == PipelineState.Running ? 250 : 1000);
+        this._handler.PostDelayed(this.UpdateFormStateLoop, this._pipeline?.State == PipelineState.Running ? 16 : 1000);
     }
     
     private void OnLog(RefresherLog log)
