@@ -7,38 +7,20 @@ namespace Refresher.Core.Pipelines.Steps;
 public class DownloadParamSfoStep : Step
 {
     public DownloadParamSfoStep(Pipeline pipeline) : base(pipeline)
-    {
-    }
-
-    public override List<StepInput> Inputs { get; } =
-    [
-        CommonStepInputs.TitleId,
-    ];
+    {}
 
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        string titleId = CommonStepInputs.TitleId.GetValueFromPipeline(this.Pipeline).Trim();
-        string gamePath = $"game/{titleId}";
-
-        // sanity check. UI will not allow this to happen, but CLI will
-        if (titleId.Length != "NPUA80662".Length)
-            throw new InvalidOperationException("Title ID does not match expected length. Did you type the ID in correctly?");
-        
-        if(!this.Pipeline.Accessor!.DirectoryExists(gamePath))
-            throw new FileNotFoundException("The game directory does not exist. This usually means you haven't installed any updates for your game.");
-
-        GameInformation game = this.Pipeline.GameInformation = new GameInformation
-        {
-            TitleId = titleId,
-        };
+        GameInformation game = this.Pipeline.GameInformation!;
+        string gamePath = $"game/{game.TitleId}";
 
         Stream? sfoStream = null;
         PatchAccessor.Try(() =>
         {
             string sfoLocation = $"{gamePath}/PARAM.SFO";
 
-            if(this.Pipeline.Accessor.FileExists(sfoLocation)) 
+            if(this.Pipeline.Accessor!.FileExists(sfoLocation)) 
                 sfoStream = this.Pipeline.Accessor.OpenRead(sfoLocation);
         });
 
@@ -47,7 +29,7 @@ public class DownloadParamSfoStep : Step
         {
             if (sfoStream == null)
             {
-                throw new FileNotFoundException("The game directory does not exist. This usually means you haven't installed any updates for your game.");
+                throw new FileNotFoundException("The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game.");
             }
             this.ParseSfoStream(sfoStream, out sfo);
         }

@@ -42,7 +42,6 @@ public abstract class PatchAccessor
         inStream.CopyTo(outStream);
     }
 
-    [Pure]
     public static void Try(Action action)
     {
         try
@@ -63,6 +62,6 @@ public abstract class PatchAccessor
 
     private static void CatchAccessorException(Exception ex)
     {
-        
+        State.Logger.LogError(Accessor, ex.ToString());
     }
 }

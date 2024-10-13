@@ -9,6 +9,8 @@ public class RPCS3PatchPipeline : Pipeline
     protected override List<Type> StepTypes =>
     [
         typeof(SetupEmulatorAccessorStep),
+        typeof(ValidateGameStep),
         typeof(DownloadParamSfoStep),
+        typeof(DownloadGameEbootStep),
     ];
 }

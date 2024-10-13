@@ -7,6 +7,8 @@ public class GameInformation
     public string? Name { get; set; }
     public string? ContentId { get; set; }
     public string? Version { get; set; }
+    
+    public string? DownloadedEbootPath { get; set; }
 
     public override string ToString()
     {
