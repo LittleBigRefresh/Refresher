@@ -11,7 +11,7 @@ public class DownloadGameLicenseStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        GameInformation game = this.Pipeline.GameInformation!;
+        GameInformation game = this.Game;
         string contentId = game.ContentId!;
         
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());

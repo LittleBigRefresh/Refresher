@@ -20,7 +20,7 @@ public class ReadEbootContentIdStep : Step
             throw new Exception("Unable to retrieve the content ID from the game's EBOOT.");
         this.Progress = 1f;
 
-        this.Pipeline.GameInformation!.ContentId = contentId;
+        this.Game.ContentId = contentId;
         State.Logger.LogDebug(InfoRetrieval, "Got content ID from the game's EBOOT: {0}", contentId);
         return Task.CompletedTask;
     }

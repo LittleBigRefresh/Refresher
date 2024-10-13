@@ -10,7 +10,7 @@ public class DownloadGameEbootStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        string titleId = this.Pipeline.GameInformation!.TitleId;
+        string titleId = this.Game.TitleId;
         string usrDir = $"game/{titleId}/USRDIR";
         
         string ebootPath = Path.Combine(usrDir, "EBOOT.BIN.ORIG"); // Prefer original backup over active copy

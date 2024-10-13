@@ -12,7 +12,7 @@ public class DownloadParamSfoStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        GameInformation game = this.Pipeline.GameInformation!;
+        GameInformation game = this.Game;
         string gamePath = $"game/{game.TitleId}";
 
         Stream? sfoStream = null;
@@ -65,7 +65,7 @@ public class DownloadParamSfoStep : Step
     private void ParseSfoStream(Stream sfoStream, out ParamSfo sfo)
     {
         sfo = new ParamSfo(sfoStream);
-        GameInformation info = this.Pipeline.GameInformation!;
+        GameInformation info = this.Game;
 
         info.Version = "01.00";
         if (sfo.Table.TryGetValue("APP_VER", out object? value))
