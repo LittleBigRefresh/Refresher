@@ -10,6 +10,7 @@ public abstract class Step
     public virtual List<StepInput> Inputs { get; } = [];
 
     protected GameInformation Game => this.Pipeline.GameInformation!;
+    protected EncryptionDetails Encryption => this.Pipeline.EncryptionDetails!;
 
     protected Step(Pipeline pipeline)
     {

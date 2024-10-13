@@ -17,10 +17,7 @@ public abstract class Pipeline
     public IPatcher? Patcher { get; set; }
     public PatchAccessor? Accessor { get; internal set; }
     public GameInformation? GameInformation { get; internal set; }
-    public string? LicenseDirectory { get; internal set; }
-    public string? DownloadedEbootPath { get; set; }
-    public string? DownloadedActDatPath { get; internal set; }
-    public string? DecryptedEbootPath { get; internal set; }
+    public EncryptionDetails? EncryptionDetails { get; internal set; }
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     

@@ -13,11 +13,11 @@ public class PrepareSceToolStep : Step
     {
         Init();
 
-        SetRapDirectory(this.Pipeline.LicenseDirectory!);
-        SetRifPath(this.Pipeline.LicenseDirectory!);
+        SetRapDirectory(this.Encryption.LicenseDirectory!);
+        SetRifPath(this.Encryption.LicenseDirectory!);
         
-        if(this.Pipeline.DownloadedActDatPath != null)
-            SetActDatFilePath(this.Pipeline.DownloadedActDatPath);
+        if(this.Encryption.DownloadedActDatPath != null)
+            SetActDatFilePath(this.Encryption.DownloadedActDatPath);
 
         return Task.CompletedTask;
     }

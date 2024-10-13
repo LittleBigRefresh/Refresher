@@ -17,7 +17,7 @@ public class DownloadGameLicenseStep : Step
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
 
-        this.Pipeline.LicenseDirectory = licenseDir;
+        this.Encryption.LicenseDirectory = licenseDir;
         
         bool found = false;
         foreach (string user in this.Pipeline.Accessor!.GetDirectoriesInDirectory(Path.Combine("home")))
@@ -45,7 +45,7 @@ public class DownloadGameLicenseStep : Step
                 if (!found && this.Pipeline.Accessor.FileExists(actDatPath))
                 {
                     string downloadedActDat = this.Pipeline.Accessor.DownloadFile(actDatPath);
-                    this.Pipeline.DownloadedActDatPath = downloadedActDat;
+                    this.Encryption.DownloadedActDatPath = downloadedActDat;
                 }
 
                 //And the license file

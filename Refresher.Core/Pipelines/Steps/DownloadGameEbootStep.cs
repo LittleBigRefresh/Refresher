@@ -38,7 +38,7 @@ public class DownloadGameEbootStep : Step
         PatchAccessor.Try(() =>
         { 
             downloadedFile = this.Pipeline.Accessor!.DownloadFile(ebootPath);
-            this.Pipeline.DownloadedEbootPath = downloadedFile;
+            this.Game.DownloadedEbootPath = downloadedFile;
         });
         
         State.Logger.LogDebug(Accessor, $"Downloaded EBOOT Path: {downloadedFile}");

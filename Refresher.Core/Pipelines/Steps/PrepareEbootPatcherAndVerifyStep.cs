@@ -18,7 +18,7 @@ public class PrepareEbootPatcherAndVerifyStep : Step
     {
         string url = this.Pipeline.Inputs["url"];
         
-        using Stream stream = File.Open(this.Pipeline.DecryptedEbootPath!, FileMode.Open);
+        using Stream stream = File.Open(this.Game.DecryptedEbootPath!, FileMode.Open);
         EbootPatcher patcher = new(stream);
 
         this.Pipeline.Patcher = patcher;
