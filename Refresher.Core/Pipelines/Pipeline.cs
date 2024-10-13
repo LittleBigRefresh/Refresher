@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using System.Diagnostics;
-
+using Refresher.Core.Accessors;
+using Refresher.Core.Patching;
 using GlobalState = Refresher.Core.State;
 
 namespace Refresher.Core.Pipelines;
@@ -10,8 +11,13 @@ public abstract class Pipeline
     public abstract string Id { get; }
     public abstract string Name { get; }
     
-    public Dictionary<string, string> Inputs = [];
+    public readonly Dictionary<string, string> Inputs = [];
     public FrozenSet<StepInput> RequiredInputs { get; private set; }
+    
+    public IPatcher? Patcher { get; internal set; }
+    public PatchAccessor? Accessor { get; internal set; }
+    public GameInformation? GameInformation { get; internal set; }
+    public EncryptionDetails? EncryptionDetails { get; internal set; }
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     
@@ -70,6 +76,7 @@ public abstract class Pipeline
             }
         }
 
+        GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} started.");
         this.State = PipelineState.Running;
         
         byte i = 1;
@@ -98,6 +105,7 @@ public abstract class Pipeline
             i++;
         }
 
+        GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
         this.State = PipelineState.Finished;
     }
 }
