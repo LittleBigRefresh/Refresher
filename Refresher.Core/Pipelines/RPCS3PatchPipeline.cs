@@ -21,5 +21,6 @@ public class RPCS3PatchPipeline : Pipeline
         typeof(DecryptGameEbootStep),
         typeof(PrepareEbootPatchCreatorAndVerifyStep),
         typeof(ApplyPatchToEbootStep),
+        // The patch creator will automatically write to the patch file. No upload steps are required.
     ];
 }
