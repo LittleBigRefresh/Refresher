@@ -13,5 +13,6 @@ public class RPCS3PatchPipeline : Pipeline
         typeof(DownloadParamSfoStep),
         typeof(DownloadGameEbootStep),
         typeof(ReadEbootContentIdStep),
+        typeof(DownloadGameLicenseStep),
     ];
 }

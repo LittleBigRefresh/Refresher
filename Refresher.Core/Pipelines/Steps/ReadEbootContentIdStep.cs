@@ -10,7 +10,7 @@ public class ReadEbootContentIdStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        string ebootPath = this.Pipeline.GameInformation!.DownloadedEbootPath!;
+        string ebootPath = this.Pipeline.DownloadedEbootPath!;
         
         LibSceToolSharp.Init();
         this.Progress = 0.5f;
@@ -20,7 +20,7 @@ public class ReadEbootContentIdStep : Step
             throw new Exception("Unable to retrieve the content ID from the game's EBOOT.");
         this.Progress = 1f;
 
-        this.Pipeline.GameInformation.ContentId = contentId;
+        this.Pipeline.GameInformation!.ContentId = contentId;
         State.Logger.LogDebug(InfoRetrieval, "Got content ID from the game's EBOOT: {0}", contentId);
         return Task.CompletedTask;
     }
