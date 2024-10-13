@@ -14,5 +14,7 @@ public class RPCS3PatchPipeline : Pipeline
         typeof(DownloadGameEbootStep),
         typeof(ReadEbootContentIdStep),
         typeof(DownloadGameLicenseStep),
+        typeof(PrepareSceToolStep),
+        typeof(DecryptGameEbootStep),
     ];
 }

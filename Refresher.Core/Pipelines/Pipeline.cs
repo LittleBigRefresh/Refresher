@@ -19,6 +19,7 @@ public abstract class Pipeline
     public string? LicenseDirectory { get; internal set; }
     public string? DownloadedEbootPath { get; set; }
     public string? DownloadedActDatPath { get; internal set; }
+    public string? DecryptedEbootPath { get; internal set; }
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     
