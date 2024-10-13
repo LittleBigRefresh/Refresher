@@ -17,7 +17,10 @@ public class DownloadGameLicenseStep : Step
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
 
-        this.Encryption.LicenseDirectory = licenseDir;
+        this.Pipeline.EncryptionDetails = new EncryptionDetails()
+        {
+            LicenseDirectory = licenseDir,
+        };
         
         bool found = false;
         foreach (string user in this.Pipeline.Accessor!.GetDirectoriesInDirectory(Path.Combine("home")))

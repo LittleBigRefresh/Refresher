@@ -146,7 +146,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex.Message}");
+                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex}");
             }
         }, this._cts?.Token ?? default);
         
