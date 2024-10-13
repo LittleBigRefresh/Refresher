@@ -6,4 +6,9 @@ internal class CommonStepInputs
     {
         Placeholder = "NPUA80662",
     };
+    
+    internal static readonly StepInput ServerUrl = new("url", "Server URL to patch to")
+    {
+        Placeholder = "https://lbp.littlebigrefresh.com",
+    };
 }

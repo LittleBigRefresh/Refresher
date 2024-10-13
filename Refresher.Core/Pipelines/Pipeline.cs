@@ -14,6 +14,7 @@ public abstract class Pipeline
     public readonly Dictionary<string, string> Inputs = [];
     public FrozenSet<StepInput> RequiredInputs { get; private set; }
     
+    public IPatcher? Patcher { get; set; }
     public PatchAccessor? Accessor { get; internal set; }
     public GameInformation? GameInformation { get; internal set; }
     public string? LicenseDirectory { get; internal set; }
