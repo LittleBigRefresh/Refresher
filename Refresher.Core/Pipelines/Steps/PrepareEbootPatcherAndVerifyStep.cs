@@ -17,9 +17,8 @@ public class PrepareEbootPatcherAndVerifyStep : Step
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         string url = this.Pipeline.Inputs["url"];
-        
-        using Stream stream = File.Open(this.Game.DecryptedEbootPath!, FileMode.Open);
-        EbootPatcher patcher = new(stream);
+
+        EbootPatcher patcher = new(File.Open(this.Game.DecryptedEbootPath!, FileMode.Open, FileAccess.ReadWrite));
 
         this.Pipeline.Patcher = patcher;
 

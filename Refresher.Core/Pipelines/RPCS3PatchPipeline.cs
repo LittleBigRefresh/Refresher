@@ -20,5 +20,6 @@ public class RPCS3PatchPipeline : Pipeline
         typeof(PrepareSceToolStep),
         typeof(DecryptGameEbootStep),
         typeof(PrepareEbootPatcherAndVerifyStep),
+        typeof(ApplyPatchToEbootStep),
     ];
 }
