@@ -1,3 +1,6 @@
+using System.Diagnostics.Contracts;
+using System.Reflection;
+
 namespace Refresher.Core.Accessors;
 
 public abstract class PatchAccessor
@@ -37,5 +40,28 @@ public abstract class PatchAccessor
         using Stream outStream = this.OpenWrite(outPath);
         
         inStream.CopyTo(outStream);
+    }
+
+    public static void Try(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (TargetInvocationException targetInvocationException)
+        {
+            CatchAccessorException(targetInvocationException.InnerException!);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            CatchAccessorException(ex);
+            throw;
+        }
+    }
+
+    private static void CatchAccessorException(Exception ex)
+    {
+        State.Logger.LogError(Accessor, ex.ToString());
     }
 }

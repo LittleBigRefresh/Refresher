@@ -1,3 +1,5 @@
+using Refresher.Core.Patching;
+
 namespace Refresher.Core.Pipelines;
 
 public abstract class Step
@@ -6,6 +8,9 @@ public abstract class Step
     public abstract float Progress { get; protected set; }
 
     public virtual List<StepInput> Inputs { get; } = [];
+
+    protected GameInformation Game => this.Pipeline.GameInformation!;
+    protected EncryptionDetails Encryption => this.Pipeline.EncryptionDetails!;
 
     protected Step(Pipeline pipeline)
     {

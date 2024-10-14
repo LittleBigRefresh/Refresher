@@ -55,7 +55,7 @@ public class ConsolePatchForm : IntegratedPatchForm
     private bool InitializePatchAccessor()
     {
         this.DisposePatchAccessor();
-        State.Logger.LogTrace(LogType.PatchAccessor, "Making a new patch accessor");
+        State.Logger.LogTrace(LogType.Accessor, "Making a new patch accessor");
         try
         {
             this.Accessor = new ConsolePatchAccessor(this._remoteAddress.Text.Trim());
@@ -86,7 +86,7 @@ public class ConsolePatchForm : IntegratedPatchForm
 
     private void DisposePatchAccessor()
     {
-        State.Logger.LogTrace(LogType.PatchAccessor, "Disposing patch accessor");
+        State.Logger.LogTrace(LogType.Accessor, "Disposing patch accessor");
         if (this.Accessor is IDisposable disposable)
             disposable.Dispose();
     }

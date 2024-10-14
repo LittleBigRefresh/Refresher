@@ -6,7 +6,7 @@ public enum LogType : byte
     PPU,
     Verify,
     CLI,
-    PatchAccessor,
+    Accessor,
     PatchForm,
     IntegratedPatchForm,
     InfoRetrieval,
@@ -14,6 +14,9 @@ public enum LogType : byte
     IDPS,
     OSIntegration,
     AutoDiscover,
+    PS3,
     PSP,
+    Vita,
+    RPCS3,
     Pipeline
 }

@@ -436,7 +436,7 @@ public partial class EbootPatcher : IPatcher
                                PPU-{this._ppuHash}:
                                  "Refresher Patch ({url})":
                                    Games:
-                                     "{this.GameName}":
+                                     "{this.GameName.ReplaceLineEndings(string.Empty)}":
                                        {this.TitleId}: [ {this.GameVersion} ]
                                    Author: "Refresher (automated)"
                                    Notes: "This patches the game to connect to {url}"

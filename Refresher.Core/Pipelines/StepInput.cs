@@ -4,11 +4,17 @@ public class StepInput
 {
     public string Id { get; init; }
     public string Name { get; init; }
+    public StepInputType Type { get; init; }
 
-    public StepInput(string id, string name)
+    public string Placeholder { get; init; }
+
+    public Func<string?>? DetermineDefaultValue { get; init; }
+
+    public StepInput(string id, string name, StepInputType type = StepInputType.Text)
     {
         this.Id = id;
         this.Name = name;
+        this.Type = type;
     }
 
     public string GetValueFromPipeline(Pipeline pipeline)
