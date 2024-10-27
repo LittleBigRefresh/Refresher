@@ -1,6 +1,7 @@
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
+using NotEnoughLogs;
 using Refresher.Core;
 using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
@@ -203,6 +204,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             // automatically scroll to the bottom by highlighting the last item temporarily
             this._messages.SelectedIndex = this._messages.Items.Count - 1;
             this._messages.SelectedIndex = -1;
+
+            if (log.Level <= LogLevel.Error)
+            {
+                MessageBox.Show(log.Content, $"{log.Category} {log.Level.ToString()}", MessageBoxType.Error);
+            }
         });
     }
 }
