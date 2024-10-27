@@ -1,3 +1,4 @@
+using System.Windows.Forms;
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
@@ -5,6 +6,17 @@ using Refresher.Core;
 using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
+using Application = Eto.Forms.Application;
+using Button = Eto.Forms.Button;
+using Control = Eto.Forms.Control;
+using HorizontalAlignment = Eto.Forms.HorizontalAlignment;
+using Label = Eto.Forms.Label;
+using ListBox = Eto.Forms.ListBox;
+using Orientation = Eto.Forms.Orientation;
+using Padding = Eto.Drawing.Padding;
+using ProgressBar = Eto.Forms.ProgressBar;
+using Splitter = Eto.Forms.Splitter;
+using TextBox = Eto.Forms.TextBox;
 
 namespace Refresher.UI;
 
@@ -26,22 +38,27 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this.Content = new Splitter
         {
             Orientation = Orientation.Vertical,
+            FixedPanel = SplitterFixedPanel.Panel1,
             Panel1 = this._formLayout = new TableLayout
             {
                 Spacing = new Size(5, 5),
                 Padding = new Padding(0, 0, 0, 10),
             },
             Panel2 = new StackLayout([
-                this._messages = new ListBox { Height = 200 },
+                new StackLayoutItem(this._messages = new ListBox
+                {
+                    Height = -1,
+                }, VerticalAlignment.Top, true),
                 this._button = new Button(this.OnButtonClick) { Text = "Execute" },
                 this._currentProgressBar = new ProgressBar(),
                 this._progressBar = new ProgressBar(),
             ])
             {
-                Padding = new Padding(0, 10, 0, 0),
+                Padding = new Padding(0, 10, 0, 10),
                 Spacing = 5,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
-                VerticalContentAlignment = VerticalAlignment.Bottom,
+                VerticalContentAlignment = VerticalAlignment.Stretch,
+                Size = new Size(-1, -1),
             },
         };
         
@@ -191,6 +208,13 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     
     private void OnLog(RefresherLog log)
     {
-        this._messages.Items.Add($"[{log.Level}] [{log.Category}] {log.Content}");
+        Application.Instance.Invoke(() =>
+        {
+            this._messages.Items.Add($"[{log.Level}] [{log.Category}] {log.Content}");
+        
+            // automatically scroll to the bottom by highlighting the last item temporarily
+            this._messages.SelectedIndex = this._messages.Items.Count - 1;
+            this._messages.SelectedIndex = -1;
+        });
     }
 }
