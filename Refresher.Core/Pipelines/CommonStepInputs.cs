@@ -20,6 +20,11 @@ internal static class CommonStepInputs
         DetermineDefaultValue = DetermineDefaultRpcs3Path,
     };
     
+    internal static readonly StepInput ConsoleIP = new("ip", "Console IP")
+    {
+        Placeholder = "192.168.1.123",
+    };
+    
     // TODO: Cache the last used location for easier entry
     private static string? DetermineDefaultRpcs3Path()
     {

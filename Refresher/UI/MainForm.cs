@@ -24,6 +24,7 @@ public class MainForm : RefresherForm
             this.PipelineButton<ExamplePipeline>(),
             #endif
             this.PipelineButton<RPCS3PatchPipeline>(),
+            this.PipelineButton<PS3PatchPipeline>(),
         ]);
 
         layout.Spacing = 5;
