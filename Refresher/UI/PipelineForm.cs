@@ -1,4 +1,3 @@
-using System.Windows.Forms;
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
@@ -6,17 +5,6 @@ using Refresher.Core;
 using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
-using Application = Eto.Forms.Application;
-using Button = Eto.Forms.Button;
-using Control = Eto.Forms.Control;
-using HorizontalAlignment = Eto.Forms.HorizontalAlignment;
-using Label = Eto.Forms.Label;
-using ListBox = Eto.Forms.ListBox;
-using Orientation = Eto.Forms.Orientation;
-using Padding = Eto.Drawing.Padding;
-using ProgressBar = Eto.Forms.ProgressBar;
-using Splitter = Eto.Forms.Splitter;
-using TextBox = Eto.Forms.TextBox;
 
 namespace Refresher.UI;
 
