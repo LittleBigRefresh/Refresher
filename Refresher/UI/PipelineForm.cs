@@ -6,6 +6,8 @@ using Refresher.Core;
 using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
+using Refresher.Core.Verification.AutoDiscover;
+using Pipeline = Refresher.Core.Pipelines.Pipeline;
 
 namespace Refresher.UI;
 
@@ -14,6 +16,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private TPipeline? _pipeline;
 
     private readonly Button _button;
+    private readonly Button _autoDiscoverButton;
     private readonly ProgressBar _currentProgressBar;
     private readonly ProgressBar _progressBar;
     private readonly ListBox _messages;
@@ -39,6 +42,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                     Height = -1,
                 }, VerticalAlignment.Top, true),
                 this._button = new Button(this.OnButtonClick) { Text = "Execute" },
+                this._autoDiscoverButton = new Button(this.OnAutoDiscoverClick) { Text = "AutoDiscover" },
                 this._currentProgressBar = new ProgressBar(),
                 this._progressBar = new ProgressBar(),
             ])
@@ -61,14 +65,18 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     {
         this._progressBar.Value = (int)((this._pipeline?.Progress ?? 0) * 100);
         this._currentProgressBar.Value = (int)(this._pipeline?.CurrentProgress * 100 ?? 0);
-        this._currentProgressBar.Enabled = this._progressBar.Enabled = this._pipeline?.State == PipelineState.Running;
         this._progressBar.ToolTip = this._pipeline?.State.ToString() ?? "Uninitialized";
+
+        bool enableControls = this._pipeline?.State != PipelineState.Running;
+        this._currentProgressBar.Enabled = !enableControls;
+        this._progressBar.Enabled = !enableControls;
+        this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
 
         this._button.Text = this._pipeline?.State switch
         {
             PipelineState.NotStarted => "Execute",
             PipelineState.Running => "Cancel",
-            PipelineState.Finished => "Retry",
+            PipelineState.Finished => "Complete!",
             PipelineState.Cancelled => "Execute",
             PipelineState.Error => "Retry",
             _ => throw new ArgumentOutOfRangeException(),
@@ -157,6 +165,46 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         }, this._cts?.Token ?? default);
         
         this.UpdateFormState();
+    }
+    
+    private void OnAutoDiscoverClick(object? sender, EventArgs e)
+    {
+        if (this._pipeline == null)
+            return;
+        
+        if (this._pipeline.State == PipelineState.Running)
+            return;
+        
+        TextControl control = (TextControl)this._formLayout.Rows
+            .Where(r => r.Cells[0].Control.ToolTip == CommonStepInputs.ServerUrl.Id)
+            .Select(r => r.Cells[1].Control)
+            .First();
+
+        string url = control.Text;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                AutoDiscoverResponse? autoDiscover = await this._pipeline.InvokeAutoDiscoverAsync(url);
+                if (autoDiscover != null)
+                {
+                    await Application.Instance.InvokeAsync(() =>
+                    {
+                        this._autoDiscoverButton.Enabled = false;
+                        this._autoDiscoverButton.Text = $"AutoDiscover [locked to {autoDiscover.ServerBrand}]";
+                        
+                        control.Text = autoDiscover.Url;
+                        control.Enabled = false;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                State.Logger.LogError(LogType.Pipeline, $"Error while invoking autodiscover: {ex}");
+                SentrySdk.CaptureException(ex);
+            }
+        }, this._cts?.Token ?? default);
     }
     
     private static TableRow AddField<TControl>(StepInput input) where TControl : Control, new()

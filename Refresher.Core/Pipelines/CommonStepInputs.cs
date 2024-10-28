@@ -1,13 +1,13 @@
 namespace Refresher.Core.Pipelines;
 
-internal static class CommonStepInputs
+public static class CommonStepInputs
 {
     internal static readonly StepInput TitleId = new("title-id", "Game", StepInputType.Game)
     {
         Placeholder = "NPUA80662",
     };
     
-    internal static readonly StepInput ServerUrl = new("url", "Server URL")
+    public static readonly StepInput ServerUrl = new("url", "Server URL")
     {
         Placeholder = "https://lbp.littlebigrefresh.com",
     };

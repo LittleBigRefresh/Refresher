@@ -2,7 +2,7 @@ using System.Collections.Frozen;
 using System.Diagnostics;
 using Refresher.Core.Accessors;
 using Refresher.Core.Patching;
-using Refresher.Core.Verification.Autodiscover;
+using Refresher.Core.Verification.AutoDiscover;
 using GlobalState = Refresher.Core.State;
 
 namespace Refresher.Core.Pipelines;
@@ -19,7 +19,7 @@ public abstract class Pipeline
     public PatchAccessor? Accessor { get; internal set; }
     public GameInformation? GameInformation { get; internal set; }
     public EncryptionDetails? EncryptionDetails { get; internal set; }
-    public AutodiscoverResponse? Autodiscover { get; internal set; }
+    public AutoDiscoverResponse? AutoDiscover { get; internal set; }
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     
@@ -109,5 +109,14 @@ public abstract class Pipeline
 
         GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
         this.State = PipelineState.Finished;
+    }
+
+    public async Task<AutoDiscoverResponse?> InvokeAutoDiscoverAsync(string url, CancellationToken cancellationToken = default)
+    {
+        AutoDiscoverResponse? autoDiscover = await AutoDiscoverClient.InvokeAutoDiscoverAsync(url, cancellationToken);
+        if(autoDiscover != null)
+           this.AutoDiscover = autoDiscover;
+
+        return autoDiscover;
     }
 }

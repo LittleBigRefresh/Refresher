@@ -9,7 +9,7 @@ using Eto.Forms;
 using Refresher.Core;
 using Refresher.Core.Patching;
 using Refresher.Core.Verification;
-using Refresher.Core.Verification.Autodiscover;
+using Refresher.Core.Verification.AutoDiscover;
 using Task = System.Threading.Tasks.Task;
 
 namespace Refresher.UI;
@@ -165,7 +165,7 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             HttpResponseMessage response = client.GetAsync("/autodiscover").Result;
             response.EnsureSuccessStatusCode();
 
-            AutodiscoverResponse? autodiscover = response.Content.ReadFromJsonAsync<AutodiscoverResponse>().Result;
+            AutoDiscoverResponse? autodiscover = response.Content.ReadFromJsonAsync<AutoDiscoverResponse>().Result;
             if (autodiscover == null) throw new InvalidOperationException("autoresponse was null");
             
             string text = $"Successfully found a '{autodiscover.ServerBrand}' server at the given URL!\n\n" +

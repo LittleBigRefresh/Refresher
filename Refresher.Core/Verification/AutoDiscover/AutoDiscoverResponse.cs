@@ -1,10 +1,10 @@
 using System.Text.Json.Serialization;
 
-namespace Refresher.Core.Verification.Autodiscover;
+namespace Refresher.Core.Verification.AutoDiscover;
 
 #nullable disable
 
-public class AutodiscoverResponse
+public class AutoDiscoverResponse
 {
     private const int SupportedVersion = 2;
 

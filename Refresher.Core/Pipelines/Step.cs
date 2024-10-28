@@ -1,4 +1,5 @@
 using Refresher.Core.Patching;
+using Refresher.Core.Verification.AutoDiscover;
 
 namespace Refresher.Core.Pipelines;
 
@@ -11,6 +12,7 @@ public abstract class Step
 
     protected GameInformation Game => this.Pipeline.GameInformation!;
     protected EncryptionDetails Encryption => this.Pipeline.EncryptionDetails!;
+    protected AutoDiscoverResponse? AutoDiscover => this.Pipeline.AutoDiscover;
 
     protected Step(Pipeline pipeline)
     {
