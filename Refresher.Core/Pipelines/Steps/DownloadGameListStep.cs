@@ -13,7 +13,10 @@ public class DownloadGameListStep : Step
     {
         this.Pipeline.GameList = [];
 
-        List<string> games = this.Pipeline.Accessor!.GetDirectoriesInDirectory("game").ToList();
+        List<string> games = this.Pipeline.Accessor!.GetDirectoriesInDirectory("game")
+            .Where(p => Path.GetFileName(p).Length == "NPUA80662".Length)
+            .ToList();
+
         int i = 0;
         foreach (string gamePath in games)
         {
