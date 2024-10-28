@@ -9,6 +9,8 @@ public class PS3PatchPipeline : Pipeline
 
     protected override Type SetupAccessorStepType => typeof(SetupPS3AccessorStep);
 
+    public override string GuideLink => "https://docs.littlebigrefresh.com/ps3";
+
     protected override List<Type> StepTypes =>
     [
         // Info gathering stage

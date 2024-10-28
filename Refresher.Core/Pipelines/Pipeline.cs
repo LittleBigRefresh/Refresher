@@ -23,6 +23,8 @@ public abstract class Pipeline
     public GameInformation? GameInformation { get; internal set; }
     public EncryptionDetails? EncryptionDetails { get; internal set; }
     public AutoDiscoverResponse? AutoDiscover { get; internal set; }
+
+    public virtual string? GuideLink => null;
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     

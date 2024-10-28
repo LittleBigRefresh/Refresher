@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
@@ -49,6 +51,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 }, VerticalAlignment.Top, true),
                 this._button = new Button(this.OnButtonClick) { Text = "Patch!" },
                 this._autoDiscoverButton = new Button(this.OnAutoDiscoverClick) { Text = "AutoDiscover" },
+                new Button(this.OnViewGuideClick) { Text = "View Guide" },
                 this._currentProgressBar = new ProgressBar(),
                 this._progressBar = new ProgressBar(),
             ])
@@ -333,6 +336,41 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 this._autoDiscoverCts = null;
             }
         }, this._autoDiscoverCts.Token);
+    }
+    
+    private void OnViewGuideClick(object? sender, EventArgs _)
+    {
+        if (this._pipeline == null)
+            return;
+
+        if (this._pipeline.GuideLink == null)
+        {
+            MessageBox.Show("No guide exists for this patch method yet, so stay tuned!", MessageBoxType.Warning);
+            return;
+        }
+
+        string url = this._pipeline.GuideLink;
+        
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                Process.Start("xdg-open", url);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start("open", url);
+            else
+                throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
+        }
+        catch (Exception e)
+        {
+            State.Logger.LogError(OSIntegration, e.ToString());
+            MessageBox.Show("We couldn't open your browser due to an error.\n" +
+                            $"You can use this link instead: {url}\n\n" +
+                            $"Exception details: {e.GetType().Name} {e.Message}", MessageBoxType.Error);
+            SentrySdk.CaptureException(e);
+        }
+        // based off of https://stackoverflow.com/a/43232486
     }
     
     private static TableRow AddField<TControl>(StepInput input, Button? button = null) where TControl : Control, new()
