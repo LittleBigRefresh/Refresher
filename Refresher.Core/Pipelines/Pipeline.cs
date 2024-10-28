@@ -46,6 +46,7 @@ public abstract class Pipeline
     public float CurrentProgress => this.State == PipelineState.Finished ? 1 : this._currentStep?.Progress ?? 0;
 
     protected virtual Type? SetupAccessorStepType => null;
+    protected virtual bool ReplacesEboot => false;
 
     protected abstract List<Type> StepTypes { get; }
     private List<Step> _steps = [];
@@ -183,5 +184,32 @@ public abstract class Pipeline
             throw new Exception("Could not download the list of games.");
 
         return this.GameList;
+    }
+    
+    public async Task RevertGameEbootAsync(CancellationToken cancellationToken = default)
+    {
+        if (this.State != PipelineState.NotStarted)
+        {
+            this.State = PipelineState.Error;
+            throw new InvalidOperationException("Pipeline must be in a clean state before reverting the EBOOT.");
+        }
+        
+        if(this.SetupAccessorStepType == null)
+            throw new InvalidOperationException("This pipeline doesn't have accessors configured.");
+
+        if (!this.ReplacesEboot)
+            throw new InvalidOperationException("This pipeline doesn't replace the EBOOT, so this operation is unnecessary.");
+
+        List<Step> stepTypes = [
+            (Step)Activator.CreateInstance(this.SetupAccessorStepType, this)!,
+            new ValidateGameStep(this),
+            new RevertGameEbootFromBackupStep(this),
+        ];
+        
+        this.State = PipelineState.Running;
+        
+        await this.RunListOfSteps(stepTypes, cancellationToken);
+        
+        this.Reset();
     }
 }

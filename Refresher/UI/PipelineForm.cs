@@ -21,6 +21,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private TPipeline? _pipeline;
 
     private readonly Button _button;
+    private readonly Button _revertButton;
     private readonly Button _autoDiscoverButton;
     private readonly ProgressBar _currentProgressBar;
     private readonly ProgressBar _progressBar;
@@ -50,6 +51,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                     Height = -1,
                 }, VerticalAlignment.Top, true),
                 this._button = new Button(this.OnButtonClick) { Text = "Patch!" },
+                this._revertButton = new Button(this.OnRevertEbootClick) { Text = "Revert EBOOT" },
                 this._autoDiscoverButton = new Button(this.OnAutoDiscoverClick) { Text = "AutoDiscover" },
                 new Button(this.OnViewGuideClick) { Text = "View Guide" },
                 this._currentProgressBar = new ProgressBar(),
@@ -86,6 +88,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         // disable other things
         this._formLayout.Enabled = enableControls;
         this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
+        this._revertButton.Enabled = enableControls;
 
         // set text of autodiscover button
         if (this._autoDiscoverCts != null)
@@ -371,6 +374,33 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             SentrySdk.CaptureException(e);
         }
         // based off of https://stackoverflow.com/a/43232486
+    }
+    
+    private void OnRevertEbootClick(object? sender, EventArgs e)
+    {
+        if (this._pipeline == null)
+            return;
+        
+        if (this._pipeline.State == PipelineState.Running)
+            return;
+        
+        this.AddFormInputsToPipeline();
+        
+        Task.Run(async () =>
+        {
+            try
+            {
+                await this._pipeline!.RevertGameEbootAsync();
+                await Application.Instance.InvokeAsync(() =>
+                {
+                    MessageBox.Show("The EBOOT was successfully reverted to the original copy.", "Success!");
+                });
+            }
+            catch (Exception ex)
+            {
+                State.Logger.LogError(LogType.Pipeline, $"Error while reverting the game's EBOOT: {ex}");
+            }
+        });
     }
     
     private static TableRow AddField<TControl>(StepInput input, Button? button = null) where TControl : Control, new()
