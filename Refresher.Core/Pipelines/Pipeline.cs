@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Diagnostics;
 using Refresher.Core.Accessors;
 using Refresher.Core.Patching;
+using Refresher.Core.Verification.Autodiscover;
 using GlobalState = Refresher.Core.State;
 
 namespace Refresher.Core.Pipelines;
@@ -18,6 +19,7 @@ public abstract class Pipeline
     public PatchAccessor? Accessor { get; internal set; }
     public GameInformation? GameInformation { get; internal set; }
     public EncryptionDetails? EncryptionDetails { get; internal set; }
+    public AutodiscoverResponse? Autodiscover { get; internal set; }
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     
@@ -25,6 +27,9 @@ public abstract class Pipeline
     {
         get
         {
+            if (this.State == PipelineState.Finished)
+                return 1;
+            
             float completed = (this._currentStepIndex - 1) / (float)this._steps.Count;
             float currentStep = this._currentStep?.Progress ?? 0f;
             float stepWeight = 1f / this._steps.Count;
@@ -33,7 +38,7 @@ public abstract class Pipeline
         }
     }
 
-    public float CurrentProgress => this._currentStep?.Progress ?? 0;
+    public float CurrentProgress => this.State == PipelineState.Finished ? 1 : this._currentStep?.Progress ?? 0;
 
     protected abstract List<Type> StepTypes { get; }
     private List<Step> _steps = [];
