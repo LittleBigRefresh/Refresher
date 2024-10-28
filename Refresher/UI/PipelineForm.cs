@@ -3,11 +3,13 @@ using Eto.Drawing;
 using Eto.Forms;
 using NotEnoughLogs;
 using Refresher.Core;
+using Refresher.Core.Accessors;
 using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
 using Refresher.Core.Patching;
 using Refresher.Core.Pipelines;
 using Refresher.Core.Verification.AutoDiscover;
+using Refresher.UI.Items;
 using Pipeline = Refresher.Core.Pipelines.Pipeline;
 
 namespace Refresher.UI;
@@ -18,12 +20,13 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
     private readonly Button _button;
     private readonly Button _autoDiscoverButton;
-    private Button? _connectButton;
     private readonly ProgressBar _currentProgressBar;
     private readonly ProgressBar _progressBar;
     private readonly ListBox _messages;
     
     private readonly TableLayout _formLayout;
+    private Button? _connectButton;
+    private DropDown? _gamesDropDown;
 
     private CancellationTokenSource? _cts;
     
@@ -99,6 +102,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             switch (input.Type)
             {
                 case StepInputType.Game:
+                    row = AddField<DropDown>(input);
+                    this._gamesDropDown = row.Cells[1].Control as DropDown;
+                    this._gamesDropDown!.Enabled = false;
+                    this._gamesDropDown.Height = 56;
+                    break;
                 case StepInputType.Text:
                     row = AddField<TextBox>(input);
                     break;
@@ -210,12 +218,52 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
     private void HandleGameList(List<GameInformation> games)
     {
-        MessageBox.Show($"Found {games.Count} game(s).", "Success!");
         if (this._connectButton != null)
         {
             this._connectButton.Enabled = false;
             this._connectButton.Text = "Connected!";
         }
+        
+        foreach (GameInformation game in games)
+        {
+            GameItem item = new()
+            {
+                Text = $"{game.Name} [{game.TitleId} {game.Version}]",
+                Version = game.Version ?? "00.00",
+                TitleId = game.TitleId,
+            };
+
+            if (GameCacheAccessor.IconExistsInCache(game.TitleId))
+            {
+                using Stream iconStream = GameCacheAccessor.GetIconFromCache(game.TitleId);
+                try
+                {
+                    item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));
+                }
+                catch (NotSupportedException)
+                {
+                    // Failed to set image for NPEB01899: System.NotSupportedException: No imaging component suitable to complete this operation was found.
+                    // ignore for now
+                }
+                catch (FormatException)
+                {
+                    // Failed to set image for BLUS31426: System.IO.FileFormatException: The image format is unrecognized.
+                    // also ignore for now
+
+                    // FileFormatException seems to not exist, but this page mentions it extending FormatException:
+                    // https://learn.microsoft.com/en-us/dotnet/api/system.io.fileformatexception
+                }
+                catch(Exception e)
+                {
+                    State.Logger.LogWarning(InfoRetrieval, $"Failed to set image for {game}: {e}");
+                    SentrySdk.CaptureException(e);
+                }
+            }
+
+            this._gamesDropDown!.Items.Add(item);
+        }
+
+        this._gamesDropDown!.Enabled = true;
     }
 
     private void OnAutoDiscoverClick(object? sender, EventArgs e)
