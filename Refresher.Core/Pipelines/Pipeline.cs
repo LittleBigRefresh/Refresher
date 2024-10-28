@@ -46,7 +46,7 @@ public abstract class Pipeline
     public float CurrentProgress => this.State == PipelineState.Finished ? 1 : this._currentStep?.Progress ?? 0;
 
     protected virtual Type? SetupAccessorStepType => null;
-    protected virtual bool ReplacesEboot => false;
+    public virtual bool ReplacesEboot => false;
 
     protected abstract List<Type> StepTypes { get; }
     private List<Step> _steps = [];

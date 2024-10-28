@@ -21,8 +21,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private TPipeline? _pipeline;
 
     private readonly Button _button;
-    private readonly Button _revertButton;
-    private readonly Button _autoDiscoverButton;
+    private readonly Button? _revertButton;
+    private readonly Button? _autoDiscoverButton;
     private readonly ProgressBar _currentProgressBar;
     private readonly ProgressBar _progressBar;
     private readonly ListBox _messages;
@@ -38,6 +38,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     
     public PipelineForm() : base(typeof(TPipeline).Name, new Size(700, -1), false)
     {
+        StackLayout layout;
         this.Content = new Splitter
         {
             Orientation = Orientation.Vertical,
@@ -47,14 +48,12 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 Spacing = new Size(5, 5),
                 Padding = new Padding(0, 0, 0, 10),
             },
-            Panel2 = new StackLayout([
+            Panel2 = layout = new StackLayout([
                 new StackLayoutItem(this._messages = new ListBox
                 {
                     Height = -1,
                 }, VerticalAlignment.Top, true),
                 this._button = new Button(this.OnButtonClick) { Text = "Patch!" },
-                this._revertButton = new Button(this.OnRevertEbootClick) { Text = "Revert EBOOT" },
-                this._autoDiscoverButton = new Button(this.OnAutoDiscoverClick) { Text = "AutoDiscover" },
                 new Button(this.OnViewGuideClick) { Text = "View Guide" },
                 this._currentProgressBar = new ProgressBar(),
                 this._progressBar = new ProgressBar(),
@@ -70,6 +69,18 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         this.InitializePipeline();
         this.InitializeFormStateUpdater();
+        
+        if (this._pipeline?.ReplacesEboot ?? false)
+        {
+            this._revertButton = new Button(this.OnRevertEbootClick) { Text = "Revert EBOOT" };
+            layout.Items.Insert(2, this._revertButton);
+        }
+        
+        if (this._pipeline?.RequiredInputs.Any(i => i == CommonStepInputs.ServerUrl) ?? false)
+        {
+            this._autoDiscoverButton = new Button(this.OnAutoDiscoverClick) { Text = "AutoDiscover" };
+            layout.Items.Insert(2, this._autoDiscoverButton);
+        }
         
         State.Log += this.OnLog;
     }
@@ -89,14 +100,19 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         // disable other things
         this._formLayout.Enabled = enableControls;
-        this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
-        this._revertButton.Enabled = enableControls;
+        if(this._autoDiscoverButton != null)
+            this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
+        if(this._revertButton != null)
+            this._revertButton.Enabled = enableControls;
 
         // set text of autodiscover button
-        if (this._autoDiscoverCts != null)
-            this._autoDiscoverButton.Text = "Running AutoDiscover... (click to cancel)";
-        else if (this._pipeline?.AutoDiscover == null)
-            this._autoDiscoverButton.Text = "AutoDiscover";
+        if (this._autoDiscoverButton != null)
+        {
+            if (this._autoDiscoverCts != null)
+                this._autoDiscoverButton.Text = "Running AutoDiscover... (click to cancel)";
+            else if (this._pipeline?.AutoDiscover == null)
+                this._autoDiscoverButton.Text = "AutoDiscover";            
+        }
 
         this._button.Text = this._pipeline?.State switch
         {
@@ -195,9 +211,9 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             this._pipeline.Reset();
         }
         
-        if (!this._usedAutoDiscover)
+        if (!this._usedAutoDiscover && this._autoDiscoverButton != null)
         {
-            DialogResult result = MessageBox.Show("You didn't use AutoDiscover. Would you like to try to run it now?", "AutoDiscover",
+            DialogResult result = MessageBox.Show("You haven't used AutoDiscover. Would you like to try to run it now?", "AutoDiscover",
                 MessageBoxButtons.YesNoCancel, MessageBoxType.Question);
             
             // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
