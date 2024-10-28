@@ -29,6 +29,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private DropDown? _gamesDropDown;
 
     private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _autoDiscoverCts;
     
     public PipelineForm() : base(typeof(TPipeline).Name, new Size(700, -1), false)
     {
@@ -68,19 +69,31 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
     private void UpdateFormState()
     {
+        // adjust progress bars
         this._progressBar.Value = (int)((this._pipeline?.Progress ?? 0) * 100);
         this._currentProgressBar.Value = (int)(this._pipeline?.CurrentProgress * 100 ?? 0);
         this._progressBar.ToolTip = this._pipeline?.State.ToString() ?? "Uninitialized";
 
         bool enableControls = this._pipeline?.State != PipelineState.Running;
+        
+        // highlight progress bars while patching
         this._currentProgressBar.Enabled = !enableControls;
         this._progressBar.Enabled = !enableControls;
+        
+        // disable other things
+        this._formLayout.Enabled = enableControls;
         this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
+
+        // set text of autodiscover button
+        if (this._autoDiscoverCts != null)
+            this._autoDiscoverButton.Text = "Running AutoDiscover... (click to cancel)";
+        else if (this._pipeline?.AutoDiscover == null)
+            this._autoDiscoverButton.Text = "AutoDiscover";
 
         this._button.Text = this._pipeline?.State switch
         {
-            PipelineState.NotStarted => "Execute",
-            PipelineState.Running => "Cancel",
+            PipelineState.NotStarted => "Patch!",
+            PipelineState.Running => "Patching... (click to cancel)",
             PipelineState.Finished => "Complete!",
             PipelineState.Cancelled => "Execute",
             PipelineState.Error => "Retry",
@@ -273,6 +286,14 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         if (this._pipeline.State == PipelineState.Running)
             return;
+
+        if (this._autoDiscoverCts != null)
+        {
+            this._autoDiscoverCts.Cancel();
+            return;
+        }
+
+        this._autoDiscoverCts = new CancellationTokenSource();
         
         TextControl control = (TextControl)this._formLayout.Rows
             .Where(r => r.Cells[0].Control.ToolTip == CommonStepInputs.ServerUrl.Id)
@@ -285,14 +306,16 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         {
             try
             {
-                AutoDiscoverResponse? autoDiscover = await this._pipeline.InvokeAutoDiscoverAsync(url);
+                AutoDiscoverResponse? autoDiscover =
+                    await this._pipeline.InvokeAutoDiscoverAsync(url, this._autoDiscoverCts.Token);
+
                 if (autoDiscover != null)
                 {
                     await Application.Instance.InvokeAsync(() =>
                     {
                         this._autoDiscoverButton.Enabled = false;
                         this._autoDiscoverButton.Text = $"AutoDiscover [locked to {autoDiscover.ServerBrand}]";
-                        
+
                         control.Text = autoDiscover.Url;
                         control.Enabled = false;
                     });
@@ -303,7 +326,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 State.Logger.LogError(LogType.Pipeline, $"Error while invoking autodiscover: {ex}");
                 SentrySdk.CaptureException(ex);
             }
-        }, this._cts?.Token ?? default);
+            finally
+            {
+                this._autoDiscoverCts = null;
+            }
+        }, this._autoDiscoverCts.Token);
     }
     
     private static TableRow AddField<TControl>(StepInput input, Button? button = null) where TControl : Control, new()
