@@ -40,6 +40,8 @@ public abstract class Pipeline
 
     public float CurrentProgress => this.State == PipelineState.Finished ? 1 : this._currentStep?.Progress ?? 0;
 
+    protected virtual Type? SetupAccessorStepType => null;
+
     protected abstract List<Type> StepTypes { get; }
     private List<Step> _steps = [];
     
@@ -50,18 +52,25 @@ public abstract class Pipeline
     {
         List<StepInput> requiredInputs = [];
         
-        this._steps = new List<Step>(this.StepTypes.Count);
+        this._steps = new List<Step>(this.StepTypes.Count + 1);
+        
+        if(this.SetupAccessorStepType != null)
+            this.AddStep(requiredInputs, this.SetupAccessorStepType);
+
         foreach (Type type in this.StepTypes)
-        {
-            Debug.Assert(type.IsAssignableTo(typeof(Step)));
-
-            Step step = (Step)Activator.CreateInstance(type, this)!;
-
-            this._steps.Add(step);
-            requiredInputs.AddRange(step.Inputs);
-        }
+            this.AddStep(requiredInputs, type);
         
         this.RequiredInputs = requiredInputs.DistinctBy(i => i.Id).ToFrozenSet();
+    }
+
+    private void AddStep(List<StepInput> requiredInputs, Type type)
+    {
+        Debug.Assert(type.IsAssignableTo(typeof(Step)));
+
+        Step step = (Step)Activator.CreateInstance(type, this)!;
+
+        this._steps.Add(step);
+        requiredInputs.AddRange(step.Inputs);
     }
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
