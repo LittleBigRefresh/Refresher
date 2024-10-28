@@ -31,8 +31,11 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
 
     private bool _usedAutoDiscover = false;
 
-    protected PatchForm(string subtitle) : base(subtitle, new Size(700, -1), false)
+    protected PatchForm(string subtitle) : base(subtitle + " [LEGACY PATCHER!]", new Size(700, -1), false)
     {
+        MessageBox.Show("This legacy patch method is deprecated and might be removed in a future release.\n\n" +
+                        "Please use the other patchers, or let us know if this is necessary for you.", "Deprecation Warning", MessageBoxType.Warning);
+
         this._messages = new ListBox { Height = 200 };
         this._patchButton = new Button(this.Patch) { Text = "Patch!", Enabled = false };
 
@@ -45,8 +48,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         TableLayout formPanel = this.FormPanel;
         formPanel.Spacing = new Size(5, 5);
         formPanel.Padding = new Padding(0, 0, 0, 10);
-
-        StackLayout layout;
         
         this.Content = new Splitter
         {
@@ -54,13 +55,17 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
             Panel1 = formPanel,
 
             // ReSharper disable once RedundantExplicitParamsArrayCreation
-            Panel2 = layout = new StackLayout(new StackLayoutItem[]
-            {
+            Panel2 = new StackLayout([
                 this._messages,
-                new Button(this.Guide) { Text = "View guide" },
                 new Button(this.InvokeAutoDiscover) { Text = "AutoDiscover" },
                 this._patchButton,
-            })
+                new Label
+                {
+                    Text = "This is a legacy patcher. Support will not be provided.",
+                    TextAlignment = TextAlignment.Center,
+                    TextColor = Colors.Orange,
+                },
+            ])
             {
                 Padding = new Padding(0, 10, 0, 0),
                 Spacing = 5,
@@ -68,15 +73,12 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
                 VerticalContentAlignment = VerticalAlignment.Bottom,
             },
         };
-        
-        foreach (Button button in this.AddExtraButtons())
-            layout.Items.Add(button);
 
         this.UrlField.TextChanged += this.Reverify;
         this.UrlField.PlaceholderText = "http://localhost:10061/lbp";
     }
 
-    protected static TableRow AddField<TControl>(string labelText, out TControl control, Button? button = null, int forceHeight = -1) where TControl : Control, new()
+    protected static TableRow AddField<TControl>(string labelText, out TControl control) where TControl : Control, new()
     {
         if (!string.IsNullOrWhiteSpace(labelText)) labelText += ':';
         
@@ -87,16 +89,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         };
 
         control = new TControl();
-        if (forceHeight != -1) control.Height = forceHeight;
-
-        if (button != null)
-        {
-            DynamicLayout buttonLayout = new();
-            buttonLayout.AddRow(button, control);
-            buttonLayout.Spacing = new Size(5, 0);
-            
-            return new TableRow(label, buttonLayout);
-        }
         
         return new TableRow(label, control);
     }
@@ -104,40 +96,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
     public virtual void CompletePatch(object? sender, EventArgs e)
     {
         // Not necessary for some patchers maybe
-    }
-
-    public virtual IEnumerable<Button> AddExtraButtons()
-    {
-        return Array.Empty<Button>();
-    }
-
-    public virtual void Guide(object? sender, EventArgs e)
-    {
-        MessageBox.Show("No guide exists for this patch method yet, so stay tuned!", MessageBoxType.Warning);
-    }
-
-    protected void OpenUrl(string url)
-    {
-        try
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                Process.Start("xdg-open", url);
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                Process.Start("open", url);
-            else
-                throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
-        }
-        catch (Exception e)
-        {
-            State.Logger.LogError(OSIntegration, e.ToString());
-            MessageBox.Show("We couldn't open your browser due to an error.\n" +
-                            $"You can use this link instead: {url}\n\n" +
-                            $"Exception details: {e.GetType().Name} {e.Message}",
-                MessageBoxType.Error);
-        }
-        // based off of https://stackoverflow.com/a/43232486
     }
 
     private void InvokeAutoDiscover(object? sender, EventArgs arg)
@@ -257,8 +215,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         if (!this._patchButton.Enabled) return; // shouldn't happen ever but just in-case
         if (this.Patcher == null) return;
 
-        this.BeforePatch(sender, e);
-
         if (!this._usedAutoDiscover)
         {
             DialogResult result = MessageBox.Show("You didn't use AutoDiscover. Would you like to try to run it now?", MessageBoxButtons.YesNoCancel, MessageBoxType.Question);
@@ -285,8 +241,6 @@ public abstract class PatchForm<TPatcher> : RefresherForm where TPatcher : class
         
         this.CompletePatch(sender, e);
     }
-    
-    protected virtual void BeforePatch(object? sender, EventArgs e) {}
 
     protected void FailVerify(string reason, Exception? e = null, bool clear = true)
     {
