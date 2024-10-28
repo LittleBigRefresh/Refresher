@@ -67,6 +67,15 @@ public abstract class Pipeline
         this.RequiredInputs = requiredInputs.DistinctBy(i => i.Id).ToFrozenSet();
     }
 
+    public void Reset()
+    {
+        this.State = PipelineState.NotStarted;
+        this._stepCount = 0;
+        this._currentStepIndex = 0;
+        this._currentStep = null;
+        this.Inputs.Clear();
+    }
+
     private void AddStep(List<StepInput> requiredInputs, Type type)
     {
         Debug.Assert(type.IsAssignableTo(typeof(Step)));
@@ -154,8 +163,10 @@ public abstract class Pipeline
         ];
         
         this.State = PipelineState.Running;
+        
         await this.RunListOfSteps(stepTypes, cancellationToken);
-        this.State = PipelineState.NotStarted;
+        
+        this.Reset();
 
         if (this.GameList == null)
             throw new Exception("Could not download the list of games.");

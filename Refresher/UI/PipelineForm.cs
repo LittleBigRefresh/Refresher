@@ -161,7 +161,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         if (this._pipeline.State is PipelineState.Cancelled or PipelineState.Error or PipelineState.Finished)
         {
-            this.InitializePipeline();
+            this._pipeline.Reset();
         }
 
         this.AddFormInputsToPipeline();
