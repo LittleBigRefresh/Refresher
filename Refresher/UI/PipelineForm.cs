@@ -5,6 +5,7 @@ using NotEnoughLogs;
 using Refresher.Core;
 using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
+using Refresher.Core.Patching;
 using Refresher.Core.Pipelines;
 using Refresher.Core.Verification.AutoDiscover;
 using Pipeline = Refresher.Core.Pipelines.Pipeline;
@@ -17,6 +18,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
     private readonly Button _button;
     private readonly Button _autoDiscoverButton;
+    private Button? _connectButton;
     private readonly ProgressBar _currentProgressBar;
     private readonly ProgressBar _progressBar;
     private readonly ListBox _messages;
@@ -104,7 +106,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                     row = AddField<FilePicker>(input);
                     break;
                 case StepInputType.ConsoleIp:
-                    row = AddField<TextBox>(input, new Button(this.OnConnectToConsoleClick) { Text = "Connect" });
+                    row = AddField<TextBox>(input, this._connectButton = new Button(this.OnConnectToConsoleClick) { Text = "Connect" });
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -115,6 +117,21 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
         this.UpdateSubtitle(this._pipeline.Name);
         this.UpdateFormState();
+    }
+
+    private void AddFormInputsToPipeline()
+    {
+        foreach (TableRow row in this._formLayout.Rows)
+        {
+            string id = row.Cells[0].Control.ToolTip;
+            Control? valueControl = row.Cells[1].Control;
+            if (valueControl is DynamicLayout layout)
+                valueControl = ((DynamicControl)layout.Rows.First().Last()).Control;
+            
+            string value = valueControl.GetUserInput();
+            
+            this._pipeline!.Inputs.Add(id, value);
+        }
     }
 
     private void InitializeFormStateUpdater()
@@ -146,18 +163,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         {
             this.InitializePipeline();
         }
-        
-        foreach (TableRow row in this._formLayout.Rows)
-        {
-            string id = row.Cells[0].Control.ToolTip;
-            Control? valueControl = row.Cells[1].Control;
-            if (valueControl is DynamicLayout layout)
-                valueControl = ((DynamicControl)layout.Rows.First().Last()).Control;
-            
-            string value = valueControl.GetUserInput();
-            
-            this._pipeline.Inputs.Add(id, value);
-        }
+
+        this.AddFormInputsToPipeline();
         
         Task.Run(async () =>
         {
@@ -174,6 +181,43 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this.UpdateFormState();
     }
     
+    private void OnConnectToConsoleClick(object? sender, EventArgs e)
+    {
+        if (this._pipeline == null)
+            return;
+        
+        if (this._pipeline.State == PipelineState.Running)
+            return;
+        
+        this.AddFormInputsToPipeline();
+        
+        Task.Run(async () =>
+        {
+            try
+            {
+                List<GameInformation> games = await this._pipeline!.DownloadGameListAsync();
+                await Application.Instance.InvokeAsync(() =>
+                {
+                    this.HandleGameList(games);
+                });
+            }
+            catch (Exception ex)
+            {
+                State.Logger.LogError(LogType.Pipeline, $"Error while downloading games list: {ex}");
+            }
+        });
+    }
+
+    private void HandleGameList(List<GameInformation> games)
+    {
+        MessageBox.Show($"Found {games.Count} game(s).", "Success!");
+        if (this._connectButton != null)
+        {
+            this._connectButton.Enabled = false;
+            this._connectButton.Text = "Connected!";
+        }
+    }
+
     private void OnAutoDiscoverClick(object? sender, EventArgs e)
     {
         if (this._pipeline == null)
@@ -257,11 +301,6 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         }
 
         return new TableRow(label, control);
-    }
-
-    private void OnConnectToConsoleClick(object? sender, EventArgs e)
-    {
-        throw new NotImplementedException();
     }
     
     private void OnLog(RefresherLog log)
