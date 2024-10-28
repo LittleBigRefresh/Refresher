@@ -17,14 +17,13 @@ public class MainForm : RefresherForm
         ([
             new Label { Text = "Welcome to Refresher! Please pick a patching method to continue." },
             new Button((_, _) => this.ShowChild<FilePatchForm>()) { Text = "File Patch (using a .ELF)" },
-            new Button((_, _) => this.ShowChild<EmulatorPatchForm>()) { Text = "RPCS3 Patch" },
-            new Button((_, _) => this.ShowChild<ConsolePatchForm>()) { Text = "PS3 Patch" },
-            new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" },
-            #if DEBUG
-            this.PipelineButton<ExamplePipeline>("Example Pipeline"),
-            #endif
             this.PipelineButton<RPCS3PatchPipeline>("RPCS3 Patch"),
             this.PipelineButton<PS3PatchPipeline>("PS3 Patch"),
+            new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" },
+            #if DEBUG
+            new Label { Text = "Debugging options:" },
+            this.PipelineButton<ExamplePipeline>("Example Pipeline"),
+            #endif
         ]);
 
         layout.Spacing = 5;
