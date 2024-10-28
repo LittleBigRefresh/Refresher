@@ -9,6 +9,7 @@ public class StepInput
     public string Placeholder { get; init; }
 
     public Func<string?>? DetermineDefaultValue { get; init; }
+    public bool ShouldCauseGameDownloadWhenChanged { get; init; }
 
     public StepInput(string id, string name, StepInputType type = StepInputType.Text)
     {

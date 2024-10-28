@@ -125,9 +125,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                     break;
                 case StepInputType.Directory:
                     row = AddField<FilePicker>(input);
+                    if (input.ShouldCauseGameDownloadWhenChanged)
+                        (row.Cells[1].Control as FilePicker)!.FilePathChanged += this.OnDownloadGameList;
                     break;
                 case StepInputType.ConsoleIp:
-                    row = AddField<TextBox>(input, this._connectButton = new Button(this.OnConnectToConsoleClick) { Text = "Connect" });
+                    row = AddField<TextBox>(input, this._connectButton = new Button(this.OnDownloadGameList) { Text = "Connect" });
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -202,7 +204,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this.UpdateFormState();
     }
     
-    private void OnConnectToConsoleClick(object? sender, EventArgs e)
+    private void OnDownloadGameList(object? sender, EventArgs e)
     {
         if (this._pipeline == null)
             return;

@@ -18,6 +18,7 @@ public static class CommonStepInputs
         // don't bother with other platforms because they should be automatic
         Placeholder = @$"C:\Users\{Environment.UserName}\RPCS3\dev_hdd0",
         DetermineDefaultValue = DetermineDefaultRpcs3Path,
+        ShouldCauseGameDownloadWhenChanged = true,
     };
     
     internal static readonly StepInput ConsoleIP = new("ip", "Console IP", StepInputType.ConsoleIp)
