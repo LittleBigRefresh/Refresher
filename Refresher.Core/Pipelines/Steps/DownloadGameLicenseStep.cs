@@ -57,7 +57,8 @@ public class DownloadGameLicenseStep : Step
 
                 State.Logger.LogInfo(Crypto, $"Downloaded compatible license file {licenseFile}.");
 
-                found = true;
+                if(Path.GetFileNameWithoutExtension(licenseFile) == game.ContentId) 
+                    found = true;
             }
 
             if (found) 
@@ -66,8 +67,13 @@ public class DownloadGameLicenseStep : Step
 
         if (!found)
         {
+            this.Game.ShouldUseNpdrmEncryption = false;
             State.Logger.LogWarning(Crypto, "Couldn't find a license file for {0}. For disc copies, this is normal." +
                                             "For digital copies, this may present problems. Attempting to continue without it...", game.TitleId);
+        }
+        else
+        {
+            this.Game.ShouldUseNpdrmEncryption = true;
         }
         
         return Task.CompletedTask;
