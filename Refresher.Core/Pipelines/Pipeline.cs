@@ -69,11 +69,20 @@ public abstract class Pipeline
 
     public void Reset()
     {
+        this.Inputs.Clear();
+
         this.State = PipelineState.NotStarted;
+
         this._stepCount = 0;
         this._currentStepIndex = 0;
         this._currentStep = null;
-        this.Inputs.Clear();
+
+        this.Patcher = null;
+        if(this.Accessor is IDisposable disposable)
+            disposable.Dispose();
+        this.Accessor = null;
+        this.GameInformation = null;
+        this.EncryptionDetails = null;
     }
 
     private void AddStep(List<StepInput> requiredInputs, Type type)
