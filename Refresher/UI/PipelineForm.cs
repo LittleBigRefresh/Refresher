@@ -103,6 +103,9 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 case StepInputType.Directory:
                     row = AddField<FilePicker>(input);
                     break;
+                case StepInputType.ConsoleIp:
+                    row = AddField<TextBox>(input, new Button(this.OnConnectToConsoleClick) { Text = "Connect" });
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -147,7 +150,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         foreach (TableRow row in this._formLayout.Rows)
         {
             string id = row.Cells[0].Control.ToolTip;
-            string value = row.Cells[1].Control.GetUserInput();
+            Control? valueControl = row.Cells[1].Control;
+            if (valueControl is DynamicLayout layout)
+                valueControl = ((DynamicControl)layout.Rows.First().Last()).Control;
+            
+            string value = valueControl.GetUserInput();
             
             this._pipeline.Inputs.Add(id, value);
         }
@@ -207,7 +214,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         }, this._cts?.Token ?? default);
     }
     
-    private static TableRow AddField<TControl>(StepInput input) where TControl : Control, new()
+    private static TableRow AddField<TControl>(StepInput input, Button? button = null) where TControl : Control, new()
     {
         Label label = new()
         {
@@ -240,7 +247,21 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             };
         }
 
+        if (button != null)
+        {
+            DynamicLayout buttonLayout = new();
+            buttonLayout.AddRow(button, control);
+            buttonLayout.Spacing = new Size(5, 0);
+            
+            return new TableRow(label, buttonLayout);
+        }
+
         return new TableRow(label, control);
+    }
+
+    private void OnConnectToConsoleClick(object? sender, EventArgs e)
+    {
+        throw new NotImplementedException();
     }
     
     private void OnLog(RefresherLog log)

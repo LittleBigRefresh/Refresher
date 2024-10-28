@@ -20,7 +20,7 @@ public static class CommonStepInputs
         DetermineDefaultValue = DetermineDefaultRpcs3Path,
     };
     
-    internal static readonly StepInput ConsoleIP = new("ip", "Console IP")
+    internal static readonly StepInput ConsoleIP = new("ip", "Console IP", StepInputType.ConsoleIp)
     {
         Placeholder = "192.168.1.123",
     };
