@@ -34,6 +34,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private CancellationTokenSource? _cts;
     private CancellationTokenSource? _autoDiscoverCts;
     
+    private bool _usedAutoDiscover = false;
+    
     public PipelineForm() : base(typeof(TPipeline).Name, new Size(700, -1), false)
     {
         this.Content = new Splitter
@@ -192,6 +194,29 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         {
             this._pipeline.Reset();
         }
+        
+        if (!this._usedAutoDiscover)
+        {
+            DialogResult result = MessageBox.Show("You didn't use AutoDiscover. Would you like to try to run it now?", "AutoDiscover",
+                MessageBoxButtons.YesNoCancel, MessageBoxType.Question);
+            
+            // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+            switch (result)
+            {
+                case DialogResult.Yes:
+                    this.OnAutoDiscoverClick(this, EventArgs.Empty);
+                    return;
+                case DialogResult.No:
+                    MessageBox.Show("Okay, AutoDiscover won't be used. If you have issues with this patch, try using it next time.\n" +
+                                    "You can also try clicking 'Revert EBOOT' before patching to undo any server-specific patches that may cause issues.\n\n" +
+                                    "Click OK to proceed with patching.", "AutoDiscover", MessageBoxType.Warning);
+                    break;
+                case DialogResult.Cancel:
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
 
         this.AddFormInputsToPipeline();
         
@@ -319,6 +344,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
                 if (autoDiscover != null)
                 {
+                    this._usedAutoDiscover = true;
                     await Application.Instance.InvokeAsync(() =>
                     {
                         this._autoDiscoverButton.Enabled = false;
