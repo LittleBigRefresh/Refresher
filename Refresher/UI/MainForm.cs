@@ -21,18 +21,18 @@ public class MainForm : RefresherForm
             new Button((_, _) => this.ShowChild<ConsolePatchForm>()) { Text = "PS3 Patch" },
             new Button((_, _) => this.ShowChild<PSPSetupForm>()) { Text = "PSP Setup" },
             #if DEBUG
-            this.PipelineButton<ExamplePipeline>(),
+            this.PipelineButton<ExamplePipeline>("Example Pipeline"),
             #endif
-            this.PipelineButton<RPCS3PatchPipeline>(),
-            this.PipelineButton<PS3PatchPipeline>(),
+            this.PipelineButton<RPCS3PatchPipeline>("RPCS3 Patch"),
+            this.PipelineButton<PS3PatchPipeline>("PS3 Patch"),
         ]);
 
         layout.Spacing = 5;
         layout.HorizontalContentAlignment = HorizontalAlignment.Stretch;
     }
 
-    private Button PipelineButton<TPipeline>() where TPipeline : Pipeline, new()
+    private Button PipelineButton<TPipeline>(string name) where TPipeline : Pipeline, new()
     {
-        return new Button((_, _) => this.ShowChild<PipelineForm<TPipeline>>()) { Text = typeof(TPipeline).Name };
+        return new Button((_, _) => this.ShowChild<PipelineForm<TPipeline>>()) { Text = name };
     }
 }
