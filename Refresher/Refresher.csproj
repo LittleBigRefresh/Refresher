@@ -25,7 +25,8 @@
     </PropertyGroup>
     
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <OutputType Condition="!$(IsWindows)">Exe</OutputType>
+        <OutputType Condition="$(IsWindows)">WinExe</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <ApplicationId>Refresher</ApplicationId>  
