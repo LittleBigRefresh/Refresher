@@ -87,6 +87,12 @@ public static class AutoDiscoverClient
             State.Logger.LogError(LogType.AutoDiscover, $"AutoDiscover failed due to something we couldn't support: {inner.Message}");
             return true;
         }
+
+        if (inner is TaskCanceledException)
+        {
+            State.Logger.LogWarning(LogType.AutoDiscover, "AutoDiscover was cancelled by the user.");
+            return true;
+        }
         
         return false;
     }
