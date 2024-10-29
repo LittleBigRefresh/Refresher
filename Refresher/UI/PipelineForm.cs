@@ -505,6 +505,12 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     {
         Application.Instance.Invoke(() =>
         {
+            // somehow getting hit on sentry?
+            // id REFRESHER-88
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+            if (this._messages == null)
+                return;
+            
             this._messages.Items.Add($"[{log.Level}] [{log.Category}] {log.Content}");
         
             // automatically scroll to the bottom by highlighting the last item temporarily
