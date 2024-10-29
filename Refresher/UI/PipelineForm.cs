@@ -168,6 +168,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
     private void AddFormInputsToPipeline()
     {
+        this._pipeline?.Reset();
+        
         foreach (TableRow row in this._formLayout.Rows)
         {
             string id = row.Cells[0].Control.ToolTip;
