@@ -2,20 +2,24 @@ using System.Text.Json.Serialization;
 
 namespace Refresher.Core.Verification.AutoDiscover;
 
-#nullable disable
-
 public class AutoDiscoverResponse
 {
-    private const int SupportedVersion = 2;
+    public const int SupportedVersion = 2;
 
     [JsonPropertyName("version")]
     public int Version { get; set; }
 
     [JsonPropertyName("serverBrand")]
-    public string ServerBrand { get; set; }
+    public string ServerBrand { get; set; } = null!;
+
+    [JsonPropertyName("serverDescription")]
+    public string ServerDescription { get; set; } = "";
         
     [JsonPropertyName("url")]
-    public string Url { get; set; }
+    public string Url { get; set; } = null!;
+    
+    [JsonPropertyName("bannerImageUrl")]
+    public string? BannerImageUrl { get; set; }
 
     [JsonPropertyName("usesCustomDigestKey")]
     public bool? UsesCustomDigestKey { get; set; } = false; // We mark as nullable, as this was added in version 2

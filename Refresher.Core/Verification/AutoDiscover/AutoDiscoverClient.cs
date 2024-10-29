@@ -32,8 +32,15 @@ public static class AutoDiscoverClient
             AutoDiscoverResponse? autodiscover = await response.Content.ReadFromJsonAsync<AutoDiscoverResponse>(cancellationToken: cancellationToken);
             if (autodiscover == null) throw new InvalidOperationException("autoresponse was null");
             
+            if(autodiscover.Version != AutoDiscoverResponse.SupportedVersion)
+                State.Logger.LogWarning(LogType.AutoDiscover, 
+                    $"The server gave a response with version {autodiscover.Version}, but we expected {AutoDiscoverResponse.SupportedVersion}. " +
+                    $"We will accept this response, but if things go wrong, try updating Refresher.");
+            
             string text = $"Successfully found a '{autodiscover.ServerBrand}' server at the given URL!\n" +
+                          $"Server Description: {autodiscover.ServerDescription}\n" +
                           $"Server's recommended patch URL: {autodiscover.Url}\n" +
+                          $"Banner URL: {autodiscover.BannerImageUrl}\n" +
                           $"Custom digest key?: {(autodiscover.UsesCustomDigestKey.GetValueOrDefault() ? "Yes" : "No")}";
             
             State.Logger.LogInfo(LogType.AutoDiscover, text);
