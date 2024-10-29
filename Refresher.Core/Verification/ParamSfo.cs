@@ -80,7 +80,7 @@ public class ParamSfo
                     break;
             }
             
-            this.Table.Add(name, value);
+            this.Table[name] = value;
 
             stream.Position = oldPosition;
         }
