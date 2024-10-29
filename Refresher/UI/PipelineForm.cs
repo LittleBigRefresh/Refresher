@@ -287,11 +287,15 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
     private void HandleGameList(List<GameInformation> games)
     {
+        Debug.Assert(this._gamesDropDown != null);
+    
         if (this._connectButton != null)
         {
             this._connectButton.Enabled = false;
             this._connectButton.Text = "Connected!";
         }
+
+        this._gamesDropDown.Items.Clear();
         
         foreach (GameInformation game in games)
         {
@@ -329,10 +333,10 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 }
             }
 
-            this._gamesDropDown!.Items.Add(item);
+            this._gamesDropDown.Items.Add(item);
         }
 
-        this._gamesDropDown!.Enabled = true;
+        this._gamesDropDown.Enabled = true;
     }
 
     private void OnAutoDiscoverClick(object? sender, EventArgs e)
