@@ -273,9 +273,14 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                     this.HandleGameList(games);
                 });
             }
+            catch (DirectoryNotFoundException)
+            {
+                State.Logger.LogError(Accessor, "The games folder doesn't exist at that path. Please ensure you entered the right path/IP.");
+            }
             catch (Exception ex)
             {
                 State.Logger.LogError(LogType.Pipeline, $"Error while downloading games list: {ex}");
+                SentrySdk.CaptureException(ex);
             }
         });
     }
