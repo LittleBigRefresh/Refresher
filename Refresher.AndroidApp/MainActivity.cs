@@ -24,7 +24,10 @@ public class MainActivity : RefresherActivity
         if (mainContent == null)
             throw new Exception("Main content not found");
 
+        this.AddButtonForPipeline<PS3PatchPipeline>(mainContent);
+        #if DEBUG
         this.AddButtonForPipeline<ExamplePipeline>(mainContent);
+        #endif
         this.AddSceToolSharpTestButton(mainContent);
     }
 
