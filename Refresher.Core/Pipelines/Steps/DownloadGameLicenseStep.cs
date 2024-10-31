@@ -53,7 +53,7 @@ public class DownloadGameLicenseStep : Step
 
                 //And the license file
                 string downloadedLicenseFile = this.Pipeline.Accessor.DownloadFile(licenseFile);
-                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)), true);
 
                 State.Logger.LogInfo(Crypto, $"Downloaded compatible license file {licenseFile}.");
 
