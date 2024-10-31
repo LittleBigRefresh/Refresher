@@ -62,6 +62,6 @@ public abstract class PatchAccessor
 
     private static void CatchAccessorException(Exception ex)
     {
-        State.Logger.LogError(Accessor, ex.ToString());
+        State.Logger.LogError(Accessor, $"Something went wrong while accessing the filesystem: {ex.GetType().Name}: {ex.Message}");
     }
 }

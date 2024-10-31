@@ -45,7 +45,7 @@ jobs:
       - name: Publish for Windows x64
         if: matrix.os == 'windows-latest'
         shell: bash
-        run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
+        run: dotnet publish -c Release -r win-x64 --no-self-contained Refresher //p:Version=${VERSION}
 
       - name: Publish for macOS x64
         if: matrix.os == 'macos-latest'
@@ -126,7 +126,7 @@ jobs:
         uses: actions/upload-artifact@v3.1.3
         with:
             name: "Refresher_for_Windows_x64"
-            path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/"
+            path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/Refresher.exe"
             if-no-files-found: error
             retention-days: 1
 
@@ -151,10 +151,8 @@ jobs:
 
       - name: Create zip files
         run: |
-            cd ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64
-            zip -r "${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64.zip" .
-
             cd ${{steps.download.outputs.download-path}}
+            mv ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64/Refresher.exe ./Refresher_for_Windows_x64.exe
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64/*.tar.gz .
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_arm/*.tar.gz .
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_arm64/*.tar.gz .
@@ -171,3 +169,4 @@ jobs:
           artifacts: |
             *.zip
             *.tar.gz
+            Refresher_for_Windows_x64.exe

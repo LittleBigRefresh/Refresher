@@ -14,7 +14,7 @@ public class ApplyPatchToEbootStep : Step
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         string url = this.Pipeline.Inputs["url"];
-        this.Pipeline.Patcher!.Patch(url, true); // TODO: handle autodiscover in pipelines
+        this.Pipeline.Patcher!.Patch(url, this.AutoDiscover?.UsesCustomDigestKey ?? false);
         return Task.CompletedTask;
     }
 }

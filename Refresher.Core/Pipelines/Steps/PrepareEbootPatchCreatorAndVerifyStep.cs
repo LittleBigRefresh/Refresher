@@ -30,7 +30,7 @@ public class PrepareEbootPatchCreatorAndVerifyStep : Step
 
         this.Pipeline.Patcher = patcher;
 
-        List<Message> messages = patcher.Verify(url, true); // TODO: handle autodiscover in pipelines
+        List<Message> messages = patcher.Verify(url, this.AutoDiscover?.UsesCustomDigestKey ?? false);
         foreach (Message message in messages)
         {
             State.Logger.LogInfo(Patcher, message.ToString());

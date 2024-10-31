@@ -15,7 +15,6 @@ public enum LogType : byte
     OSIntegration,
     AutoDiscover,
     PS3,
-    PSP,
     Vita,
     RPCS3,
     Pipeline

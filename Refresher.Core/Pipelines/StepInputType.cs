@@ -7,4 +7,5 @@ public enum StepInputType : byte
     OpenFile,
     SaveFile,
     Game,
+    ConsoleIp,
 }

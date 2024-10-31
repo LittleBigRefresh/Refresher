@@ -1,4 +1,5 @@
 using Eto.Forms;
+using Refresher.UI.Items;
 
 namespace Refresher.Core.Extensions;
 
@@ -10,6 +11,7 @@ public static class ControlExtensions
         {
             TextControl textControl => textControl.Text,
             FilePicker filePicker => filePicker.FilePath,
+            DropDown dropDown => (dropDown.SelectedValue as GameItem)?.TitleId ?? string.Empty,
             _ => throw new ArgumentOutOfRangeException(control.GetType().Name),
         };
     }

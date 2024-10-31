@@ -35,13 +35,13 @@ public class DownloadParamSfoStep : Step
         }
         catch (EndOfStreamException)
         {
-            State.Logger.LogError(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO because the file was incomplete.");
+            State.Logger.LogWarning(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO because the file was incomplete.");
         }
         catch(Exception e)
         {
             game.Name = $"Unknown PARAM.SFO [{game}]";
                 
-            State.Logger.LogError(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO: {e}");
+            State.Logger.LogWarning(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO: {e}");
             if (sfo != null)
             {
                 State.Logger.LogDebug(InfoRetrieval, $"PARAM.SFO version:{sfo.Version} dump:");

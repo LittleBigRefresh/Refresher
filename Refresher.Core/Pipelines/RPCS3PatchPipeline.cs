@@ -6,10 +6,14 @@ public class RPCS3PatchPipeline : Pipeline
 {
     public override string Id => "rpcs3-patch";
     public override string Name => "RPCS3 Patch";
+
+    protected override Type SetupAccessorStepType => typeof(SetupEmulatorAccessorStep);
+    
+    public override string GuideLink => "https://docs.littlebigrefresh.com/rpcs3";
+
     protected override List<Type> StepTypes =>
     [
         // Info gathering stage
-        typeof(SetupEmulatorAccessorStep),
         typeof(ValidateGameStep),
         typeof(DownloadParamSfoStep),
         typeof(DownloadGameEbootStep),

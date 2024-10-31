@@ -7,10 +7,14 @@ public class PS3PatchPipeline : Pipeline
     public override string Id => "ps3-patch";
     public override string Name => "PS3 Patch";
 
+    protected override Type SetupAccessorStepType => typeof(SetupPS3AccessorStep);
+    public override bool ReplacesEboot => true;
+
+    public override string GuideLink => "https://docs.littlebigrefresh.com/ps3";
+
     protected override List<Type> StepTypes =>
     [
         // Info gathering stage
-        typeof(SetupPS3AccessorStep),
         typeof(ValidateGameStep),
         typeof(DownloadParamSfoStep),
         typeof(DownloadGameEbootStep),
