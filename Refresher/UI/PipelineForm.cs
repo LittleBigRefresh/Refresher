@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using Eto;
 using Eto.Drawing;
 using Eto.Forms;
@@ -55,6 +56,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 }, VerticalAlignment.Top, true),
                 this._button = new Button(this.OnButtonClick) { Text = "Patch!" },
                 new Button(this.OnViewGuideClick) { Text = "View Guide" },
+                new Button(this.OnCopyLogClick) { Text = "Copy Log (for support)" },
                 this._currentProgressBar = new ProgressBar(),
                 this._progressBar = new ProgressBar(),
             ])
@@ -454,6 +456,18 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 State.Logger.LogError(LogType.Pipeline, $"Error while reverting the game's EBOOT: {ex}");
             }
         });
+    }
+
+    private void OnCopyLogClick(object? sender, EventArgs e)
+    {
+        StringBuilder log = new();
+        foreach (IListItem item in this._messages.Items)
+        {
+            log.AppendLine(item.Text);
+        }
+        
+        Clipboard.Instance.Text = log.ToString();
+        MessageBox.Show("The log was successfully copied to the clipboard.", "Success");
     }
     
     private static TableRow AddField<TControl>(StepInput input, Button? button = null) where TControl : Control, new()
