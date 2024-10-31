@@ -154,7 +154,6 @@ jobs:
             cd ${{steps.download.outputs.download-path}}
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64/Refresher.exe ./Refresher_for_Windows_x64.exe
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64/*.tar.gz .
-            mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64/*.tar.gz .
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_arm/*.tar.gz .
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_arm64/*.tar.gz .
             mv ${{steps.download.outputs.download-path}}/Refresher_for_macOS/*.tar.gz .
