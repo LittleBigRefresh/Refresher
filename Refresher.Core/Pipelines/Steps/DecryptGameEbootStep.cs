@@ -10,6 +10,8 @@ public class DecryptGameEbootStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        LibSceToolSharp.PrintInfos(this.Game.DownloadedEbootPath!);
+        
         string tempFile = this.Game.DecryptedEbootPath = Path.GetTempFileName();
         LibSceToolSharp.Decrypt(this.Game.DownloadedEbootPath!, tempFile);
         

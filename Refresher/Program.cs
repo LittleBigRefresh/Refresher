@@ -35,7 +35,6 @@ public class Program
         }
         else
         {
-            State.Logger.LogInfo(OSIntegration, "Launching in GUI mode");
             try
             {
                 App = new Application();
@@ -58,8 +57,14 @@ public class Program
                 ReportUnhandledException(ex, true);
             };
             
+            // on windows, open a log window when shift is held on startup
+            // this will NOT work in rider. it must be run independently or the console will be useless
+            if (OperatingSystem.IsWindows() && (Keyboard.Modifiers & Keys.Shift) != 0)
+                WindowsConsoleHelper.AllocateConsole();
+            
             try
             {
+                State.Logger.LogInfo(OSIntegration, "Launching in GUI mode");
                 App.Run(new MainForm());
             }
             catch(Exception ex)
@@ -70,6 +75,9 @@ public class Program
             }
             App.Dispose();
             SentrySdk.Flush();
+            
+            if(WindowsConsoleHelper.OpenedConsole)
+                WindowsConsoleHelper.ShowEndBlurb();
         }
     }
 
