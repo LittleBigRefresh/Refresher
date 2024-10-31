@@ -42,7 +42,7 @@ jobs:
     - name: Publish for Windows x64
       if: matrix.os == 'windows-latest'
       shell: bash
-      run: dotnet publish -c Release -r win-x64 --self-contained Refresher //p:Version=${VERSION}
+      run: dotnet publish -c Release -r win-x64 --no-self-contained Refresher //p:Version=${VERSION}
 
     - name: Publish for macOS x64
       if: matrix.os == 'macos-latest'
@@ -125,7 +125,7 @@ jobs:
       uses: actions/upload-artifact@v3.1.1
       with:
           name: "Refresher for Windows x64"
-          path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/"
+          path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/Refresher.exe"
           if-no-files-found: error
           retention-days: 30
           
