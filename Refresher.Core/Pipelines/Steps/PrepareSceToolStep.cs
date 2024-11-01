@@ -18,6 +18,9 @@ public class PrepareSceToolStep : Step
         
         if(this.Encryption.DownloadedActDatPath != null)
             SetActDatFilePath(this.Encryption.DownloadedActDatPath);
+        
+        if(this.Encryption.ConsoleIdps != null)
+            SetIdpsKey(this.Encryption.ConsoleIdps);
 
         return Task.CompletedTask;
     }

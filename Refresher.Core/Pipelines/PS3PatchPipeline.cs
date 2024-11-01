@@ -20,6 +20,7 @@ public class PS3PatchPipeline : Pipeline
         typeof(DownloadGameEbootStep),
         typeof(ReadEbootContentIdStep),
         typeof(DownloadGameLicenseStep),
+        typeof(GetConsoleIdpsStep),
         
         // Decryption and patch stage
         typeof(PrepareSceToolStep),
