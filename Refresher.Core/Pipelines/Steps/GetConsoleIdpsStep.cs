@@ -13,9 +13,12 @@ public class GetConsoleIdpsStep : Step
     {
         ConsolePatchAccessor? accessor = this.Pipeline.Accessor as ConsolePatchAccessor;
         Debug.Assert(accessor != null);
-        
-        this.Encryption.ConsoleIdps = accessor.IdpsFile.Value;
-        // ^ is lazy<t>, will generate upon use
+
+        if (this.Game.ShouldUseNpdrmEncryption.GetValueOrDefault())
+        {
+            this.Encryption.ConsoleIdps = accessor.IdpsFile.Value;
+            // ^ is lazy<t>, will generate upon use
+        }
 
         return Task.CompletedTask;
     }
