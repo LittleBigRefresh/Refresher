@@ -146,6 +146,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                     this._gamesDropDown!.Enabled = false;
                     this._gamesDropDown.Height = 56;
                     break;
+                case StepInputType.Url:
                 case StepInputType.Text:
                     row = AddField<TextBox>(input);
                     break;

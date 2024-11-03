@@ -7,7 +7,7 @@ public static class CommonStepInputs
         Placeholder = "NPUA80662",
     };
     
-    public static readonly StepInput ServerUrl = new("url", "Server URL")
+    public static readonly StepInput ServerUrl = new("url", "Server URL", StepInputType.Url)
     {
         Placeholder = "https://lbp.littlebigrefresh.com",
     };
