@@ -60,7 +60,7 @@ jobs:
       
     - name: Install Android SDK 21
       if: matrix.os == 'ubuntu-latest'
-      run: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms:android-21"
+      run: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms;android-21"
       
     - name: Publish for Android ARM64
       if: matrix.os == 'ubuntu-latest'
