@@ -1,6 +1,5 @@
 using Eto.Drawing;
 using Eto.Forms;
-using Sentry;
 using System.Runtime.InteropServices;
 using Refresher.Core;
 

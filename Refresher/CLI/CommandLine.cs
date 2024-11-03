@@ -2,7 +2,6 @@ using System.IO.MemoryMappedFiles;
 using Refresher.Core;
 using Refresher.Core.Patching;
 using Refresher.Core.Verification;
-using Refresher.Core.Patching;
 
 namespace Refresher.CLI;
 

@@ -1,5 +1,4 @@
-﻿using System.Net.Mime;
-using Refresher.Core.Verification.AutoDiscover;
+﻿using Refresher.Core.Verification.AutoDiscover;
 
 namespace Refresher.Core.Pipelines;
 

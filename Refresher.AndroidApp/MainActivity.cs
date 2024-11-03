@@ -1,8 +1,5 @@
 using _Microsoft.Android.Resource.Designer;
 using Android.Content;
-using Refresher.AndroidApp.Logging;
-using Refresher.Core;
-using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
 using SCEToolSharp;
 

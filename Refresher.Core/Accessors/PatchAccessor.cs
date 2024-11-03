@@ -1,4 +1,3 @@
-using System.Diagnostics.Contracts;
 using System.Reflection;
 
 namespace Refresher.Core.Accessors;

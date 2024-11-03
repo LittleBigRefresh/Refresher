@@ -1,5 +1,4 @@
-﻿using Refresher.Core.Accessors;
-using Refresher.Core.Patching;
+﻿using Refresher.Core.Patching;
 
 namespace Refresher.Core.Pipelines.Steps;
 

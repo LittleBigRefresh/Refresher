@@ -11,7 +11,6 @@ using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
 using Refresher.Core.Patching;
 using Refresher.Core.Pipelines;
-using Refresher.Core.Verification.AutoDiscover;
 using Refresher.UI.Items;
 using Pipeline = Refresher.Core.Pipelines.Pipeline;
 

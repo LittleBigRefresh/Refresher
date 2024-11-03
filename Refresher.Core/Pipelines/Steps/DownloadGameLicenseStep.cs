@@ -1,5 +1,4 @@
 using Refresher.Core.Patching;
-using SCEToolSharp;
 
 namespace Refresher.Core.Pipelines.Steps;
 

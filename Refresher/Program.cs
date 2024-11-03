@@ -1,12 +1,10 @@
-﻿using System.Diagnostics;
-using System.Reflection;
+﻿using System.Reflection;
 using CommandLine;
 using Eto.Forms;
 using NotEnoughLogs.Sinks;
 using Refresher.CLI;
 using Refresher.Core;
 using Refresher.Core.Logging;
-using Refresher.Core.Pipelines;
 using Refresher.UI;
 
 namespace Refresher;
