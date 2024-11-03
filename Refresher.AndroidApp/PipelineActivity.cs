@@ -86,7 +86,7 @@ public class PipelineActivity : RefresherActivity
         foreach (StepInput input in pipeline.RequiredInputs)
         {
             EditText view = new(this);
-            view.Hint = input.Name;
+            view.Hint = $"{input.Name} (e.g. {input.Placeholder})";
             view.Tag = input.Id;
             view.LayoutParameters = layoutParams;
             view.InputType = InputTypes.ClassText | InputTypes.TextVariationNormal;
