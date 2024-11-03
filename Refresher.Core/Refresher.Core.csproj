@@ -5,12 +5,14 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <DebugType>embedded</DebugType>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     
     <ItemGroup>
         <PackageReference Include="FluentFTP" Version="49.0.2" />
         <PackageReference Include="NotEnoughLogs" Version="2.0.3" />
-        <PackageReference Include="SCEToolSharp" Version="1.2.3" />
+        <PackageReference Include="LibSceSharp" Version="1.0.0" />
+        <PackageReference Include="LibSceSharp.Native" Version="1.0.0" />
         <PackageReference Include="ELFSharp" Version="2.17.3" />
         <PackageReference Include="Sentry" Version="4.4.0" />
     </ItemGroup>

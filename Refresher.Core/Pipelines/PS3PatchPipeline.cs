@@ -15,15 +15,15 @@ public class PS3PatchPipeline : Pipeline
     protected override List<Type> StepTypes =>
     [
         // Info gathering stage
+        typeof(PrepareSceToolStep),
         typeof(ValidateGameStep),
         typeof(DownloadParamSfoStep),
         typeof(DownloadGameEbootStep),
-        typeof(ReadEbootContentIdStep),
+        typeof(LoadAndReadSelfStep),
         typeof(DownloadGameLicenseStep),
         typeof(GetConsoleIdpsStep),
         
         // Decryption and patch stage
-        typeof(PrepareSceToolStep),
         typeof(DecryptGameEbootStep),
         typeof(PrepareEbootPatcherAndVerifyStep),
         typeof(ApplyPatchToEbootStep),

@@ -1,29 +1,29 @@
-using SCEToolSharp;
+﻿using LibSceSharp;
 
 namespace Refresher.Core.Pipelines.Steps;
 
-public class ReadEbootContentIdStep : Step
+public class LoadAndReadSelfStep : Step
 {
-    public ReadEbootContentIdStep(Pipeline pipeline) : base(pipeline)
-    {}
+    public LoadAndReadSelfStep(Pipeline pipeline) : base(pipeline)
+    {
+    }
 
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        string ebootPath = this.Game.DownloadedEbootPath!;
+        Self self = new(this.Encryption.Sce!, File.ReadAllBytes(this.Game.DownloadedEbootPath!), true);
+        this.Encryption.Self = self;
         
-        LibSceToolSharp.Init();
-        this.Progress = 0.5f;
-        
-        string? contentId = LibSceToolSharp.GetContentId(ebootPath)?.TrimEnd('\0');
-        this.Game.ContentId = contentId;
-
-        this.Progress = 1f;
+        string? contentId = this.Encryption.Self!.ContentId;
 
         if(contentId != null)
             State.Logger.LogDebug(InfoRetrieval, "Got content ID from the game's EBOOT: {0}", contentId);
         else
             State.Logger.LogDebug(InfoRetrieval, "Unable to find content ID in the game's EBOOT.");
+        
+        this.Game.ContentId = contentId;
+        this.Game.ShouldUseNpdrmEncryption = self.NeedsNpdrmLicense;
+        
         return Task.CompletedTask;
     }
 }

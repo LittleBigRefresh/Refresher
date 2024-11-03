@@ -1,4 +1,5 @@
-using static SCEToolSharp.LibSceToolSharp;
+using LibSceSharp;
+using Refresher.Core.Patching;
 
 namespace Refresher.Core.Pipelines.Steps;
 
@@ -11,16 +12,10 @@ public class PrepareSceToolStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        Init();
-
-        SetRapDirectory(this.Encryption.LicenseDirectory!);
-        SetRifPath(this.Encryption.LicenseDirectory!);
+        this.Pipeline.EncryptionDetails = new EncryptionDetails();
         
-        if(this.Encryption.DownloadedActDatPath != null)
-            SetActDatFilePath(this.Encryption.DownloadedActDatPath);
-        
-        if(this.Encryption.ConsoleIdps != null)
-            SetIdpsKey(this.Encryption.ConsoleIdps);
+        LibSce sce = new();
+        this.Encryption.Sce = sce;
 
         return Task.CompletedTask;
     }

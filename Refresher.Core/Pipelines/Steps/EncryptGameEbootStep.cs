@@ -1,6 +1,4 @@
-﻿using SCEToolSharp;
-
-namespace Refresher.Core.Pipelines.Steps;
+﻿namespace Refresher.Core.Pipelines.Steps;
 
 public class EncryptGameEbootStep : Step
 {
@@ -13,17 +11,17 @@ public class EncryptGameEbootStep : Step
         if (this.Game.ShouldUseNpdrmEncryption ?? this.Game.TitleId.StartsWith('N'))
         {
             State.Logger.LogDebug(Crypto, "Will encrypt using Npdrm");
-            LibSceToolSharp.SetNpdrmEncryptOptions();
-            LibSceToolSharp.SetNpdrmContentId(this.Game.ContentId!);
+            // TODO: LibSceToolSharp.SetNpdrmEncryptOptions();
+            // TODO: LibSceToolSharp.SetNpdrmContentId(this.Game.ContentId!);
         }
         else
         {
             State.Logger.LogDebug(Crypto, "Will encrypt using Disc");
-            LibSceToolSharp.SetDiscEncryptOptions();
+            // TODO: LibSceToolSharp.SetDiscEncryptOptions();
         }
         
         string tempFile = this.Game.EncryptedEbootPath = Path.GetTempFileName();
-        LibSceToolSharp.Encrypt(this.Game.DecryptedEbootPath!, tempFile);
+        // TODO: LibSceToolSharp.Encrypt(this.Game.DecryptedEbootPath!, tempFile);
         
         // HACK: scetool doesn't give us result codes, check if the file has been written to instead
         if (new FileInfo(tempFile).Length == 0)

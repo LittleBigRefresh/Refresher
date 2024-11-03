@@ -1,7 +1,7 @@
 using _Microsoft.Android.Resource.Designer;
 using Android.Content;
+using LibSceSharp;
 using Refresher.Core.Pipelines;
-using SCEToolSharp;
 
 using ConditionalAttribute = System.Diagnostics.ConditionalAttribute;
 
@@ -48,16 +48,16 @@ public class MainActivity : RefresherActivity
     private void AddSceToolSharpTestButton(LinearLayout layout)
     {
         Button button = new(this);
-        button.Text = "DEBUG: Test LibSceToolSharp";
+        button.Text = "DEBUG: Test LibSceSharp";
         button.SetAllCaps(false);
 
         button.Click += (_, _) =>
         {
-            string initReturn;
+            string initReturn = "Success!";
 
             try
             {
-                initReturn = LibSceToolSharp.Init().ToString();
+                using LibSce sce = new();
             }
             catch (Exception ex)
             {
@@ -65,7 +65,7 @@ public class MainActivity : RefresherActivity
             }
             
             new AlertDialog.Builder(this)
-                .SetTitle("LibSceToolSharp.Init() returns")?
+                .SetTitle("LibSceSharp returns:")?
                 .SetMessage(initReturn)?
                 .SetPositiveButton("Hell yeah", (_, _) => {})?
                 .SetNegativeButton("FUCK", (_, _) => {})?

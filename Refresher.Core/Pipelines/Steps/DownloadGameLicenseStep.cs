@@ -12,14 +12,9 @@ public class DownloadGameLicenseStep : Step
     {
         GameInformation game = this.Game;
         string? contentId = game.ContentId;
-        
-        string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
-        Directory.CreateDirectory(licenseDir);
 
-        this.Pipeline.EncryptionDetails = new EncryptionDetails()
-        {
-            LicenseDirectory = licenseDir,
-        };
+        if (contentId == null)
+            throw new NotImplementedException("Cannot pick a license to decrypt with without a content id");
         
         bool found = false;
         foreach (string user in this.Pipeline.Accessor!.GetDirectoriesInDirectory(Path.Combine("home")))
@@ -35,11 +30,9 @@ public class DownloadGameLicenseStep : Step
             
             foreach (string licenseFile in this.Pipeline.Accessor.GetFilesInDirectory(exdataFolder))
             {
-                //If the license file does not contain the content ID or the title ID in its path, skip it
-                if (!(contentId != null && licenseFile.Contains(contentId)) && !licenseFile.Contains(game.TitleId))
+                // If the license file does not start with the content ID, skip it.
+                if (!Path.GetFileName(licenseFile).StartsWith(contentId))
                     continue;
-                
-                State.Logger.LogDebug(Crypto, $"Found compatible rap: {licenseFile}");
 
                 string actDatPath = Path.Combine(user, "exdata", "act.dat");
                     
@@ -52,27 +45,21 @@ public class DownloadGameLicenseStep : Step
 
                 //And the license file
                 string downloadedLicenseFile = this.Pipeline.Accessor.DownloadFile(licenseFile);
-                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)), true);
+                this.Encryption.DownloadedLicensePath = downloadedLicenseFile;
 
-                State.Logger.LogInfo(Crypto, $"Downloaded compatible license file {licenseFile}.");
-
-                if(Path.GetFileNameWithoutExtension(licenseFile) == game.ContentId) 
-                    found = true;
+                State.Logger.LogInfo(Crypto, $"Downloaded license file '{licenseFile}'.");
+                found = true;
+                break;
             }
 
             if (found) 
                 break;
         }
 
-        if (!found)
+        if (!found && this.Game.ShouldUseNpdrmEncryption.GetValueOrDefault())
         {
-            this.Game.ShouldUseNpdrmEncryption = false;
-            State.Logger.LogWarning(Crypto, "Couldn't find a license file for {0}. For disc copies, this is normal. " +
-                                            "For digital copies, this may present problems. Attempting to continue without it...", game.TitleId);
-        }
-        else
-        {
-            this.Game.ShouldUseNpdrmEncryption = true;
+            State.Logger.LogWarning(Crypto, "Couldn't find a license file for {0}. " +
+                                            "This may present problems. Attempting to continue without it...", game.TitleId);
         }
         
         return Task.CompletedTask;

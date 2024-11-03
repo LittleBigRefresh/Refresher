@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using LibSceSharp;
 using NotEnoughLogs;
 using NotEnoughLogs.Behaviour;
 using NotEnoughLogs.Sinks;
@@ -12,6 +15,24 @@ public static class State
 
     public delegate void RefresherLogHandler(RefresherLog log);
     public static event RefresherLogHandler? Log;
+    
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static unsafe void SceLog(byte* scopePtr, LibSceLogLevel nativeLevel, byte* messagePtr)
+    {
+        string? scope = Marshal.PtrToStringUTF8((IntPtr)scopePtr);
+        string? message = Marshal.PtrToStringUTF8((IntPtr)messagePtr);
+
+        LogLevel level = nativeLevel switch
+        {
+            LibSceLogLevel.Error => LogLevel.Error,
+            LibSceLogLevel.Warning => LogLevel.Warning,
+            LibSceLogLevel.Info => LogLevel.Info,
+            LibSceLogLevel.Debug => LogLevel.Debug,
+            _ => throw new ArgumentOutOfRangeException(nameof(nativeLevel), nativeLevel, null),
+        };
+
+        Logger.Log(level, $"libsce/{scope}", message);
+    }
 
     public static void InitializeLogger(IEnumerable<ILoggerSink> sinks)
     {
@@ -23,6 +44,11 @@ public static class State
             Behaviour = new DirectLoggingBehaviour(),
             MaxLevel = LogLevel.Trace,
         });
+
+        unsafe
+        {
+            LibSce.SetLogCallback(&SceLog);
+        }
     }
 
     internal static void InvokeOnLog(LogLevel level, ReadOnlySpan<char> category, ReadOnlySpan<char> content)
