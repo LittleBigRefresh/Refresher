@@ -6,7 +6,7 @@ namespace Refresher.Core.Pipelines;
 /// <summary>
 /// A set of common utilities to assist in controlling a pipeline from a UI.
 /// </summary>
-public class PipelineController
+public sealed class PipelineController
 {
     private readonly Pipeline _pipeline;
     private readonly Action<Action> _uiThread;
