@@ -16,12 +16,13 @@ public class PipelineActivity : RefresherActivity
     
     private Pipeline? _pipeline;
     private CancellationTokenSource? _cts;
-    
-    private TextView _pipelineState = null!;
+
     private LinearLayout _pipelineInputs = null!;
     private ScrollView _logScroll = null!;
     private TextView _log = null!;
     private Button _button = null!;
+    private Button? _autoDiscoverButton = null!;
+    private Button? _revertButton = null!;
     private ProgressBar _progressBar = null!;
     private ProgressBar _currentProgressBar = null!;
     
@@ -38,9 +39,13 @@ public class PipelineActivity : RefresherActivity
         this.SetContentView(ResourceConstant.Layout.activity_pipeline);
         
         this._button = this.FindViewById<Button>(ResourceConstant.Id.ExecutePipelineButton)!;
-        this._button.Click += this.ExecutePipeline;
+        this._button.Click += this.OnButtonClick;
         
-        this._pipelineState = this.FindViewById<TextView>(ResourceConstant.Id.PipelineState)!;
+        this._autoDiscoverButton = this.FindViewById<Button>(ResourceConstant.Id.AutoDiscoverButton)!;
+        this._autoDiscoverButton.Click += this.OnAutoDiscoverClick;
+        
+        this._revertButton = this.FindViewById<Button>(ResourceConstant.Id.RevertButton)!;
+        this._revertButton.Click += this.OnRevertEbootClick;
         
         this._progressBar = this.FindViewById<ProgressBar>(ResourceConstant.Id.ProgressBar)!;
         this._currentProgressBar = this.FindViewById<ProgressBar>(ResourceConstant.Id.CurrentProgressBar)!;
@@ -99,7 +104,7 @@ public class PipelineActivity : RefresherActivity
         }
     }
     
-    private void ExecutePipeline(object? sender, EventArgs e)
+    private void OnButtonClick(object? sender, EventArgs e)
     {
         if (this._pipeline == null)
             return;
@@ -141,13 +146,44 @@ public class PipelineActivity : RefresherActivity
             }
         }, this._cts?.Token ?? default);
     }
+    
+    private void OnAutoDiscoverClick(object? sender, EventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+    
+    private void OnRevertEbootClick(object? sender, EventArgs e)
+    {
+        throw new NotImplementedException();
+    }
 
     private void UpdateFormState()
     {
-        this._pipelineState.Text = this._pipeline?.State.ToString();
-
         this._progressBar.Progress = (int)((this._pipeline?.Progress ?? 0) * 100);
         this._currentProgressBar.Progress = (int)((this._pipeline?.CurrentProgress ?? 0) * 100);
+        
+        bool enableControls = this._pipeline?.State != PipelineState.Running;
+        
+        // highlight progress bars while patching
+        this._currentProgressBar.Enabled = !enableControls;
+        this._progressBar.Enabled = !enableControls;
+        
+        // disable other things
+        // this._formLayout.Enabled = enableControls;
+        if(this._autoDiscoverButton != null)
+            this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
+        if(this._revertButton != null)
+            this._revertButton.Enabled = enableControls;
+        
+        this._button.Text = this._pipeline?.State switch
+        {
+            PipelineState.NotStarted => "Patch!",
+            PipelineState.Running => "Patching... (click to cancel)",
+            PipelineState.Finished => "Complete!",
+            PipelineState.Cancelled => "Patch!",
+            PipelineState.Error => "Retry",
+            _ => throw new ArgumentOutOfRangeException(),
+        };
     }
 
     private void UpdateFormStateLoop()

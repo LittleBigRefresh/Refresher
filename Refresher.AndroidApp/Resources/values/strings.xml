@@ -2,5 +2,6 @@
     <string name="app_name">Refresher</string>
     <string name="welcome_text">Welcome to Refresher!\nPlease pick a patching method to continue.</string>
     <string name="pipeline_execute">Execute</string>
-    <string name="loading">Loading...</string>
+    <string name="pipeline_autodiscover">AutoDiscover</string>
+    <string name="pipeline_revert">Revert EBOOT</string>
 </resources>

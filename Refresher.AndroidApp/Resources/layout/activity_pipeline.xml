@@ -5,11 +5,6 @@
               android:layout_height="match_parent"
               android:padding="15dp">
     />
-    <TextView android:id="@+id/PipelineState"
-              android:text="@string/loading"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"/>
-
     <LinearLayout android:id="@+id/PipelineInputs"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -42,5 +37,14 @@
 
     <Button android:id="@+id/ExecutePipelineButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="@string/pipeline_execute"/>
+            android:layout_height="wrap_content" android:text="@string/pipeline_execute"
+            android:textAllCaps="false"/>
+    <Button android:id="@+id/AutoDiscoverButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/pipeline_autodiscover"
+            android:textAllCaps="false"/>
+    <Button android:id="@+id/RevertButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/pipeline_revert"
+            android:textAllCaps="false"/>
 </LinearLayout>

@@ -24,17 +24,18 @@ public class MainActivity : RefresherActivity
         if (mainContent == null)
             throw new Exception("Main content not found");
 
-        this.AddButtonForPipeline<PS3PatchPipeline>(mainContent);
+        this.AddButtonForPipeline<PS3PatchPipeline>(mainContent, "Patch a PS3 game");
         #if DEBUG
-        this.AddButtonForPipeline<ExamplePipeline>(mainContent);
-        #endif
+        this.AddButtonForPipeline<ExamplePipeline>(mainContent, "Example Pipeline");
         this.AddSceToolSharpTestButton(mainContent);
+        #endif
     }
 
-    private void AddButtonForPipeline<TPipeline>(LinearLayout layout) where TPipeline : Pipeline
+    private void AddButtonForPipeline<TPipeline>(LinearLayout layout, string name) where TPipeline : Pipeline
     {
         Button button = new(this);
-        button.Text = typeof(TPipeline).Name;
+        button.Text = name;
+        button.SetAllCaps(false);
 
         button.Click += (_, _) =>
         {
@@ -51,6 +52,7 @@ public class MainActivity : RefresherActivity
     {
         Button button = new(this);
         button.Text = "DEBUG: Test LibSceToolSharp";
+        button.SetAllCaps(false);
 
         button.Click += (_, _) =>
         {
