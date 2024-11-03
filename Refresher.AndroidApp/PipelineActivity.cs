@@ -169,7 +169,7 @@ public class PipelineActivity : RefresherActivity
         this._progressBar.Enabled = !enableControls;
         
         // disable other things
-        // this._formLayout.Enabled = enableControls;
+        this._pipelineInputs.Enabled = enableControls;
         if(this._autoDiscoverButton != null)
             this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
         if(this._revertButton != null)
