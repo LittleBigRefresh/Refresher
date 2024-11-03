@@ -8,17 +8,17 @@ namespace Refresher.Core;
 
 public static class State
 {
-    public static readonly Logger Logger = InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
+    public static Logger Logger { get; private set; } = null!;
 
     public delegate void RefresherLogHandler(RefresherLog log);
     public static event RefresherLogHandler? Log;
 
-    private static Logger InitializeLogger(IEnumerable<ILoggerSink> sinks)
+    public static void InitializeLogger(IEnumerable<ILoggerSink> sinks)
     {
-        // if(Logger != null)
-            // Logger.Dispose();
+        // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+        Logger?.Dispose();
 
-        return new Logger(sinks, new LoggerConfiguration
+        Logger = new Logger(sinks, new LoggerConfiguration
         {
             Behaviour = new DirectLoggingBehaviour(),
             MaxLevel = LogLevel.Trace,

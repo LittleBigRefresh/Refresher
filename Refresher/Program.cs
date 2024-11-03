@@ -2,8 +2,10 @@
 using System.Reflection;
 using CommandLine;
 using Eto.Forms;
+using NotEnoughLogs.Sinks;
 using Refresher.CLI;
 using Refresher.Core;
+using Refresher.Core.Logging;
 using Refresher.Core.Pipelines;
 using Refresher.UI;
 
@@ -18,6 +20,7 @@ public class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        State.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
         State.InitializeSentry();
         
         if (args.Length > 0)

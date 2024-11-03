@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="sentry-android-ndk-7.8.0">
+    <CLASSES>
+      <root url="file:///tmp/JetBrains/xamarinAarPackages/sentry-android-ndk-7.8.0/classes.jar" />
+      <root url="file:///tmp/JetBrains/xamarinAarPackages/sentry-android-ndk-7.8.0/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
