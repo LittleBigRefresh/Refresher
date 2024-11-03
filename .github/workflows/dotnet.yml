@@ -58,6 +58,10 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: dotnet workload install android
       
+    - name: Install Android SDK 21
+      if: matrix.os == 'ubuntu-latest'
+      run: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms:android-21"
+      
     - name: Publish for Android ARM64
       if: matrix.os == 'ubuntu-latest'
       run: dotnet publish -c Release -r android-arm64 --self-contained Refresher.AndroidApp /p:AndroidSdkDirectory=/usr/local/lib/android/sdk /p:Version=${VERSION}
