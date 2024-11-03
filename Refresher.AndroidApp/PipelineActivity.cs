@@ -138,7 +138,7 @@ public class PipelineActivity : RefresherActivity
             {
                 State.Logger.LogInfo(LogType.Pipeline, "Executing Pipeline...");
                 await this._pipeline.ExecuteAsync(this._cts?.Token ?? default);
-                this.UpdateFormState();
+                this._handler.Post(this.UpdateFormState);
             }
             catch (Exception ex)
             {
