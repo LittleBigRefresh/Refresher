@@ -16,7 +16,6 @@ public class PipelineActivity : RefresherActivity
     
     private Pipeline? _pipeline;
     private PipelineController _controller;
-    private CancellationTokenSource? _cts;
 
     private LinearLayout _pipelineInputs = null!;
     private ScrollView _logScroll = null!;
@@ -65,8 +64,6 @@ public class PipelineActivity : RefresherActivity
 
     private void InitializePipeline()
     {
-        this._cts = new CancellationTokenSource();
-        
         string? pipelineTypeName = this.Intent?.GetStringExtra("PipelineType");
         if(pipelineTypeName == null)
             throw new Exception("Pipeline type not specified");
@@ -115,7 +112,7 @@ public class PipelineActivity : RefresherActivity
         
         if (this._pipeline.State == PipelineState.Running)
         {
-            this._cts?.Cancel();
+            this._controller.CancelPipeline();
             return;
         }
         

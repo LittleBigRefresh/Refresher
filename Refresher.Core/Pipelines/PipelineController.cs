@@ -54,6 +54,11 @@ public class PipelineController
     {
         this._cts?.Cancel();
     }
+    
+    public void CancelAutoDiscover()
+    {
+        this._autoDiscoverCts?.Cancel();
+    }
 
     public void MainButtonClick()
     {
@@ -62,6 +67,8 @@ public class PipelineController
             this.CancelPipeline();
             return;
         }
+
+        this._cts = new CancellationTokenSource();
         
         if (this._pipeline.State is PipelineState.Cancelled or PipelineState.Error or PipelineState.Finished)
         {
@@ -85,7 +92,7 @@ public class PipelineController
     {
         if (this._autoDiscoverCts != null)
         {
-            this._autoDiscoverCts.Cancel();
+            this.CancelAutoDiscover();
             return;
         }
 
