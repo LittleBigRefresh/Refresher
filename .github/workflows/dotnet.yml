@@ -54,6 +54,10 @@ jobs:
       shell: bash
       run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
       
+    - name: Install Android workload
+      if: matrix.os == 'ubuntu-latest'
+      run: dotnet workload install android
+      
     - name: Publish for Android ARM64
       if: matrix.os == 'ubuntu-latest'
       run: dotnet publish -c Release -r android-arm64 --self-contained Refresher.AndroidApp /p:Version=${VERSION}
