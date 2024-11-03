@@ -60,11 +60,11 @@ jobs:
       
     - name: Install Android SDK 21
       if: matrix.os == 'ubuntu-latest'
-      run: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platforms;android-21"
+      run: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platforms;android-21" "build-tools;21.1.2"
       
     - name: Publish for Android ARM64
       if: matrix.os == 'ubuntu-latest'
-      run: dotnet publish -c Release -r android-arm64 --self-contained Refresher.AndroidApp /p:AndroidSdkDirectory=/usr/local/lib/android/sdk /p:Version=${VERSION}
+      run: dotnet publish -c Release -r android-arm64 --self-contained Refresher.AndroidApp /p:AndroidSdkDirectory=${ANDROID_SDK_ROOT} /p:Version=${VERSION}
 
     - name: Create macOS universal2 binary
       if: matrix.os == 'macos-latest'
