@@ -89,7 +89,11 @@ public class PipelineActivity : RefresherActivity
             view.Hint = $"{input.Name} (e.g. {input.Placeholder})";
             view.Tag = input.Id;
             view.LayoutParameters = layoutParams;
-            view.InputType = InputTypes.ClassText | InputTypes.TextVariationNormal;
+
+            if (input.Type is StepInputType.Url or StepInputType.ConsoleIp)
+                view.InputType = InputTypes.ClassText | InputTypes.TextVariationUri;
+            else
+                view.InputType = InputTypes.ClassText | InputTypes.TextVariationNormal;
             
             this._pipelineInputs.AddView(view);
         }
