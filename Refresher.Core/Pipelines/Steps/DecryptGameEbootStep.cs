@@ -15,11 +15,6 @@ public class DecryptGameEbootStep : Step
         LibSce sce = this.Encryption.Sce!;
         byte[] selfData = File.ReadAllBytes(this.Game.DownloadedEbootPath!);
 
-        // if we don't need to decrypt, just don't. ez
-        if (!this.Game.ShouldUseNpdrmEncryption.GetValueOrDefault())
-        {
-            this.Encryption.Self = new Self(sce, selfData);
-        }
         // if we downloaded an act.dat file, we downloaded a rif. use full console decryption.
         if (this.Encryption.DownloadedActDatPath != null)
         {
@@ -34,10 +29,10 @@ public class DecryptGameEbootStep : Step
             byte[] rapData = File.ReadAllBytes(this.Encryption.DownloadedLicensePath!);
             this.Encryption.Self = new Self(sce, selfData, rapData);
         }
-        // otherwise, we're fucked
+        // otherwise, we're either fucked or this is a free-type npdrm eboot. decrypt it without any rif/rap
         else
         {
-            throw new InvalidOperationException("No encryption method could be determined.");
+            this.Encryption.Self = new Self(sce, selfData);
         }
         
         string tempFile = this.Game.DecryptedEbootPath = Path.GetTempFileName();
