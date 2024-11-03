@@ -10,13 +10,15 @@ public class DecryptGameEbootStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        LibSceToolSharp.PrintInfos(this.Game.DownloadedEbootPath!);
+        
         string tempFile = this.Game.DecryptedEbootPath = Path.GetTempFileName();
         LibSceToolSharp.Decrypt(this.Game.DownloadedEbootPath!, tempFile);
         
         // HACK: scetool doesn't give us result codes, check if the file has been written to instead
         if (new FileInfo(tempFile).Length == 0)
         {
-            throw new Exception("Decryption failed.");
+            throw new Exception($"Decryption of the EBOOT failed. Support info: game='{this.Game}' npdrm='{this.Game.ShouldUseNpdrmEncryption}'");
         }
         
         return Task.CompletedTask;

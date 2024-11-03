@@ -12,7 +12,7 @@ public class DownloadGameLicenseStep : Step
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         GameInformation game = this.Game;
-        string contentId = game.ContentId!;
+        string? contentId = game.ContentId;
         
         string licenseDir = Path.Join(Path.GetTempPath(), "refresher-" + Random.Shared.Next());
         Directory.CreateDirectory(licenseDir);
@@ -36,8 +36,8 @@ public class DownloadGameLicenseStep : Step
             
             foreach (string licenseFile in this.Pipeline.Accessor.GetFilesInDirectory(exdataFolder))
             {
-                //If the license file does not contain the content ID in its path, skip it
-                if (!licenseFile.Contains(contentId) && !licenseFile.Contains(game.TitleId))
+                //If the license file does not contain the content ID or the title ID in its path, skip it
+                if (!(contentId != null && licenseFile.Contains(contentId)) && !licenseFile.Contains(game.TitleId))
                     continue;
                 
                 State.Logger.LogDebug(Crypto, $"Found compatible rap: {licenseFile}");
@@ -53,7 +53,7 @@ public class DownloadGameLicenseStep : Step
 
                 //And the license file
                 string downloadedLicenseFile = this.Pipeline.Accessor.DownloadFile(licenseFile);
-                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)));
+                File.Move(downloadedLicenseFile, Path.Join(licenseDir, Path.GetFileName(licenseFile)), true);
 
                 State.Logger.LogInfo(Crypto, $"Downloaded compatible license file {licenseFile}.");
 
@@ -68,7 +68,7 @@ public class DownloadGameLicenseStep : Step
         if (!found)
         {
             this.Game.ShouldUseNpdrmEncryption = false;
-            State.Logger.LogWarning(Crypto, "Couldn't find a license file for {0}. For disc copies, this is normal." +
+            State.Logger.LogWarning(Crypto, "Couldn't find a license file for {0}. For disc copies, this is normal. " +
                                             "For digital copies, this may present problems. Attempting to continue without it...", game.TitleId);
         }
         else
