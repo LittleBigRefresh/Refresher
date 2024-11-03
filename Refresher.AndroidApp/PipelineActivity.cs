@@ -126,8 +126,7 @@ public class PipelineActivity : RefresherActivity
             
             this._pipeline.Inputs.Add(id, value);
         }
-        
-        // State.Logger.LogInfo(LogType.Pipeline, "Starting pipeline task...");
+
         Task.Run(async () =>
         {
             try
@@ -146,8 +145,7 @@ public class PipelineActivity : RefresherActivity
     private void UpdateFormState()
     {
         this._pipelineState.Text = this._pipeline?.State.ToString();
-        // this._pipelineState.Text = DateTimeOffset.Now.Ticks.ToString();
-        
+
         this._progressBar.Progress = (int)((this._pipeline?.Progress ?? 0) * 100);
         this._currentProgressBar.Progress = (int)((this._pipeline?.CurrentProgress ?? 0) * 100);
     }
