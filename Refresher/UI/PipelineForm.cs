@@ -20,6 +20,7 @@ namespace Refresher.UI;
 public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline, new()
 {
     private TPipeline? _pipeline;
+    private PipelineController? _controller;
 
     private readonly Button _button;
     private readonly Button? _revertButton;
@@ -31,9 +32,6 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private readonly TableLayout _formLayout;
     private Button? _connectButton;
     private DropDown? _gamesDropDown;
-
-    private CancellationTokenSource? _cts;
-    private CancellationTokenSource? _autoDiscoverCts;
     
     private bool _usedAutoDiscover = false;
     
@@ -94,7 +92,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this._currentProgressBar.Value = (int)(this._pipeline?.CurrentProgress * 100 ?? 0);
         this._progressBar.ToolTip = this._pipeline?.State.ToString() ?? "Uninitialized";
 
-        bool enableControls = this._pipeline?.State != PipelineState.Running;
+        bool enableControls = this._controller.EnableControls;
         
         // highlight progress bars while patching
         this._currentProgressBar.Enabled = !enableControls;
@@ -109,29 +107,15 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
         // set text of autodiscover button
         if (this._autoDiscoverButton != null)
-        {
-            if (this._autoDiscoverCts != null)
-                this._autoDiscoverButton.Text = "Running AutoDiscover... (click to cancel)";
-            else if (this._pipeline?.AutoDiscover == null)
-                this._autoDiscoverButton.Text = "AutoDiscover";            
-        }
+            this._autoDiscoverButton.Text = this._controller.AutoDiscoverButtonText;
 
-        this._button.Text = this._pipeline?.State switch
-        {
-            PipelineState.NotStarted => "Patch!",
-            PipelineState.Running => "Patching... (click to cancel)",
-            PipelineState.Finished => "Complete!",
-            PipelineState.Cancelled => "Patch!",
-            PipelineState.Error => "Retry",
-            _ => throw new ArgumentOutOfRangeException(),
-        };
+        this._button.Text = this._controller.MainButtonText;
     }
 
     private void InitializePipeline()
     {
-        this._cts = new CancellationTokenSource();
-
         this._pipeline = new TPipeline();
+        this._controller = new PipelineController(this._pipeline, Application.Instance.Invoke);
         this._pipeline.Initialize();
         
         this._formLayout.Rows.Clear();
@@ -207,7 +191,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
 
         if (this._pipeline.State == PipelineState.Running)
         {
-            this._cts?.Cancel();
+            this._controller?.CancelPipeline();
             return;
         }
         
@@ -240,19 +224,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         }
 
         this.AddFormInputsToPipeline();
-        
-        Task.Run(async () =>
-        {
-            try
-            {
-                await this._pipeline.ExecuteAsync(this._cts?.Token ?? default);
-            }
-            catch (Exception ex)
-            {
-                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex}");
-            }
-        }, this._cts?.Token ?? default);
-        
+
+        this._controller?.MainButtonClick();
         this.UpdateFormState();
     }
     
@@ -349,14 +322,6 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         if (this._pipeline.State == PipelineState.Running)
             return;
-
-        if (this._autoDiscoverCts != null)
-        {
-            this._autoDiscoverCts.Cancel();
-            return;
-        }
-
-        this._autoDiscoverCts = new CancellationTokenSource();
         
         TextControl control = (TextControl)this._formLayout.Rows
             .Where(r => r.Cells[0].Control.ToolTip == CommonStepInputs.ServerUrl.Id)
@@ -364,37 +329,16 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             .First();
 
         string url = control.Text;
-
-        Task.Run(async () =>
+        this._controller?.AutoDiscoverButtonClick(url, autoDiscover =>
         {
-            try
-            {
-                AutoDiscoverResponse? autoDiscover =
-                    await this._pipeline.InvokeAutoDiscoverAsync(url, this._autoDiscoverCts.Token);
+            this._usedAutoDiscover = true;
 
-                if (autoDiscover != null)
-                {
-                    this._usedAutoDiscover = true;
-                    await Application.Instance.InvokeAsync(() =>
-                    {
-                        this._autoDiscoverButton.Enabled = false;
-                        this._autoDiscoverButton.Text = $"AutoDiscover [locked to {autoDiscover.ServerBrand}]";
+            Debug.Assert(this._autoDiscoverButton != null);
+            this._autoDiscoverButton.Enabled = false;
 
-                        control.Text = autoDiscover.Url;
-                        control.Enabled = false;
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                State.Logger.LogError(LogType.Pipeline, $"Error while invoking autodiscover: {ex}");
-                SentrySdk.CaptureException(ex);
-            }
-            finally
-            {
-                this._autoDiscoverCts = null;
-            }
-        }, this._autoDiscoverCts.Token);
+            control.Text = autoDiscover.Url;
+            control.Enabled = false;
+        });
     }
     
     private void OnViewGuideClick(object? sender, EventArgs _)

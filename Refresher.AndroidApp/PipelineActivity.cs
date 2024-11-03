@@ -15,6 +15,7 @@ public class PipelineActivity : RefresherActivity
     internal static PipelineActivity Instance { get; private set; }
     
     private Pipeline? _pipeline;
+    private PipelineController _controller;
     private CancellationTokenSource? _cts;
 
     private LinearLayout _pipelineInputs = null!;
@@ -25,6 +26,8 @@ public class PipelineActivity : RefresherActivity
     private Button? _revertButton = null!;
     private ProgressBar _progressBar = null!;
     private ProgressBar _currentProgressBar = null!;
+    
+    private bool _usedAutoDiscover = false;
     
     private readonly Handler _handler = new(Looper.MainLooper!);
 
@@ -75,6 +78,7 @@ public class PipelineActivity : RefresherActivity
         Pipeline pipeline = (Pipeline)Activator.CreateInstance(pipelineType)!;
         pipeline.Initialize();
         this._pipeline = pipeline;
+        this._controller = new PipelineController(pipeline, action => this._handler.Post(action));
         
         if (this.ActionBar != null)
         {
@@ -132,24 +136,24 @@ public class PipelineActivity : RefresherActivity
             this._pipeline.Inputs.Add(id, value);
         }
 
-        Task.Run(async () =>
-        {
-            try
-            {
-                State.Logger.LogInfo(LogType.Pipeline, "Executing Pipeline...");
-                await this._pipeline.ExecuteAsync(this._cts?.Token ?? default);
-                this._handler.Post(this.UpdateFormState);
-            }
-            catch (Exception ex)
-            {
-                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex.Message}");
-            }
-        }, this._cts?.Token ?? default);
+        this._controller.MainButtonClick();
     }
     
     private void OnAutoDiscoverClick(object? sender, EventArgs e)
     {
-        throw new NotImplementedException();
+        if(this._pipelineInputs.FindViewWithTag("url") is not EditText text)
+            throw new Exception("URL input was not found");
+        
+        this._controller.AutoDiscoverButtonClick(text.Text, autoDiscover =>
+        {
+            this._usedAutoDiscover = true;
+
+            System.Diagnostics.Debug.Assert(this._autoDiscoverButton != null);
+            this._autoDiscoverButton.Enabled = false;
+
+            text.Text = autoDiscover.Url;
+            text.Enabled = false;
+        });
     }
     
     private void OnRevertEbootClick(object? sender, EventArgs e)
@@ -162,7 +166,7 @@ public class PipelineActivity : RefresherActivity
         this._progressBar.Progress = (int)((this._pipeline?.Progress ?? 0) * 100);
         this._currentProgressBar.Progress = (int)((this._pipeline?.CurrentProgress ?? 0) * 100);
         
-        bool enableControls = this._pipeline?.State != PipelineState.Running;
+        bool enableControls = this._controller.EnableControls;
         
         // highlight progress bars while patching
         this._currentProgressBar.Enabled = !enableControls;
@@ -175,15 +179,11 @@ public class PipelineActivity : RefresherActivity
         if(this._revertButton != null)
             this._revertButton.Enabled = enableControls;
         
-        this._button.Text = this._pipeline?.State switch
-        {
-            PipelineState.NotStarted => "Patch!",
-            PipelineState.Running => "Patching... (click to cancel)",
-            PipelineState.Finished => "Complete!",
-            PipelineState.Cancelled => "Patch!",
-            PipelineState.Error => "Retry",
-            _ => throw new ArgumentOutOfRangeException(),
-        };
+        // set text of autodiscover button
+        if (this._autoDiscoverButton != null)
+            this._autoDiscoverButton.Text = this._controller.AutoDiscoverButtonText;
+
+        this._button.Text = this._controller.MainButtonText;
     }
 
     private void UpdateFormStateLoop()
