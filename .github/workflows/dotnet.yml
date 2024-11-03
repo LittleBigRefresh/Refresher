@@ -54,6 +54,9 @@ jobs:
       shell: bash
       run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
       
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
     - name: Install Android workload
       if: matrix.os == 'ubuntu-latest'
       run: dotnet workload install android
