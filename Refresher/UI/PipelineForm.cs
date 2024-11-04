@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -480,5 +481,11 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 MessageBox.Show(log.Content, $"{log.Category} {log.Level.ToString()}", MessageBoxType.Error);
             }
         });
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        Environment.Exit(0);
+        base.OnClosing(e);
     }
 }
