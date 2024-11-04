@@ -1,4 +1,5 @@
-﻿using Refresher.Core.Patching;
+﻿using Refresher.Core.Accessors;
+using Refresher.Core.Patching;
 
 namespace Refresher.Core.Pipelines.Steps;
 
@@ -16,28 +17,50 @@ public class DownloadGameListStep : Step
             .Where(p => Path.GetFileName(p).Length == "NPUA80662".Length)
             .ToList();
 
+        bool isConsole = this.Pipeline.Accessor is ConsolePatchAccessor;
+
         int i = 0;
         foreach (string gamePath in games)
         {
             State.Logger.LogInfo(InfoRetrieval, $"Downloading information for game '{gamePath}'...");
-            if (!this.Pipeline.Accessor.FileExists(Path.Combine(gamePath, "PARAM.SFO")))
-            {
-                State.Logger.LogDebug(InfoRetrieval, $"{gamePath} has no PARAM.SFO, skipping...");
-                continue;
-            }
             
             GameInformation game = new()
             {
                 TitleId = Path.GetFileName(gamePath),
             };
             this.Pipeline.GameInformation = game;
-            
-            DownloadParamSfoStep paramStep = new(this.Pipeline);
-            await paramStep.ExecuteAsync(cancellationToken);
-            
-            DownloadIconStep iconStep = new(this.Pipeline);
-            await iconStep.ExecuteAsync(cancellationToken);
-            
+
+            const int maxTries = 5;
+            int tries = maxTries + 1;
+            while (--tries != 0)
+            {
+                try
+                {
+                    DownloadParamSfoStep paramStep = new(this.Pipeline);
+                    await paramStep.ExecuteAsync(cancellationToken);
+
+                    DownloadIconStep iconStep = new(this.Pipeline);
+                    await iconStep.ExecuteAsync(cancellationToken);
+
+                    break;
+                }
+                catch(Exception e)
+                {
+                    State.Logger.LogWarning(InfoRetrieval, $"Failed to get information for '{game.TitleId}'. {tries} tries remaining...");
+                    State.Logger.LogWarning(InfoRetrieval, e.ToString());
+                    if (isConsole)
+                        await Task.Delay(5000, cancellationToken);
+                }
+            }
+
+            if (tries == 0)
+            {
+                State.Logger.LogWarning(InfoRetrieval, $"Couldn't get information for '{game.TitleId}' after {maxTries} tries. Giving up.");
+            }
+
+            if (isConsole)
+                await Task.Delay(100, cancellationToken);
+
             this.Pipeline.GameList.Add(game);
             this.Progress = i++ / (float)games.Count;
         }

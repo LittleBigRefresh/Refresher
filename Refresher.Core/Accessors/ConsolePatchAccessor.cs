@@ -17,7 +17,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         
         this._client = new FtpClient(remoteIp, "anonymous", "");
         this._client.Config.LogToConsole = true;
-        this._client.Config.ConnectTimeout = 5000;
+        this._client.Config.ConnectTimeout = 10000;
         
         FtpProfile? profile = this._client.AutoConnect();
         if (profile == null) throw new FTPConnectionFailureException();

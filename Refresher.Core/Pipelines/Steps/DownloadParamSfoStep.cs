@@ -29,7 +29,8 @@ public class DownloadParamSfoStep : Step
         {
             if (sfoStream == null)
             {
-                throw new FileNotFoundException("The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game.");
+                State.Logger.LogWarning(InfoRetrieval, "The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game. Will try to proceed anyways...");
+                return Task.CompletedTask;
             }
             this.ParseSfoStream(sfoStream, out sfo);
         }
