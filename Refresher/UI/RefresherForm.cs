@@ -36,7 +36,11 @@ public abstract class RefresherForm : Form
         
         State.Logger.LogDebug(OSIntegration, $"Showing child form {form.GetType().Name} '{form.Title}'");
 
-        if (close) this.Visible = false;
+        if (close)
+        {
+            Application.Instance.MainForm = form;
+            this.Close();
+        }
     }
 
     protected void UpdateSubtitle(string subtitle)
