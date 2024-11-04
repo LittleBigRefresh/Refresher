@@ -114,6 +114,13 @@ public abstract class Pipeline
                 throw new InvalidOperationException($"Input {input.Id} was not provided to the pipeline before execution.");
             }
         }
+        
+        if(this.Inputs.Count != 0)
+            GlobalState.Logger.LogTrace(LogType.Pipeline, "Pipeline inputs:");
+        foreach ((string? key, string? value) in this.Inputs)
+        {
+            GlobalState.Logger.LogTrace(LogType.Pipeline, $"  '{key}' = '{value}'");
+        }
 
         GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} started.");
         this.State = PipelineState.Running;
