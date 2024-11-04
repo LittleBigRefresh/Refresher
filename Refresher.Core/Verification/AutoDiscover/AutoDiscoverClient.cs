@@ -9,8 +9,7 @@ public static class AutoDiscoverClient
 {
     public static async Task<AutoDiscoverResponse?> InvokeAutoDiscoverAsync(string url, CancellationToken cancellationToken = default)
     {
-        if(!url.StartsWith("http"))
-            url = "https://" + url; // prefer HTTPS by default if there's no scheme set.
+        url = TryCompleteUrl(url);
         
         State.Logger.LogInfo(LogType.AutoDiscover, $"Invoking autodiscover on URL '{url}'");
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? autodiscoverUri))
@@ -102,5 +101,33 @@ public static class AutoDiscoverClient
         }
         
         return false;
+    }
+
+    private static string TryCompleteUrl(string url)
+    {
+        if (url.StartsWith("http")) return url;
+
+        // cool GAMER shortcuts
+        switch (url.ToLowerInvariant())
+        {
+            case "r":
+            case "refresh":
+                return "https://lbp.littlebigrefresh.com";
+            case "l":
+            case "local":
+                return "http://localhost:10061";
+            case "b":
+            case "beacon":
+                // technically, beacon doesn't support autodiscover so this is more future-proofing if they ever do for some reason
+                return "https://beacon.lbpunion.com";
+            case "refreshed":
+                State.Logger.LogError("jvyden", "you're gonna make me cry. it's refresh. not refreshed.");
+                goto case "refresh";
+            default:
+                // prefer HTTPS by default if there's no scheme set.
+                return "https://" + url;
+        }
+
+        return url;
     }
 }
