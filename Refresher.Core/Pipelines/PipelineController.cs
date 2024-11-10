@@ -1,4 +1,4 @@
-﻿using Refresher.Core.Verification.AutoDiscover;
+using Refresher.Core.Verification.AutoDiscover;
 
 namespace Refresher.Core.Pipelines;
 
@@ -106,7 +106,7 @@ public sealed class PipelineController
 
                 if (autoDiscover != null)
                 {
-                    this._autoDiscoverButtonText = $"AutoDiscover [locked to {autoDiscover.ServerBrand}]";
+                    this._autoDiscoverButtonText = $"AutoDiscover [Connected to {autoDiscover.ServerBrand}]";
                     this._uiThread.Invoke(() => onSuccess.Invoke(autoDiscover));
                 }
             }
