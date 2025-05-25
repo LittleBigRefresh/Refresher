@@ -31,6 +31,7 @@ public class LbpPS3PatchPipeline : Pipeline
         typeof(EncryptGameEbootStep),
         typeof(BackupGameEbootBeforeReplaceStep),
         typeof(UploadPatchworkSprxStep),
+        typeof(UploadPatchworkConfigurationStep),
         typeof(UploadGameEbootStep),
     ];
 }
