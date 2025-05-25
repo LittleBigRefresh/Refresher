@@ -24,7 +24,8 @@ public class ApplySprxPatchToEbootStep : Step
         
         elf.SprxPath = "/dev_hdd0/plugins/patchwork.sprx";
 
-        await using FileStream writeStream = File.OpenWrite(decryptedEbootPath);
+        // writing requires read permissions for PPU hash calculation
+        await using FileStream writeStream = File.Open(decryptedEbootPath, FileMode.Open, FileAccess.ReadWrite);
         elf.Write(writeStream);
     }
 }
