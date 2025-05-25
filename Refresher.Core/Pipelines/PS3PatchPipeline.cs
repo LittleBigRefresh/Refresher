@@ -5,7 +5,7 @@ namespace Refresher.Core.Pipelines;
 public class PS3PatchPipeline : Pipeline
 {
     public override string Id => "ps3-patch";
-    public override string Name => "PS3 Patch";
+    public override string Name => "PS3 Patch (any game)";
 
     protected override Type SetupAccessorStepType => typeof(SetupPS3AccessorStep);
     public override bool ReplacesEboot => true;
