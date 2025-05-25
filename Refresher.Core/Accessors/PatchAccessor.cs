@@ -58,6 +58,24 @@ public abstract class PatchAccessor
             throw;
         }
     }
+    
+    public static async Task TryAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (TargetInvocationException targetInvocationException)
+        {
+            CatchAccessorException(targetInvocationException.InnerException!);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            CatchAccessorException(ex);
+            throw;
+        }
+    }
 
     private static void CatchAccessorException(Exception ex)
     {

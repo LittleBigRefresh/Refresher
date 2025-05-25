@@ -14,23 +14,23 @@ public class LbpPS3PatchPipeline : Pipeline
 
     protected override List<Type> StepTypes =>
     [
-        // // Info gathering stage
-        // typeof(ValidateGameStep),
-        // typeof(DownloadParamSfoStep),
-        // typeof(DownloadGameEbootStep),
-        // typeof(ReadEbootContentIdStep),
-        // typeof(DownloadGameLicenseStep),
-        // typeof(GetConsoleIdpsStep),
-        //
-        // // Decryption and patch stage
-        // typeof(PrepareSceToolStep),
-        // typeof(DecryptGameEbootStep),
-        // typeof(PrepareEbootPatcherAndVerifyStep),
-        // typeof(ApplyPatchToEbootStep),
-        //
-        // // Encryption and upload stage
-        // typeof(EncryptGameEbootStep),
-        // typeof(BackupGameEbootBeforeReplaceStep),
-        // typeof(UploadGameEbootStep),
+        // Info gathering stage
+        typeof(ValidateGameStep),
+        typeof(DownloadParamSfoStep),
+        typeof(DownloadGameEbootStep),
+        typeof(ReadEbootContentIdStep),
+        typeof(DownloadGameLicenseStep),
+        typeof(GetConsoleIdpsStep),
+        
+        // Decryption and patch stage
+        typeof(PrepareSceToolStep),
+        typeof(DecryptGameEbootStep),
+        typeof(ApplySprxPatchToEbootStep),
+        
+        // Encryption and upload stage
+        typeof(EncryptGameEbootStep),
+        typeof(BackupGameEbootBeforeReplaceStep),
+        typeof(UploadPatchworkSprxStep),
+        typeof(UploadGameEbootStep),
     ];
 }

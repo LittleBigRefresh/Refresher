@@ -17,5 +17,6 @@ public enum LogType : byte
     PS3,
     Vita,
     RPCS3,
-    Pipeline
+    Pipeline,
+    Patchwork
 }
