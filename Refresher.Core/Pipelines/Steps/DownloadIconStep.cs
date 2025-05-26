@@ -1,5 +1,5 @@
-using Refresher.Core.Accessors;
 using Refresher.Core.Patching;
+using Refresher.Core.Storage;
 
 namespace Refresher.Core.Pipelines.Steps;
 
@@ -15,10 +15,10 @@ public class DownloadIconStep : Step
         string gamePath = $"game/{game.TitleId}";
         
         string iconPath = Path.Combine(gamePath, "ICON0.PNG");
-        if (!GameCacheAccessor.IconExistsInCache(game.TitleId) && this.Pipeline.Accessor!.FileExists(iconPath))
+        if (!GameCacheStorage.IconExistsInCache(game.TitleId) && this.Pipeline.Accessor!.FileExists(iconPath))
         {
             using Stream iconStream = this.Pipeline.Accessor.OpenRead(iconPath);
-            GameCacheAccessor.WriteIconToCache(game.TitleId, iconStream);
+            GameCacheStorage.WriteIconToCache(game.TitleId, iconStream);
         }
 
         return Task.CompletedTask;

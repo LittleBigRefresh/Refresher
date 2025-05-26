@@ -7,10 +7,11 @@ using Eto.Forms;
 using NotEnoughLogs;
 using Refresher.Core;
 using Refresher.Core.Accessors;
-using Refresher.Core.Extensions;
 using Refresher.Core.Logging;
 using Refresher.Core.Patching;
 using Refresher.Core.Pipelines;
+using Refresher.Core.Storage;
+using Refresher.Extensions;
 using Refresher.UI.Items;
 using Pipeline = Refresher.Core.Pipelines.Pipeline;
 
@@ -281,9 +282,9 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 TitleId = game.TitleId,
             };
 
-            if (GameCacheAccessor.IconExistsInCache(game.TitleId))
+            if (GameCacheStorage.IconExistsInCache(game.TitleId))
             {
-                using Stream iconStream = GameCacheAccessor.GetIconFromCache(game.TitleId);
+                using Stream iconStream = GameCacheStorage.GetIconFromCache(game.TitleId);
                 try
                 {
                     item.Image = new Bitmap(iconStream).WithSize(new Size(64, 64));

@@ -1,12 +1,12 @@
-namespace Refresher.Core.Accessors;
+namespace Refresher.Core.Storage;
 
-public static class GameCacheAccessor
+public static class GameCacheStorage
 {
     private const string ApplicationDirectory = "Refresher";
     private const string CacheDirectory = "cache";
     private static readonly string FullCacheDirectory;
 
-    static GameCacheAccessor()
+    static GameCacheStorage()
     {
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         FullCacheDirectory = Path.Combine(appData, ApplicationDirectory, CacheDirectory);

@@ -1,7 +1,7 @@
 using Eto.Forms;
 using Refresher.UI.Items;
 
-namespace Refresher.Core.Extensions;
+namespace Refresher.Extensions;
 
 public static class ControlExtensions
 {
