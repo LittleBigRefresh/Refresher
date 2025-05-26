@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Refresher.Core.Accessors;
 using Refresher.Core.Patching;
 using Refresher.Core.Pipelines.Steps;
+using Refresher.Core.Storage;
 using Refresher.Core.Verification.AutoDiscover;
 using GlobalState = Refresher.Core.State;
 
@@ -129,6 +130,9 @@ public abstract class Pipeline
         await this.RunListOfSteps(this._steps, cancellationToken);
         GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
         this.State = PipelineState.Finished;
+        
+        PreviousInputStorage.ApplyFromPipeline(this);
+        PreviousInputStorage.Write();
     }
 
     private async Task RunListOfSteps(List<Step> steps, CancellationToken cancellationToken = default)
