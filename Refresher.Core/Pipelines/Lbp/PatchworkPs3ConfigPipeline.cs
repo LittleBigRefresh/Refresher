@@ -11,6 +11,7 @@ public class PatchworkPs3ConfigPipeline : Pipeline
 
     protected override List<Type> StepTypes =>
     [
+        typeof(UploadPatchworkSprxStep),
         typeof(UploadPatchworkConfigurationStep),
     ];
 }
