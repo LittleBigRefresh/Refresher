@@ -202,6 +202,27 @@ public abstract class Pipeline
         return this.GameList;
     }
     
+    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    {
+        if (this.State != PipelineState.NotStarted)
+        {
+            this.State = PipelineState.Error;
+            throw new InvalidOperationException("Pipeline must be in a clean state before downloading games.");
+        }
+        
+        if(this.SetupAccessorStepType == null)
+            throw new InvalidOperationException("This pipeline doesn't have accessors configured.");
+
+        List<Step> stepTypes = [
+            (Step)Activator.CreateInstance(this.SetupAccessorStepType, this)!,
+        ];
+        
+        this.State = PipelineState.Running;
+        
+        await this.RunListOfSteps(stepTypes, cancellationToken);
+        this.Reset();
+    }
+    
     public async Task RevertGameEbootAsync(CancellationToken cancellationToken = default)
     {
         if (this.State != PipelineState.NotStarted)

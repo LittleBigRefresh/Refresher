@@ -20,6 +20,7 @@ public class MainForm : RefresherForm
             new Label { Text = "LittleBigPlanet:" },
             this.PipelineButton<LbpPS3PatchPipeline>("Patch LBP1/2/3 for PS3"),
             
+            this.PipelineButton<PatchworkPs3ConfigPipeline>("Reconfigure Patch for PS3"),
             new Label { Text = "General (for non-LBP games):" },
             new Button((_, _) => this.ShowChild<FilePatchForm>()) { Text = "File Patch (using a .ELF)" },
             this.PipelineButton<RPCS3PatchPipeline>("Patch any RPCS3 game"),

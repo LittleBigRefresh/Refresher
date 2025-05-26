@@ -140,10 +140,10 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 case StepInputType.Directory:
                     row = AddField<FilePicker>(input, value);
                     if (input.ShouldCauseGameDownloadWhenChanged)
-                        (row.Cells[1].Control as FilePicker)!.FilePathChanged += this.OnDownloadGameList;
+                        (row.Cells[1].Control as FilePicker)!.FilePathChanged += this.OnConnect;
                     break;
                 case StepInputType.ConsoleIp:
-                    row = AddField<TextBox>(input, value, this._connectButton = new Button(this.OnDownloadGameList) { Text = "Connect" });
+                    row = AddField<TextBox>(input, value, this._connectButton = new Button(this.OnConnect) { Text = "Connect" });
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -232,7 +232,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this.UpdateFormState();
     }
     
-    private void OnDownloadGameList(object? sender, EventArgs e)
+    private void OnConnect(object? sender, EventArgs e)
     {
         if (this._pipeline == null)
             return;
@@ -242,18 +242,24 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         this.AddFormInputsToPipeline();
         
-        if (this._gamesDropDown == null)
-            return;
-        
         Task.Run(async () =>
         {
             try
             {
-                List<GameInformation> games = await this._pipeline!.DownloadGameListAsync();
-                await Application.Instance.InvokeAsync(() =>
+                if (this._gamesDropDown != null)
                 {
-                    this.HandleGameList(games);
-                });
+                    List<GameInformation> games = await this._pipeline!.DownloadGameListAsync();
+                    await Application.Instance.InvokeAsync(() =>
+                    {
+                        this.HandleConnection();
+                        this.HandleGameList(games);
+                    });
+                }
+                else
+                {
+                    await this._pipeline.ConnectAsync();
+                    await Application.Instance.InvokeAsync(this.HandleConnection);
+                }
             }
             catch (DirectoryNotFoundException)
             {
@@ -267,15 +273,17 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         });
     }
 
+    private void HandleConnection()
+    {
+        if (this._connectButton == null) return;
+
+        this._connectButton.Enabled = false;
+        this._connectButton.Text = "Connected!";
+    }
+
     private void HandleGameList(List<GameInformation> games)
     {
         Debug.Assert(this._gamesDropDown != null);
-    
-        if (this._connectButton != null)
-        {
-            this._connectButton.Enabled = false;
-            this._connectButton.Text = "Connected!";
-        }
 
         this._gamesDropDown.Items.Clear();
         
