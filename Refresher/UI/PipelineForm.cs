@@ -242,6 +242,9 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         
         this.AddFormInputsToPipeline();
         
+        if (this._gamesDropDown == null)
+            return;
+        
         Task.Run(async () =>
         {
             try
