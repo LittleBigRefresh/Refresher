@@ -26,6 +26,11 @@ public static class CommonStepInputs
         Placeholder = "192.168.1.123",
     };
     
+    internal static readonly StepInput LobbyPassword = new("lobby-password", "Lobby Password")
+    {
+        Placeholder = "(leave empty to randomize)",
+    };
+    
     // TODO: Cache the last used location for easier entry
     private static string? DetermineDefaultRpcs3Path()
     {

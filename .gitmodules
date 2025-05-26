@@ -1,0 +1,3 @@
+[submodule "External/SPRXPatcher"]
+	path = External/SPRXPatcher
+	url = https://github.com/NotNite/SPRXPatcher

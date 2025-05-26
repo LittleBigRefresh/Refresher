@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refresher.Core", "Refresher
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refresher.AndroidApp", "Refresher.AndroidApp\Refresher.AndroidApp.csproj", "{ADE97BEF-7886-496A-AA8F-7B7504ED931C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External", "External", "{71B14553-E495-4197-9DE3-DB573C6F5CA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPRXPatcher", "External\SPRXPatcher\SPRXPatcher\SPRXPatcher.csproj", "{B49FCFA3-89F2-4B00-A512-711A68DA93D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,12 @@ Global
 		{ADE97BEF-7886-496A-AA8F-7B7504ED931C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ADE97BEF-7886-496A-AA8F-7B7504ED931C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ADE97BEF-7886-496A-AA8F-7B7504ED931C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B49FCFA3-89F2-4B00-A512-711A68DA93D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B49FCFA3-89F2-4B00-A512-711A68DA93D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B49FCFA3-89F2-4B00-A512-711A68DA93D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B49FCFA3-89F2-4B00-A512-711A68DA93D6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B49FCFA3-89F2-4B00-A512-711A68DA93D6} = {71B14553-E495-4197-9DE3-DB573C6F5CA2}
 	EndGlobalSection
 EndGlobal

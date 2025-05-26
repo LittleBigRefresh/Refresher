@@ -25,6 +25,8 @@ public abstract class Pipeline
     public AutoDiscoverResponse? AutoDiscover { get; internal set; }
 
     public virtual string? GuideLink => null;
+
+    public virtual IEnumerable<string> GameNameFilters => [];
     
     public PipelineState State { get; private set; } = PipelineState.NotStarted;
     

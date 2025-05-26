@@ -60,9 +60,12 @@ public class DownloadGameListStep : Step
 
             if (isConsole)
                 await Task.Delay(100, cancellationToken);
-
-            this.Pipeline.GameList.Add(game);
+            
             this.Progress = i++ / (float)games.Count;
+
+            List<string> filters = this.Pipeline.GameNameFilters.ToList();
+            if(filters.Count <= 0 || filters.Any(f => game.Name?.Contains(f, StringComparison.InvariantCultureIgnoreCase) ?? false))
+                this.Pipeline.GameList.Add(game);
         }
 
         this.Pipeline.GameInformation = null;

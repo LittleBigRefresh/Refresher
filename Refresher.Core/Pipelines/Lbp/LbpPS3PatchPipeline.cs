@@ -1,16 +1,18 @@
 ﻿using Refresher.Core.Pipelines.Steps;
 
-namespace Refresher.Core.Pipelines;
+namespace Refresher.Core.Pipelines.Lbp;
 
-public class PS3PatchPipeline : Pipeline
+public class LbpPS3PatchPipeline : Pipeline
 {
-    public override string Id => "ps3-patch";
-    public override string Name => "PS3 Patch (any game)";
+    public override string Id => "lbp-ps3-patch";
+    public override string Name => "LBP PS3 Patch";
 
     protected override Type SetupAccessorStepType => typeof(SetupPS3AccessorStep);
     public override bool ReplacesEboot => true;
 
     public override string GuideLink => "https://docs.littlebigrefresh.com/ps3";
+
+    public override IEnumerable<string> GameNameFilters => ["littlebigplanet", "lbp"];
 
     protected override List<Type> StepTypes =>
     [
@@ -25,12 +27,13 @@ public class PS3PatchPipeline : Pipeline
         // Decryption and patch stage
         typeof(PrepareSceToolStep),
         typeof(DecryptGameEbootStep),
-        typeof(PrepareEbootPatcherAndVerifyStep),
-        typeof(ApplyPatchToEbootStep),
+        typeof(ApplySprxPatchToEbootStep),
         
         // Encryption and upload stage
         typeof(EncryptGameEbootStep),
         typeof(BackupGameEbootBeforeReplaceStep),
+        typeof(UploadPatchworkSprxStep),
+        typeof(UploadPatchworkConfigurationStep),
         typeof(UploadGameEbootStep),
     ];
 }
