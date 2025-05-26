@@ -15,11 +15,13 @@ jobs:
     name: Build, Test, and Upload Builds (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - uses: actions/checkout@v4
         with:
-          dotnet-version: 8.0.x
+          submodules: 'recursive'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
           
       - name: Set VERSION variable from tag
         if: ${{ contains(github.ref, 'refs/tags') }}
@@ -60,7 +62,7 @@ jobs:
       - name: Create macOS universal2 binary
         if: matrix.os == 'macos-latest'
         shell: bash
-        working-directory: Refresher/bin/Release/net8.0/
+        working-directory: Refresher/bin/Release/net9.0/
         run: |
           mkdir -p osx-universal2/publish/Refresher.app/Contents/MacOS
           cp -r osx-arm64/publish/*.app/Contents/ osx-universal2/publish/Refresher.app/Contents/
@@ -76,27 +78,27 @@ jobs:
   
       - name: 'Tar macOS universal2 build'
         if: matrix.os == 'macos-latest'
-        working-directory: Refresher/bin/Release/net8.0/osx-universal2/publish/
+        working-directory: Refresher/bin/Release/net9.0/osx-universal2/publish/
         run: tar -czvf ../../../../../../Refresher_for_macOS.tar.gz *.app 
 
       - name: 'Tar Linux x64'
         if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net8.0/linux-x64/publish/
+        working-directory: Refresher/bin/Release/net9.0/linux-x64/publish/
         run: tar -czvf ../../../../../../Refresher_for_Linux_x64.tar.gz *
 
       - name: 'Tar Linux ARM'
         if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net8.0/linux-arm/publish/
+        working-directory: Refresher/bin/Release/net9.0/linux-arm/publish/
         run: tar -czvf ../../../../../../Refresher_for_Linux_arm.tar.gz *
         
       - name: 'Tar Linux ARM64'
         if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net8.0/linux-arm64/publish/
+        working-directory: Refresher/bin/Release/net9.0/linux-arm64/publish/
         run: tar -czvf ../../../../../../Refresher_for_Linux_arm64.tar.gz *
 
       - name: Upload Linux x64 build
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v3.1.3
+        uses: actions/upload-artifact@v4
         with:
             name: "Refresher_for_Linux_x64"
             path: "Refresher_for_Linux_x64.tar.gz"
@@ -105,7 +107,7 @@ jobs:
 
       - name: Upload Linux ARM build
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v3.1.3
+        uses: actions/upload-artifact@v4
         with:
             name: "Refresher_for_Linux_arm"
             path: "Refresher_for_Linux_arm.tar.gz"
@@ -114,7 +116,7 @@ jobs:
 
       - name: Upload Linux ARM64 build
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v3.1.3
+        uses: actions/upload-artifact@v4
         with:
             name: "Refresher_for_Linux_arm64"
             path: "Refresher_for_Linux_arm64.tar.gz"
@@ -123,16 +125,16 @@ jobs:
 
       - name: Upload Windows x64 build
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v3.1.3
+        uses: actions/upload-artifact@v4
         with:
             name: "Refresher_for_Windows_x64"
-            path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/Refresher.exe"
+            path: "Refresher/bin/Release/net9.0-windows/win-x64/publish/Refresher.exe"
             if-no-files-found: error
             retention-days: 1
 
       - name: Upload macOS universal2 build
         if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
             name: "Refresher_for_macOS"
             path: "Refresher_for_macOS.tar.gz"
@@ -143,11 +145,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download artifacts
         id: download
-        uses: actions/download-artifact@v3.0.2
+        uses: actions/download-artifact@v4
 
       - name: Create zip files
         run: |
@@ -158,7 +160,7 @@ jobs:
             mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_arm64/*.tar.gz .
             mv ${{steps.download.outputs.download-path}}/Refresher_for_macOS/*.tar.gz .
         
-      - uses: ncipollo/release-action@v1.14.0
+      - uses: ncipollo/release-action@v1.16.0
         name: "Create release"
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"

@@ -30,11 +30,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <ApplicationId>Refresher</ApplicationId>  
-        <TargetFramework Condition="!$(IsWindows)">net8.0</TargetFramework>
-        <TargetFramework Condition="$(IsWindows)">net8.0-windows</TargetFramework>
+        <TargetFramework Condition="!$(IsWindows)">net9.0</TargetFramework>
+        <TargetFramework Condition="$(IsWindows)">net9.0-windows</TargetFramework>
         <RuntimeIdentifiers Condition="$(IsOSX)">osx-x64;osx-arm64</RuntimeIdentifiers>
         <ApplicationIcon>Resources\refresher.ico</ApplicationIcon>
-        <BuiltInComInteropSupport Condition="'$(TargetFramework)' == 'net8.0-windows'">true</BuiltInComInteropSupport>
+        <BuiltInComInteropSupport Condition="'$(TargetFramework)' == 'net9.0-windows'">true</BuiltInComInteropSupport>
         <IncludeNativeLibrariesForSelfExtract Condition="$(IsWindows)">true</IncludeNativeLibrariesForSelfExtract>
         <DebugType>embedded</DebugType>
     </PropertyGroup>
