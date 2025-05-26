@@ -118,29 +118,32 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this._controller = new PipelineController(this._pipeline, Application.Instance.Invoke);
         this._pipeline.Initialize();
         
+        PreviousInputStorage.Read();
         this._formLayout.Rows.Clear();
         foreach (StepInput input in this._pipeline.RequiredInputs)
         {
+            PreviousInputStorage.StoredInputs.TryGetValue(input.Id, out string? value);
+            
             TableRow row;
             switch (input.Type)
             {
                 case StepInputType.Game:
-                    row = AddField<DropDown>(input);
+                    row = AddField<DropDown>(input, value);
                     this._gamesDropDown = row.Cells[1].Control as DropDown;
                     this._gamesDropDown!.Enabled = false;
                     this._gamesDropDown.Height = 56;
                     break;
                 case StepInputType.Url:
                 case StepInputType.Text:
-                    row = AddField<TextBox>(input);
+                    row = AddField<TextBox>(input, value);
                     break;
                 case StepInputType.Directory:
-                    row = AddField<FilePicker>(input);
+                    row = AddField<FilePicker>(input, value);
                     if (input.ShouldCauseGameDownloadWhenChanged)
                         (row.Cells[1].Control as FilePicker)!.FilePathChanged += this.OnDownloadGameList;
                     break;
                 case StepInputType.ConsoleIp:
-                    row = AddField<TextBox>(input, this._connectButton = new Button(this.OnDownloadGameList) { Text = "Connect" });
+                    row = AddField<TextBox>(input, value, this._connectButton = new Button(this.OnDownloadGameList) { Text = "Connect" });
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -415,7 +418,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         MessageBox.Show("The log was successfully copied to the clipboard.", "Success");
     }
     
-    private static TableRow AddField<TControl>(StepInput input, Button? button = null) where TControl : Control, new()
+    private static TableRow AddField<TControl>(StepInput input, string? value = null, Button? button = null) where TControl : Control, new()
     {
         Label label = new()
         {
@@ -428,6 +431,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         TextBox? textBox = control as TextBox;
 
         string? newValue = input.DetermineDefaultValue?.Invoke();
+        newValue ??= value;
 
         if (textBox != null)
         {
