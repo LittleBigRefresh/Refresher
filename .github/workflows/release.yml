@@ -62,7 +62,7 @@ jobs:
       - name: Create macOS universal2 binary
         if: matrix.os == 'macos-latest'
         shell: bash
-        working-directory: Refresher/bin/Release/net8.0/
+        working-directory: Refresher/bin/Release/net9.0/
         run: |
           mkdir -p osx-universal2/publish/Refresher.app/Contents/MacOS
           cp -r osx-arm64/publish/*.app/Contents/ osx-universal2/publish/Refresher.app/Contents/
@@ -78,22 +78,22 @@ jobs:
   
       - name: 'Tar macOS universal2 build'
         if: matrix.os == 'macos-latest'
-        working-directory: Refresher/bin/Release/net8.0/osx-universal2/publish/
+        working-directory: Refresher/bin/Release/net9.0/osx-universal2/publish/
         run: tar -czvf ../../../../../../Refresher_for_macOS.tar.gz *.app 
 
       - name: 'Tar Linux x64'
         if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net8.0/linux-x64/publish/
+        working-directory: Refresher/bin/Release/net9.0/linux-x64/publish/
         run: tar -czvf ../../../../../../Refresher_for_Linux_x64.tar.gz *
 
       - name: 'Tar Linux ARM'
         if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net8.0/linux-arm/publish/
+        working-directory: Refresher/bin/Release/net9.0/linux-arm/publish/
         run: tar -czvf ../../../../../../Refresher_for_Linux_arm.tar.gz *
         
       - name: 'Tar Linux ARM64'
         if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net8.0/linux-arm64/publish/
+        working-directory: Refresher/bin/Release/net9.0/linux-arm64/publish/
         run: tar -czvf ../../../../../../Refresher_for_Linux_arm64.tar.gz *
 
       - name: Upload Linux x64 build
@@ -128,7 +128,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: "Refresher_for_Windows_x64"
-            path: "Refresher/bin/Release/net8.0-windows/win-x64/publish/Refresher.exe"
+            path: "Refresher/bin/Release/net9.0-windows/win-x64/publish/Refresher.exe"
             if-no-files-found: error
             retention-days: 1
 
