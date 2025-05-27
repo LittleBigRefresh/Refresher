@@ -1,6 +1,7 @@
 using _Microsoft.Android.Resource.Designer;
 using Android.Content;
 using Refresher.Core.Pipelines;
+using Refresher.Core.Pipelines.Lbp;
 using SCEToolSharp;
 
 using ConditionalAttribute = System.Diagnostics.ConditionalAttribute;
@@ -21,7 +22,8 @@ public class MainActivity : RefresherActivity
         if (mainContent == null)
             throw new Exception("Main content not found");
 
-        this.AddButtonForPipeline<PS3PatchPipeline>(mainContent, "Patch a PS3 game");
+        this.AddButtonForPipeline<LbpPS3PatchPipeline>(mainContent, "Patch LBP1/2/3 for PS3");
+        this.AddButtonForPipeline<PS3PatchPipeline>(mainContent, "Patch any PS3 game");
         #if DEBUG
         this.AddButtonForPipeline<ExamplePipeline>(mainContent, "Example Pipeline");
         this.AddSceToolSharpTestButton(mainContent);
