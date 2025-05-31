@@ -71,7 +71,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         
         if (!response.IsSuccessStatusCode)
         {
-            State.Logger.LogError(IDPS, "Couldn't fetch the IDPS from the PS3 because of a bad status code.");
+            State.Logger.LogError(IDPS, $"Couldn't fetch the IDPS from the PS3 because of a bad status code: {response.StatusCode}");
             State.Logger.LogDebug(IDPS, response.Content.ReadAsStringAsync().Result);
             return null;
         }
