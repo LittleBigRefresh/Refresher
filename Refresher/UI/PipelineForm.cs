@@ -177,10 +177,10 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     {
         Thread progressThread = new(() =>
         {
-            while (!this.IsDisposed && !Application.Instance.IsDisposed)
+            while (!this.IsDisposed && Application.Instance != null && !Application.Instance.IsDisposed)
             {
                 Application.Instance.Invoke(this.UpdateFormState);
-                Thread.Sleep(this._pipeline?.State == PipelineState.Running ? 50 : 250);
+                Thread.Sleep(this._pipeline?.State == PipelineState.Running ? 10 : 250);
             }
         });
         
