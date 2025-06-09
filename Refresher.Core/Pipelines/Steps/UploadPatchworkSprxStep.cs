@@ -13,9 +13,13 @@ public class UploadPatchworkSprxStep : Step
     {
         await PatchAccessor.TryAsync(async () =>
         {
+            const string pluginsFolder = "/dev_hdd0/plugins/";
             const string sprxName = "patchwork.sprx";
             const string sprxPath = "/dev_hdd0/plugins/" + sprxName;
             
+            if(!this.Pipeline.Accessor!.DirectoryExists(pluginsFolder))
+                this.Pipeline.Accessor.CreateDirectory(pluginsFolder);
+
             if (this.Pipeline.Accessor!.FileExists(sprxPath))
                 this.Pipeline.Accessor.RemoveFile(sprxPath);
             
