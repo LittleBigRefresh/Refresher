@@ -42,6 +42,19 @@ public abstract class PatchAccessor
         inStream.CopyTo(outStream);
     }
 
+    /// <summary>
+    /// Creates a directory if it doesn't already exist.
+    /// </summary>
+    /// <param name="path">The path to the directory to create</param>
+    /// <returns>True if the directory was created, false if not.</returns>
+    public bool CreateDirectoryIfNotExists(string path)
+    {
+        if (this.DirectoryExists(path)) return false;
+
+        this.CreateDirectory(path);
+        return true;
+    }
+
     public static void Try(Action action)
     {
         try

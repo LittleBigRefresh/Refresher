@@ -17,6 +17,8 @@ public class UploadPatchworkConfigurationStep : Step
     public override float Progress { get; protected set; }
     public override async Task ExecuteAsync(CancellationToken ct = default)
     {
+        this.Pipeline.Accessor!.CreateDirectoryIfNotExists("/dev_hdd0/tmp/");
+        
         string? lobbyPassword = this.Pipeline.Inputs["lobby-password"];
         if (string.IsNullOrWhiteSpace(lobbyPassword))
             lobbyPassword = null;
