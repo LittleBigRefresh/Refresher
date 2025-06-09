@@ -17,7 +17,7 @@ public class UploadPatchworkConfigurationStep : Step
     public override float Progress { get; protected set; }
     public override async Task ExecuteAsync(CancellationToken ct = default)
     {
-        this.Pipeline.Accessor!.CreateDirectoryIfNotExists("/dev_hdd0/tmp/");
+        this.Pipeline.Accessor!.CreateDirectoryIfNotExists("tmp/");
         
         string? lobbyPassword = this.Pipeline.Inputs["lobby-password"];
         if (string.IsNullOrWhiteSpace(lobbyPassword))
@@ -42,7 +42,7 @@ public class UploadPatchworkConfigurationStep : Step
     {
         await PatchAccessor.TryAsync(async () =>
         {
-            string configPath = "/dev_hdd0/tmp/" + filename;
+            string configPath = "tmp/" + filename;
             
             if (this.Pipeline.Accessor!.FileExists(configPath))
                 this.Pipeline.Accessor.RemoveFile(configPath);
