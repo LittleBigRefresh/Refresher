@@ -25,6 +25,7 @@ public class EmulatorPatchAccessor : PatchAccessor
     public override Stream OpenRead(string path) => File.OpenRead(this.GetPath(path));
     public override Stream OpenWrite(string path) => File.OpenWrite(this.GetPath(path));
     public override void RemoveFile(string path) => File.Delete(this.GetPath(path));
+    public override void CreateDirectory(string path) => Directory.CreateDirectory(this.GetPath(path));
 
     public override void CopyFile(string inPath, string outPath)
         => File.Copy(this.GetPath(inPath), this.GetPath(outPath));

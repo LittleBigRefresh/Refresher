@@ -13,6 +13,7 @@ public abstract class PatchAccessor
     public abstract Stream OpenRead(string path);
     public abstract Stream OpenWrite(string path);
     public abstract void RemoveFile(string path);
+    public abstract void CreateDirectory(string path);
 
     public string DownloadFile(string path)
     {

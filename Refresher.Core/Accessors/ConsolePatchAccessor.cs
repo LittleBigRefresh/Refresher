@@ -126,6 +126,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     public override Stream OpenWrite(string path) => this._client.OpenWrite(GetPath(path), FtpDataType.Binary, false);
 
     public override void RemoveFile(string path) => this._client.DeleteFile(GetPath(path));
+    public override void CreateDirectory(string path) => this._client.CreateDirectory(GetPath(path), false);
 
     public void Dispose()
     {
