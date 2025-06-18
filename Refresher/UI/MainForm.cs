@@ -28,7 +28,6 @@ public class MainForm : RefresherForm
             this.PipelineButton<PS3PatchPipeline>("Patch any PS3 game"),
 
             new Label { Text = "Advanced (for experts):" },
-            new Button((_, _) => this.ShowChild<FilePatchForm>()) { Text = "File Patch (using a .ELF)" },
             this.PipelineButton<ElfToElfPatchPipeline>(".elf->.elf Patch"),
 
             #if DEBUG
