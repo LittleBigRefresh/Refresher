@@ -144,6 +144,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                     row = AddField<TextBox>(input, value);
                     break;
                 case StepInputType.Directory:
+                case StepInputType.OpenFile:
+                case StepInputType.SaveFile:
                     row = AddField<FilePicker>(input, value);
                     if (input.ShouldCauseGameDownloadWhenChanged)
                     {
