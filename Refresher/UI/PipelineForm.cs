@@ -83,6 +83,10 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         }
         
         State.Log += this.OnLog;
+        this.UpdateFormState();
+
+        if(this._shouldTriggerOnConnect)
+            this.OnConnect(this, EventArgs.Empty);
     }
 
     private void UpdateFormState()
@@ -112,6 +116,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
         this._button.Text = this._controller.MainButtonText;
     }
 
+    private bool _shouldTriggerOnConnect = false;
+
     private void InitializePipeline()
     {
         this._pipeline = new TPipeline();
@@ -140,7 +146,10 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
                 case StepInputType.Directory:
                     row = AddField<FilePicker>(input, value);
                     if (input.ShouldCauseGameDownloadWhenChanged)
+                    {
                         (row.Cells[1].Control as FilePicker)!.FilePathChanged += this.OnConnect;
+                        this._shouldTriggerOnConnect = value != null;
+                    }
                     break;
                 case StepInputType.ConsoleIp:
                     row = AddField<TextBox>(input, value, this._connectButton = new Button(this.OnConnect) { Text = "Connect" });
