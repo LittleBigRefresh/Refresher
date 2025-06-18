@@ -37,7 +37,7 @@ public class FakeEncryptGameEbootStep : Step
         Marshal.Copy(ptr, buffer, 0, size);
         Marshal.FreeHGlobal(ptr);
         
-        stream.Write(buffer, 0, size);
+        stream.Write(buffer);
     }
 
     public override float Progress { get; protected set; }

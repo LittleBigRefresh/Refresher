@@ -35,6 +35,6 @@ public class LbpRPCS3PatchPipeline : Pipeline
         typeof(BackupGameEbootBeforeReplaceStep),
         typeof(UploadPatchworkSprxStep),
         typeof(UploadPatchworkConfigurationStep),
-        typeof(UploadGameEbootElfStep), // upload EBOOT.elf for now
+        typeof(UploadGameEbootStep),
     ];
 }
