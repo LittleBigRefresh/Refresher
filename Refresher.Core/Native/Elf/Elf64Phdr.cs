@@ -1,9 +1,13 @@
-﻿using System.Runtime.InteropServices;
+﻿// This file contains modified & ported code from jjolano's make_fself C project.
+// make_fself is licensed under GPL-3.0.
+// Find it here: https://github.com/jjolano/make_fself
+
+using System.Runtime.InteropServices;
 
 namespace Refresher.Core.Native.Elf;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct Elf64_Phdr
+public struct Elf64Phdr
 {
     public uint p_type;
     public uint p_flags;

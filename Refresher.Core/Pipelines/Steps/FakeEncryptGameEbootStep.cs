@@ -1,4 +1,8 @@
-﻿using System.Runtime.InteropServices;
+﻿// This file contains modified & ported code from jjolano's make_fself C project.
+// make_fself is licensed under GPL-3.0.
+// Find it here: https://github.com/jjolano/make_fself
+
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Refresher.Core.Native.Elf;
 using Refresher.Core.Native.Sce;
@@ -81,8 +85,8 @@ public class FakeEncryptGameEbootStep : Step
 
         for (int i = 0; i < phdrCount; i++)
         {
-            long offset = (long)Swap64(elfHeader.e_phoff) + i * Marshal.SizeOf<Elf64_Phdr>();
-            Elf64_Phdr elfPhdr = MemoryMarshal.Read<Elf64_Phdr>(elfData.AsSpan((int)offset));
+            long offset = (long)Swap64(elfHeader.e_phoff) + i * Marshal.SizeOf<Elf64Phdr>();
+            Elf64Phdr elfPhdr = MemoryMarshal.Read<Elf64Phdr>(elfData.AsSpan((int)offset));
 
             segments[i].offset = Swap64(Swap64(elfPhdr.p_offset) + Swap64(sceHeader.head_len));
             segments[i].size = elfPhdr.p_filesz;
