@@ -24,6 +24,9 @@
         <EmbeddedResource Include="Resources/patchwork.sprx" Condition="Exists('Resources/patchwork.sprx')">
             <LogicalName>patchwork.sprx</LogicalName>
         </EmbeddedResource>
+        <EmbeddedResource Include="Resources/patchwork-rpcs3.sprx" Condition="Exists('Resources/patchwork-rpcs3.sprx')">
+            <LogicalName>patchwork-rpcs3.sprx</LogicalName>
+        </EmbeddedResource>
     </ItemGroup>
 
 </Project>
