@@ -9,7 +9,7 @@ public class LbpRPCS3PatchPipeline : Pipeline
     public override string Name => "LBP RPCS3 Patch";
 
     protected override Type SetupAccessorStepType => typeof(SetupEmulatorAccessorStep);
-    public override bool ReplacesEboot => false;
+    public override bool ReplacesEboot => true;
 
     public override string GuideLink => "https://docs.littlebigrefresh.com/rpcs3";
 
@@ -30,9 +30,9 @@ public class LbpRPCS3PatchPipeline : Pipeline
         typeof(ApplySprxPatchToEbootStep),
         
         // Encryption and upload stage
-        // FIXME: encrypting seems to break the elf in rpcs3?
-        // typeof(EncryptGameEbootStep),
-        // typeof(BackupGameEbootBeforeReplaceStep),
+        typeof(FakeEncryptGameEbootStep),
+        typeof(PrintInfoForEncryptedGameEbootStep),
+        typeof(BackupGameEbootBeforeReplaceStep),
         typeof(UploadPatchworkSprxStep),
         typeof(UploadPatchworkConfigurationStep),
         typeof(UploadGameEbootElfStep), // upload EBOOT.elf for now

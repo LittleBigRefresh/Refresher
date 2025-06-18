@@ -18,5 +18,7 @@ public enum LogType : byte
     Vita,
     RPCS3,
     Pipeline,
-    Patchwork
+    Patchwork,
+    Encrypt,
+    Decrypt,
 }
