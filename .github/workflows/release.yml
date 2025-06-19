@@ -140,5 +140,7 @@ jobs:
           generateReleaseNotes: true
           allowUpdates: true
           bodyFile: "RELEASE_NOTES.md"
+          omitBody: 'false'
+          omitBodyDuringUpdate: 'false'
           artifacts: |
             *.tar.gz
