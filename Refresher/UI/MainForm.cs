@@ -24,9 +24,11 @@ public class MainForm : RefresherForm
             this.PipelineButton<PatchworkRPCS3ConfigPipeline>("Reconfigure Patch for RPCS3"),
 
             new Label { Text = "General (for non-LBP games):" },
-            new Button((_, _) => this.ShowChild<FilePatchForm>()) { Text = "File Patch (using a .ELF)" },
             this.PipelineButton<RPCS3PatchPipeline>("Patch any RPCS3 game"),
             this.PipelineButton<PS3PatchPipeline>("Patch any PS3 game"),
+
+            new Label { Text = "Advanced (for experts):" },
+            this.PipelineButton<ElfToElfPatchPipeline>(".elf->.elf Patch"),
 
             #if DEBUG
             new Label { Text = "Debugging options:" },
