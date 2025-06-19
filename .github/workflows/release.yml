@@ -90,19 +90,19 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-            vpk pack --framework net9.0-x64-desktop --runtime win7-x64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher.exe --packTitle Refresher --packAuthors LittleBigRefresh
+            vpk pack --channel windows-x64 --framework net9.0-x64-desktop --runtime win7-x64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher.exe --packTitle Refresher --packAuthors LittleBigRefresh
             
       - name: Run vpk pack for Linux x64
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-            vpk pack --runtime linux-x64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
+            vpk pack --channel linux-x64 --runtime linux-x64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
             
       - name: Run vpk pack for Linux ARM64
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-            vpk pack --runtime linux-arm64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
+            vpk pack --channel linux-arm64 --runtime linux-arm64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
             
       - name: Upload velopack build to GitHub
         if: matrix.os != 'macos-latest'
