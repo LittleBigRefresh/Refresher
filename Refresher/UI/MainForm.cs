@@ -90,7 +90,7 @@ public class MainForm : RefresherForm
         UpdateInfo? newVersion = await this._velo.CheckForUpdatesAsync();
         if (newVersion == null)
         {
-            this.UpdateStatus = "Refresher is up to date!";
+            this.UpdateStatus = $"Refresher is up to date! {this._velo.CurrentVersion?.ToNormalizedString() ?? "<unknown>"}";
             return;
         }
 
@@ -100,8 +100,11 @@ public class MainForm : RefresherForm
         this._updateInfo = newVersion;
         
         this.UpdateStatus = $"An update is available. Click here to install Refresher {newVersion.TargetFullRelease.Version.ToNormalizedString()}!";
-        this._updateStatusLabel.TextColor = Colors.Orange;
-        this._updateStatusLabel.MouseUp += this.OnClickUpdate;
+        await Application.Instance.InvokeAsync(() =>
+        {
+            this._updateStatusLabel.TextColor = Colors.Orange;
+            this._updateStatusLabel.MouseUp += this.OnClickUpdate;
+        });
     }
 
     private void OnClickUpdate(object? sender, MouseEventArgs e)
@@ -111,7 +114,7 @@ public class MainForm : RefresherForm
 
         this.UpdateStatus = "Installing...";
 
-        Task.Run(async () =>
+        Task.Run(() =>
         {
             try
             {
