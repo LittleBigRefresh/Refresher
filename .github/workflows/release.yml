@@ -138,6 +138,7 @@ jobs:
           prerelease: false
           draft: true
           generateReleaseNotes: true
+          allowUpdates: true
           bodyFile: "RELEASE_NOTES.md"
           artifacts: |
             *.tar.gz
