@@ -6,6 +6,9 @@ on:
     tags:
       - "*"
 
+permissions:
+    contents: write
+
 jobs:
   build:
     strategy:
@@ -104,7 +107,7 @@ jobs:
       - name: Upload velopack build to GitHub
         if: matrix.os != 'macos-latest'
         shell: bash
-        run: vpk upload github --repoUrl https://github.com/${{ github.repository }} --merge --releaseName v$VERSION --tag v$VERSION
+        run: vpk upload github --repoUrl https://github.com/${{ github.repository }} --merge --releaseName v$VERSION --tag v$VERSION --token ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload macOS universal2 build
         if: matrix.os == 'macos-latest'
