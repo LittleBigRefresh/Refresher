@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
             vpk pack --channel windows-x64 --framework net9.0-x64-desktop --runtime win7-x64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher.exe --packTitle Refresher --packAuthors LittleBigRefresh
-            vpk upload github --channel windows-arm64 --repoUrl https://github.com/${{ github.repository }} --merge --releaseName v$VERSION --tag v$VERSION --token ${{ secrets.GITHUB_TOKEN }}
+            vpk upload github --channel windows-x64 --repoUrl https://github.com/${{ github.repository }} --merge --releaseName v$VERSION --tag v$VERSION --token ${{ secrets.GITHUB_TOKEN }}
             
       - name: Run vpk pack for Linux x64
         if: matrix.os == 'ubuntu-latest'
