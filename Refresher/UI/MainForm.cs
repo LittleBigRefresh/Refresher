@@ -60,7 +60,7 @@ public class MainForm : RefresherForm
         layout.Spacing = 5;
         layout.HorizontalContentAlignment = HorizontalAlignment.Stretch;
 
-        this.UpdateStatus = "Loading updater...";
+        this._updateStatusLabel.Text = "Loading updater...";
     }
 
     protected override void OnLoadComplete(EventArgs e)
@@ -90,7 +90,7 @@ public class MainForm : RefresherForm
         UpdateInfo? newVersion = await this._velo.CheckForUpdatesAsync();
         if (newVersion == null)
         {
-            this.UpdateStatus = $"Refresher is up to date! {this._velo.CurrentVersion?.ToNormalizedString() ?? "<unknown>"}";
+            this.UpdateStatus = $"Refresher is up to date! You are on v{this._velo.CurrentVersion?.ToNormalizedString() ?? "<unknown>"}.";
             return;
         }
 
