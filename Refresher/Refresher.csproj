@@ -53,6 +53,7 @@
       <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
       <PackageReference Include="Sentry" Version="4.4.0" />
       <Content Include="Resources/refresher.icns" Link="refresher.icns" Condition="$(IsOSX)" />
+      <PackageReference Include="Velopack" Version="0.0.1298" />
     </ItemGroup>
 
     <ItemGroup>
