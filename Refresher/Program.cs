@@ -6,6 +6,8 @@ using Refresher.CLI;
 using Refresher.Core;
 using Refresher.Core.Logging;
 using Refresher.UI;
+using Velopack;
+using Velopack.Logging;
 
 namespace Refresher;
 
@@ -18,6 +20,11 @@ public class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        VelopackApp
+            .Build()
+            .SetLogger(new ConsoleVelopackLogger())
+            .Run();
+        
         State.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
         State.InitializeSentry();
         
