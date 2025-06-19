@@ -4,7 +4,7 @@ namespace Refresher.Core.Verification.AutoDiscover;
 
 public class AutoDiscoverResponse
 {
-    public const int SupportedVersion = 2;
+    public const int SupportedVersion = 3;
 
     [JsonPropertyName("version")]
     public int Version { get; set; }
