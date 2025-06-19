@@ -34,20 +34,20 @@ jobs:
         
       - name: Publish for Linux x64
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION}
+        run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION} -o publish/
 
       - name: Publish for Linux ARM
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet publish -c Release -r linux-arm --self-contained Refresher /p:Version=${VERSION}
+        run: dotnet publish -c Release -r linux-arm --self-contained Refresher /p:Version=${VERSION} -o publish/
 
       - name: Publish for Linux ARM64
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet publish -c Release -r linux-arm64 --self-contained Refresher /p:Version=${VERSION}
+        run: dotnet publish -c Release -r linux-arm64 --self-contained Refresher /p:Version=${VERSION} -o publish/
 
       - name: Publish for Windows x64
         if: matrix.os == 'windows-latest'
         shell: bash
-        run: dotnet publish -c Release -r win-x64 --no-self-contained Refresher //p:Version=${VERSION}
+        run: dotnet publish -c Release -r win-x64 --no-self-contained Refresher //p:Version=${VERSION} -o publish/
 
       - name: Publish for macOS x64
         if: matrix.os == 'macos-latest'
@@ -79,58 +79,37 @@ jobs:
       - name: 'Tar macOS universal2 build'
         if: matrix.os == 'macos-latest'
         working-directory: Refresher/bin/Release/net9.0/osx-universal2/publish/
-        run: tar -czvf ../../../../../../Refresher_for_macOS.tar.gz *.app 
-
-      - name: 'Tar Linux x64'
-        if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net9.0/linux-x64/publish/
-        run: tar -czvf ../../../../../../Refresher_for_Linux_x64.tar.gz *
-
-      - name: 'Tar Linux ARM'
-        if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net9.0/linux-arm/publish/
-        run: tar -czvf ../../../../../../Refresher_for_Linux_arm.tar.gz *
+        run: tar -czvf ../../../../../../Refresher_for_macOS.tar.gz *.app
         
-      - name: 'Tar Linux ARM64'
-        if: matrix.os == 'ubuntu-latest'
-        working-directory: Refresher/bin/Release/net9.0/linux-arm64/publish/
-        run: tar -czvf ../../../../../../Refresher_for_Linux_arm64.tar.gz *
-
-      - name: Upload Linux x64 build
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-            name: "Refresher_for_Linux_x64"
-            path: "Refresher_for_Linux_x64.tar.gz"
-            if-no-files-found: error
-            retention-days: 1
-
-      - name: Upload Linux ARM build
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-            name: "Refresher_for_Linux_arm"
-            path: "Refresher_for_Linux_arm.tar.gz"
-            if-no-files-found: error
-            retention-days: 1
-
-      - name: Upload Linux ARM64 build
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-            name: "Refresher_for_Linux_arm64"
-            path: "Refresher_for_Linux_arm64.tar.gz"
-            if-no-files-found: error
-            retention-days: 1
-
-      - name: Upload Windows x64 build
+      - name: Prepare Velopack
+        if: matrix.os != 'macos-latest'
+        run: |
+            dotnet tool install -g vpk
+            vpk download github --repoUrl https://github.com/${{ github.repository }}
+            
+      - name: Run vpk pack for Windows x64
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-            name: "Refresher_for_Windows_x64"
-            path: "Refresher/bin/Release/net9.0-windows/win-x64/publish/Refresher.exe"
-            if-no-files-found: error
-            retention-days: 1
+        run: |
+            vpk pack --framework net9.0-x64-desktop --runtime win7-x64 --packId Refresher --packVersion $VERSION --packDir .\publish --mainExe Refresher.exe --packTitle Refresher --packAuthors LittleBigRefresh
+            
+      - name: Run vpk pack for Linux x64
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+            vpk pack --runtime linux-x64 --packId Refresher --packVersion $VERSION --packDir .\publish --mainExe Refresher.exe --packTitle Refresher --packAuthors LittleBigRefresh
+            
+      - name: Run vpk pack for Linux ARM
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+            vpk pack --runtime linux-arm --packId Refresher --packVersion $VERSION --packDir .\publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
+            
+      - name: Run vpk pack for Linux ARM64
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+            vpk pack --runtime linux-arm64 --packId Refresher --packVersion $VERSION --packDir .\publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
+            
+      - name: Upload velopack build to GitHub
+        if: matrix.os != 'macos-latest'
+        run: vpk upload github --repoUrl https://github.com/${{ github.repository }} --merge --releaseName v$VERSION --tag v$VERSION
 
       - name: Upload macOS universal2 build
         if: matrix.os == 'macos-latest'
@@ -154,10 +133,6 @@ jobs:
       - name: Create zip files
         run: |
             cd ${{steps.download.outputs.download-path}}
-            mv ${{steps.download.outputs.download-path}}/Refresher_for_Windows_x64/Refresher.exe ./Refresher_for_Windows_x64.exe
-            mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_x64/*.tar.gz .
-            mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_arm/*.tar.gz .
-            mv ${{steps.download.outputs.download-path}}/Refresher_for_Linux_arm64/*.tar.gz .
             mv ${{steps.download.outputs.download-path}}/Refresher_for_macOS/*.tar.gz .
         
       - uses: ncipollo/release-action@v1.16.0
@@ -169,6 +144,4 @@ jobs:
           generateReleaseNotes: true
           bodyFile: "RELEASE_NOTES.md"
           artifacts: |
-            *.zip
             *.tar.gz
-            Refresher_for_Windows_x64.exe
