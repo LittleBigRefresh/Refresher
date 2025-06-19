@@ -36,10 +36,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION} -o publish/
 
-      - name: Publish for Linux ARM
-        if: matrix.os == 'ubuntu-latest'
-        run: dotnet publish -c Release -r linux-arm --self-contained Refresher /p:Version=${VERSION} -o publish/
-
       - name: Publish for Linux ARM64
         if: matrix.os == 'ubuntu-latest'
         run: dotnet publish -c Release -r linux-arm64 --self-contained Refresher /p:Version=${VERSION} -o publish/
@@ -98,12 +94,6 @@ jobs:
         shell: bash
         run: |
             vpk pack --runtime linux-x64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
-            
-      - name: Run vpk pack for Linux ARM
-        if: matrix.os == 'ubuntu-latest'
-        shell: bash
-        run: |
-            vpk pack --runtime linux-arm --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
             
       - name: Run vpk pack for Linux ARM64
         if: matrix.os == 'ubuntu-latest'

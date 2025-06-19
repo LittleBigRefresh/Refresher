@@ -33,10 +33,6 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION}
       
-    - name: Publish for Linux ARM
-      if: matrix.os == 'ubuntu-latest'
-      run: dotnet publish -c Release -r linux-arm --self-contained Refresher /p:Version=${VERSION}
-      
     - name: Publish for Linux ARM64
       if: matrix.os == 'ubuntu-latest'
       run: dotnet publish -c Release -r linux-arm64 --self-contained Refresher /p:Version=${VERSION}
@@ -96,11 +92,6 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       working-directory: Refresher/bin/Release/net9.0/linux-x64/publish/
       run: tar -cvf ../../../../../../Refresher-x64.tar *
-
-    - name: 'Tar Linux ARM'
-      if: matrix.os == 'ubuntu-latest'
-      working-directory: Refresher/bin/Release/net9.0/linux-arm/publish/
-      run: tar -cvf ../../../../../../Refresher-arm.tar *
       
     - name: 'Tar Linux ARM64'
       if: matrix.os == 'ubuntu-latest'
@@ -113,15 +104,6 @@ jobs:
       with:
           name: "Refresher for Linux x64"
           path: "Refresher-x64.tar"
-          if-no-files-found: error
-          retention-days: 30
-
-    - name: Upload Linux ARM build
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-          name: "Refresher for Linux ARM"
-          path: "Refresher-arm.tar"
           if-no-files-found: error
           retention-days: 30
 
