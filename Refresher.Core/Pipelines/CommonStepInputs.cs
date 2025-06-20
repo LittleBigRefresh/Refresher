@@ -30,7 +30,7 @@ public static class CommonStepInputs
         Required = true,
     };
     
-    internal static readonly StepInput LobbyPassword = new("lobby-password", "Lobby Password")
+    internal static readonly StepInput LobbyPassword = new("lobby-password", "Join Key")
     {
         Placeholder = "(leave empty to randomize)",
     };
