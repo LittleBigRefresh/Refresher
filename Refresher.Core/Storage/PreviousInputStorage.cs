@@ -9,6 +9,7 @@ public static class PreviousInputStorage
 {
     private const string ApplicationDirectory = "Refresher";
     private const string FileName = "inputs.ini";
+    private static readonly string DirectoryPath;
     private static readonly string FilePath;
     
     public static readonly Dictionary<string, string> StoredInputs = [];
@@ -16,6 +17,7 @@ public static class PreviousInputStorage
     static PreviousInputStorage()
     {
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        DirectoryPath = Path.Combine(appData, ApplicationDirectory);
         FilePath = Path.Combine(appData, ApplicationDirectory, FileName);
     }
 
@@ -55,6 +57,8 @@ public static class PreviousInputStorage
 
     public static void Write()
     {
+        Directory.CreateDirectory(DirectoryPath);
+        
         using FileStream stream = File.OpenWrite(FilePath);
         using StreamWriter writer = new(stream);
         foreach ((string key, string value) in StoredInputs)
