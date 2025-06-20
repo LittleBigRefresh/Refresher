@@ -3,19 +3,22 @@ using System.Diagnostics;
 using Refresher.Core.Accessors;
 using Refresher.Core.Patching;
 using Refresher.Core.Pipelines.Steps;
+using Refresher.Core.Platform;
 using Refresher.Core.Storage;
 using Refresher.Core.Verification.AutoDiscover;
 using GlobalState = Refresher.Core.State;
 
 namespace Refresher.Core.Pipelines;
 
-public abstract class Pipeline
+public abstract class Pipeline : IAccessesPlatform
 {
     public abstract string Id { get; }
     public abstract string Name { get; }
     
     public readonly Dictionary<string, string> Inputs = [];
-    public FrozenSet<StepInput> RequiredInputs { get; private set; }
+    public FrozenSet<StepInput> RequiredInputs { get; private set; } = null!;
+
+    public IPlatformInterface Platform { get; private set; } = null!;
 
     internal List<GameInformation>? GameList { get; set; } = null;
     
@@ -58,8 +61,10 @@ public abstract class Pipeline
     private byte _currentStepIndex;
     private Step? _currentStep;
 
-    public void Initialize()
+    public void Initialize(IPlatformInterface platform)
     {
+        this.Platform = platform;
+
         List<StepInput> requiredInputs = [];
         
         this._steps = new List<Step>(this.StepTypes.Count + 1);

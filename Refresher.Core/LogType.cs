@@ -21,4 +21,5 @@ public enum LogType : byte
     Patchwork,
     Encrypt,
     Decrypt,
+    Platform,
 }

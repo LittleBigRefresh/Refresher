@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Refresher.Core.Accessors;
+using Refresher.Core.Platform;
 
 namespace Refresher.Core.Pipelines.Steps;
 
@@ -29,9 +30,10 @@ public class UploadPatchworkSprxStep : Step
                 ? sprxNameEmulator
                 : sprxName;
 
-            if (File.Exists(localSprxName))
+            const string question = "Found custom patchwork.sprx next to exe file, upload that instead?";
+
+            if (File.Exists(localSprxName) && this.Platform.Ask(question) == QuestionResult.Yes)
             {
-                State.Logger.LogInfo(Patchwork, "Found custom patchwork.sprx next to exe file, uploading that instead");
                 this.Pipeline.Accessor.UploadFile(localSprxName, sprxPath);
             }
             else
