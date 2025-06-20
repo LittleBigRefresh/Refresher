@@ -96,6 +96,7 @@ public abstract class PatchAccessor
 
     private static void CatchAccessorException(Step step, Exception ex)
     {
+        State.Logger.LogError(Accessor, "Filesystem error: " + ex);
         step.Fail($"Something went wrong while accessing the filesystem: {ex.GetType().Name}: {ex.Message}");
     }
 }
