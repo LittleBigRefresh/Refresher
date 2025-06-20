@@ -113,13 +113,20 @@ public abstract class Pipeline : IAccessesPlatform
             this.State = PipelineState.Error;
             throw new InvalidOperationException("Pipeline must be restarted before it can be executed again.");
         }
-        
+
         foreach (StepInput input in this.RequiredInputs)
         {
-            if (!this.Inputs.ContainsKey(input.Id))
+            if (!this.Inputs.TryGetValue(input.Id, out string? data))
             {
                 this.State = PipelineState.Error;
                 throw new InvalidOperationException($"Input {input.Id} was not provided to the pipeline before execution.");
+            }
+
+            if (input.Required && string.IsNullOrWhiteSpace(data))
+            {
+                this.State = PipelineState.Error;
+                this.Platform.WarnPrompt($"Please fill out the required '{input.Name}' input before proceeding, as it is a required field.");
+                return;
             }
         }
         

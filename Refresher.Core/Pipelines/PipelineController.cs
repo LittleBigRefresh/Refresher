@@ -1,3 +1,4 @@
+using Refresher.Core.Platform;
 using Refresher.Core.Verification.AutoDiscover;
 
 namespace Refresher.Core.Pipelines;
@@ -5,13 +6,15 @@ namespace Refresher.Core.Pipelines;
 /// <summary>
 /// A set of common utilities to assist in controlling a pipeline from a UI.
 /// </summary>
-public sealed class PipelineController
+public sealed class PipelineController : IAccessesPlatform
 {
     private readonly Pipeline _pipeline;
     private readonly Action<Action> _uiThread;
     
     private CancellationTokenSource? _cts;
     private CancellationTokenSource? _autoDiscoverCts;
+    
+    public IPlatformInterface Platform => this._pipeline.Platform;
 
     public PipelineController(Pipeline pipeline, Action<Action> uiThread)
     {
@@ -82,9 +85,9 @@ public sealed class PipelineController
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex}");
+                this.Platform.ErrorPrompt($"Error while running pipeline {this._pipeline.Name}: {ex}");
             }
-        }, this._cts?.Token ?? default);
+        }, this._cts?.Token ?? CancellationToken.None);
     }
 
     public void AutoDiscoverButtonClick(string url, Action<AutoDiscoverResponse> onSuccess)

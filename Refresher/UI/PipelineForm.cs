@@ -506,6 +506,11 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             // automatically scroll to the bottom by highlighting the last item temporarily
             this._messages.SelectedIndex = this._messages.Items.Count - 1;
             this._messages.SelectedIndex = -1;
+            
+            if (log.Level <= LogLevel.Error && log.Category != nameof(LogType.Platform))
+            {
+                MessageBox.Show(log.Content, $"{log.Category} {log.Level.ToString()}", MessageBoxType.Error);
+            }
         });
     }
 }
