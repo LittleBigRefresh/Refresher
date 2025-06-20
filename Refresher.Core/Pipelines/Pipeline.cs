@@ -132,15 +132,20 @@ public abstract class Pipeline : IAccessesPlatform
 
         GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} started.");
         this.State = PipelineState.Running;
-        await this.RunListOfSteps(this._steps, cancellationToken);
-        GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
-        this.State = PipelineState.Finished;
+
+        bool success = await this.RunListOfSteps(this._steps, cancellationToken);
+
+        if (success)
+        {
+            GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
+            this.State = PipelineState.Finished;
         
-        PreviousInputStorage.ApplyFromPipeline(this);
-        PreviousInputStorage.Write();
+            PreviousInputStorage.ApplyFromPipeline(this);
+            PreviousInputStorage.Write();
+        }
     }
 
-    private async Task RunListOfSteps(List<Step> steps, CancellationToken cancellationToken = default)
+    private async Task<bool> RunListOfSteps(List<Step> steps, CancellationToken cancellationToken = default)
     {
         this._stepCount = steps.Count;
         byte i = 1;
@@ -158,7 +163,7 @@ public abstract class Pipeline : IAccessesPlatform
             catch (TaskCanceledException)
             {
                 this.State = PipelineState.Cancelled;
-                return;
+                return false;
             }
             catch (Exception)
             {
@@ -166,8 +171,15 @@ public abstract class Pipeline : IAccessesPlatform
                 throw;
             }
 
+            if (this.State == PipelineState.Error)
+            {
+                return false;
+            }
+
             i++;
         }
+
+        return true;
     }
 
     public async Task<AutoDiscoverResponse?> InvokeAutoDiscoverAsync(string url, CancellationToken cancellationToken = default)
@@ -253,5 +265,11 @@ public abstract class Pipeline : IAccessesPlatform
         await this.RunListOfSteps(stepTypes, cancellationToken);
         
         this.Reset();
+    }
+
+    public void Fail(Step step, string reason)
+    {
+        this.Platform.ErrorPrompt($"{step.GetType().Name} failed: {reason}\n\nPatching cannot continue.");
+        this.State = PipelineState.Error;
     }
 }

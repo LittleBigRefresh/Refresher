@@ -30,7 +30,7 @@ public class DownloadParamSfoStep : Step
             if (sfoStream == null)
             {
                 if(game.TitleId != "TEST12345")
-                    this.Platform.WarnPrompt("The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game. Refresher will try to proceed anyways.");
+                    State.Logger.LogWarning(InfoRetrieval, "The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game. Refresher will try to proceed anyways.");
 
                 return Task.CompletedTask;
             }

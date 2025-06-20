@@ -23,4 +23,13 @@ public abstract class Step : IAccessesPlatform
     public abstract Task ExecuteAsync(CancellationToken cancellationToken = default);
 
     public IPlatformInterface Platform => this.Pipeline.Platform;
+
+    protected bool Failed { get; private set; }
+
+    public Task Fail(string reason)
+    {
+        this.Failed = true;
+        this.Pipeline.Fail(this, reason);
+        return Task.CompletedTask;
+    }
 }

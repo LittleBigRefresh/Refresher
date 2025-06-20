@@ -38,7 +38,7 @@ public class PrepareEbootPatchCreatorAndVerifyStep : Step
 
         if (messages.Any(m => m.Level == MessageLevel.Error))
         {
-            throw new Exception("There were errors while verifying the patch details against the EBOOT. Check the log for more information.");
+            return this.Fail("There were errors while verifying the patch details against the EBOOT. Check the log for more information.");
         }
         
         return Task.CompletedTask;

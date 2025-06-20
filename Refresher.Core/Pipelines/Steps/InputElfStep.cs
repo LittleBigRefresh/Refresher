@@ -17,7 +17,7 @@ public class InputElfStep : Step
     {
         string elfInput = this.Inputs.First().GetValueFromPipeline(this.Pipeline);
         if (!File.Exists(elfInput))
-            throw new FileNotFoundException("The Input .ELF could not be found.");
+            return this.Fail("The Input .ELF could not be found.");
 
         string temp = Path.GetTempFileName();
 

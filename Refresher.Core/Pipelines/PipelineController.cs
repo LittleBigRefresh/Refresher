@@ -30,7 +30,7 @@ public sealed class PipelineController
         PipelineState.Running => "Patching... (click to cancel)",
         PipelineState.Finished => "Complete!",
         PipelineState.Cancelled => "Patch!",
-        PipelineState.Error => "Retry",
+        PipelineState.Error => "Retry (patch failed!)",
         _ => throw new ArgumentOutOfRangeException(),
     };
 

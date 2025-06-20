@@ -28,9 +28,12 @@ public class DownloadGameEbootStep : Step
 
             // If we land here, then we have no valid patch target without any way to recover.
             // This is very inconvenient for us and the user.
-            throw new FileNotFoundException("The EBOOT.BIN file does not exist, nor does the original backup exist." +
-                                            "This usually means you haven't installed any updates for your game.");
+            this.Fail("The EBOOT.BIN file does not exist, nor does the original backup exist." +
+                             "This usually means you haven't installed any updates for your game.");
         });
+        
+        if(this.Failed)
+            return Task.CompletedTask;
 
         this.Progress = 0.5f;
 
@@ -44,7 +47,7 @@ public class DownloadGameEbootStep : Step
         State.Logger.LogDebug(Accessor, $"Downloaded EBOOT Path: {downloadedFile}");
         if (!File.Exists(downloadedFile))
         {
-            throw new FileNotFoundException("Could not find the EBOOT we downloaded. This is likely a bug. Patching cannot continue.");
+            return this.Fail("Could not find the EBOOT we downloaded. This is likely a bug. Patching cannot continue.");
         }
         
         return Task.CompletedTask;

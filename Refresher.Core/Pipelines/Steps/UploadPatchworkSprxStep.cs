@@ -42,8 +42,12 @@ public class UploadPatchworkSprxStep : Step
                 await using Stream? readStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(localSprxName);
 
                 if (readStream == null)
-                    throw new InvalidOperationException($"The sprx file for {this.Pipeline.Accessor.GetType().Name} is missing from this build!" +
-                                                        $"Please tell a developer on Discord/GitHub!");
+                {
+                    await this.Fail($"The sprx file for {this.Pipeline.Accessor.GetType().Name} is missing from this build! " +
+                                    $"Please tell a developer on Discord/GitHub!");
+
+                    return;
+                }
 
                 await readStream.CopyToAsync(writeStream, cancellationToken);
                 await writeStream.FlushAsync(cancellationToken);

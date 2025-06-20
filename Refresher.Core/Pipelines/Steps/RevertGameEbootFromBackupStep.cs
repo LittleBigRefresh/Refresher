@@ -20,7 +20,8 @@ public class RevertGameEbootFromBackupStep : Step
 
             if (!this.Pipeline.Accessor!.FileExists(backup))
             {
-                throw new FileNotFoundException("The original backup couldn't be found. Is your game unpatched?");
+                this.Fail("The original backup couldn't be found. Is your game unpatched?");
+                return;
             }
             
             this.Progress = 0.25f;
