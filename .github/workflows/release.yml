@@ -37,11 +37,11 @@ jobs:
         
       - name: Publish for Linux x64
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION} -o publish/
+        run: dotnet publish -c Release -r linux-x64 --self-contained Refresher /p:Version=${VERSION} -o publish-x64/
 
       - name: Publish for Linux ARM64
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet publish -c Release -r linux-arm64 --self-contained Refresher /p:Version=${VERSION} -o publish/
+        run: dotnet publish -c Release -r linux-arm64 --self-contained Refresher /p:Version=${VERSION} -o publish-arm64/
 
       - name: Publish for Windows x64
         if: matrix.os == 'windows-latest'
@@ -97,14 +97,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-            vpk pack --channel linux-x64 --runtime linux-x64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
+            vpk pack --channel linux-x64 --runtime linux-x64 --packId Refresher --packVersion $VERSION --packDir ./publish-x64 --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
             vpk upload github --channel linux-x64 --repoUrl https://github.com/${{ github.repository }} --merge --releaseName v$VERSION --tag v$VERSION --token ${{ secrets.GITHUB_TOKEN }}
             
       - name: Run vpk pack for Linux ARM64
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-            vpk pack --channel linux-arm64 --runtime linux-arm64 --packId Refresher --packVersion $VERSION --packDir ./publish --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
+            vpk pack --channel linux-arm64 --runtime linux-arm64 --packId Refresher --packVersion $VERSION --packDir ./publish-arm64 --mainExe Refresher --packTitle Refresher --packAuthors LittleBigRefresh
             vpk upload github --channel linux-arm64 --repoUrl https://github.com/${{ github.repository }} --merge --releaseName v$VERSION --tag v$VERSION --token ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload macOS universal2 build
