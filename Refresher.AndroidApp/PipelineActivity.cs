@@ -73,7 +73,7 @@ public class PipelineActivity : RefresherActivity
             throw new Exception("Pipeline was not found");
 
         Pipeline pipeline = (Pipeline)Activator.CreateInstance(pipelineType)!;
-        pipeline.Initialize();
+        pipeline.Initialize(new AndroidPlatformInterface());
         this._pipeline = pipeline;
         this._controller = new PipelineController(pipeline, action => this._handler.Post(action));
         

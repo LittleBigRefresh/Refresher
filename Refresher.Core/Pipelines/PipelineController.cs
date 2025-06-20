@@ -81,6 +81,7 @@ public sealed class PipelineController : IAccessesPlatform
         {
             try
             {
+                this.Platform.PrepareThread();
                 await this._pipeline.ExecuteAsync(this._cts?.Token ?? CancellationToken.None);
             }
             catch (Exception ex)

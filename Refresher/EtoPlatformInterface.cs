@@ -55,4 +55,10 @@ public class EtoPlatformInterface : IPlatformInterface
             _ => throw new UnreachableException(),
         };
     }
+
+    public void PrepareThread()
+    {}
+
+    public void StopThread()
+    {}
 }
