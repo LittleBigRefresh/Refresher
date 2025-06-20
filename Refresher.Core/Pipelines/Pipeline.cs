@@ -3,19 +3,22 @@ using System.Diagnostics;
 using Refresher.Core.Accessors;
 using Refresher.Core.Patching;
 using Refresher.Core.Pipelines.Steps;
+using Refresher.Core.Platform;
 using Refresher.Core.Storage;
 using Refresher.Core.Verification.AutoDiscover;
 using GlobalState = Refresher.Core.State;
 
 namespace Refresher.Core.Pipelines;
 
-public abstract class Pipeline
+public abstract class Pipeline : IAccessesPlatform
 {
     public abstract string Id { get; }
     public abstract string Name { get; }
     
     public readonly Dictionary<string, string> Inputs = [];
-    public FrozenSet<StepInput> RequiredInputs { get; private set; }
+    public FrozenSet<StepInput> RequiredInputs { get; private set; } = null!;
+
+    public IPlatformInterface Platform { get; private set; } = null!;
 
     internal List<GameInformation>? GameList { get; set; } = null;
     
@@ -58,8 +61,10 @@ public abstract class Pipeline
     private byte _currentStepIndex;
     private Step? _currentStep;
 
-    public void Initialize()
+    public void Initialize(IPlatformInterface platform)
     {
+        this.Platform = platform;
+
         List<StepInput> requiredInputs = [];
         
         this._steps = new List<Step>(this.StepTypes.Count + 1);
@@ -108,13 +113,20 @@ public abstract class Pipeline
             this.State = PipelineState.Error;
             throw new InvalidOperationException("Pipeline must be restarted before it can be executed again.");
         }
-        
+
         foreach (StepInput input in this.RequiredInputs)
         {
-            if (!this.Inputs.ContainsKey(input.Id))
+            if (!this.Inputs.TryGetValue(input.Id, out string? data))
             {
                 this.State = PipelineState.Error;
                 throw new InvalidOperationException($"Input {input.Id} was not provided to the pipeline before execution.");
+            }
+
+            if (input.Required && string.IsNullOrWhiteSpace(data))
+            {
+                this.State = PipelineState.Error;
+                this.Platform.WarnPrompt($"Please fill out the required '{input.Name}' input before proceeding, as it is a required field.");
+                return;
             }
         }
         
@@ -127,15 +139,22 @@ public abstract class Pipeline
 
         GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} started.");
         this.State = PipelineState.Running;
-        await this.RunListOfSteps(this._steps, cancellationToken);
-        GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
-        this.State = PipelineState.Finished;
+
+        bool success = await this.RunListOfSteps(this._steps, cancellationToken);
+
+        if (success)
+        {
+            GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
+            this.State = PipelineState.Finished;
         
-        PreviousInputStorage.ApplyFromPipeline(this);
-        PreviousInputStorage.Write();
+            PreviousInputStorage.ApplyFromPipeline(this);
+            PreviousInputStorage.Write();
+            
+            this.Platform.InfoPrompt("Patch successful!");
+        }
     }
 
-    private async Task RunListOfSteps(List<Step> steps, CancellationToken cancellationToken = default)
+    private async Task<bool> RunListOfSteps(List<Step> steps, CancellationToken cancellationToken = default)
     {
         this._stepCount = steps.Count;
         byte i = 1;
@@ -153,7 +172,7 @@ public abstract class Pipeline
             catch (TaskCanceledException)
             {
                 this.State = PipelineState.Cancelled;
-                return;
+                return false;
             }
             catch (Exception)
             {
@@ -161,8 +180,15 @@ public abstract class Pipeline
                 throw;
             }
 
+            if (this.State == PipelineState.Error)
+            {
+                return false;
+            }
+
             i++;
         }
+
+        return true;
     }
 
     public async Task<AutoDiscoverResponse?> InvokeAutoDiscoverAsync(string url, CancellationToken cancellationToken = default)
@@ -248,5 +274,11 @@ public abstract class Pipeline
         await this.RunListOfSteps(stepTypes, cancellationToken);
         
         this.Reset();
+    }
+
+    public void Fail(Step step, string reason)
+    {
+        this.Platform.ErrorPrompt($"{step.GetType().Name} failed: {reason}\n\nPatching cannot continue.");
+        this.State = PipelineState.Error;
     }
 }

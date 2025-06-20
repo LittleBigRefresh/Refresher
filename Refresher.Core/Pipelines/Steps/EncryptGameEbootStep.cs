@@ -28,7 +28,7 @@ public class EncryptGameEbootStep : Step
         // HACK: scetool doesn't give us result codes, check if the file has been written to instead
         if (new FileInfo(tempFile).Length == 0)
         {
-            throw new Exception("Encryption failed.");
+            return this.Fail("Encryption failed.");
         }
         
         return Task.CompletedTask;

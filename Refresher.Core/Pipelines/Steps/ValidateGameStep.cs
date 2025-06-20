@@ -21,10 +21,10 @@ public class ValidateGameStep : Step
 
         // sanity check. UI will not allow this to happen, but CLI will
         if (titleId.Length != "NPUA80662".Length)
-            throw new InvalidOperationException("Title ID does not match expected length. Did you type the ID in correctly?");
-        
-        if(!this.Pipeline.Accessor!.DirectoryExists(gamePath))
-            throw new FileNotFoundException("The game directory does not exist. This usually means you haven't installed any updates for your game.");
+            this.Fail("Title ID does not match expected length. Did you type the ID in correctly?");
+
+        if (!this.Pipeline.Accessor!.DirectoryExists(gamePath))
+            this.Fail("The game directory does not exist. This usually means you haven't installed any updates for your game.");
         
         this.Pipeline.GameInformation = new GameInformation
         {

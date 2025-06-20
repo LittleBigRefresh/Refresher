@@ -1,3 +1,4 @@
+using Refresher.Core.Platform;
 using Refresher.Core.Verification.AutoDiscover;
 
 namespace Refresher.Core.Pipelines;
@@ -5,13 +6,15 @@ namespace Refresher.Core.Pipelines;
 /// <summary>
 /// A set of common utilities to assist in controlling a pipeline from a UI.
 /// </summary>
-public sealed class PipelineController
+public sealed class PipelineController : IAccessesPlatform
 {
     private readonly Pipeline _pipeline;
     private readonly Action<Action> _uiThread;
     
     private CancellationTokenSource? _cts;
     private CancellationTokenSource? _autoDiscoverCts;
+    
+    public IPlatformInterface Platform => this._pipeline.Platform;
 
     public PipelineController(Pipeline pipeline, Action<Action> uiThread)
     {
@@ -30,7 +33,7 @@ public sealed class PipelineController
         PipelineState.Running => "Patching... (click to cancel)",
         PipelineState.Finished => "Complete!",
         PipelineState.Cancelled => "Patch!",
-        PipelineState.Error => "Retry",
+        PipelineState.Error => "Retry (patch failed!)",
         _ => throw new ArgumentOutOfRangeException(),
     };
 
@@ -78,13 +81,18 @@ public sealed class PipelineController
         {
             try
             {
-                await this._pipeline.ExecuteAsync(this._cts?.Token ?? default);
+                this.Platform.PrepareThread();
+                await this._pipeline.ExecuteAsync(this._cts?.Token ?? CancellationToken.None);
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while running pipeline {this._pipeline.Name}: {ex}");
+                this.Platform.ErrorPrompt($"Unhandled error while running pipeline {this._pipeline.Name}: {ex}");
             }
-        }, this._cts?.Token ?? default);
+            finally
+            {
+                this.Platform.PrepareStopThread();
+            }
+        }, this._cts?.Token ?? CancellationToken.None);
     }
 
     public void AutoDiscoverButtonClick(string url, Action<AutoDiscoverResponse> onSuccess)
@@ -112,7 +120,7 @@ public sealed class PipelineController
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while invoking autodiscover: {ex}");
+                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while invoking autodiscover: {ex}");
                 SentrySdk.CaptureException(ex);
             }
             finally

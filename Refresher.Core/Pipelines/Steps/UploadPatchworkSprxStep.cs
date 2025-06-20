@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Refresher.Core.Accessors;
+using Refresher.Core.Platform;
 
 namespace Refresher.Core.Pipelines.Steps;
 
@@ -11,7 +12,7 @@ public class UploadPatchworkSprxStep : Step
     public override float Progress { get; protected set; }
     public override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await PatchAccessor.TryAsync(async () =>
+        await PatchAccessor.TryAsync(this, async () =>
         {
             const string pluginsFolder = "plugins/";
             const string sprxName = "patchwork.sprx";
@@ -29,9 +30,10 @@ public class UploadPatchworkSprxStep : Step
                 ? sprxNameEmulator
                 : sprxName;
 
-            if (File.Exists(localSprxName))
+            const string question = "Found custom patchwork.sprx next to exe file, upload that instead?";
+
+            if (File.Exists(localSprxName) && this.Platform.Ask(question) == QuestionResult.Yes)
             {
-                State.Logger.LogInfo(Patchwork, "Found custom patchwork.sprx next to exe file, uploading that instead");
                 this.Pipeline.Accessor.UploadFile(localSprxName, sprxPath);
             }
             else
@@ -40,8 +42,12 @@ public class UploadPatchworkSprxStep : Step
                 await using Stream? readStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(localSprxName);
 
                 if (readStream == null)
-                    throw new InvalidOperationException($"The sprx file for {this.Pipeline.Accessor.GetType().Name} is missing from this build!" +
-                                                        $"Please tell a developer on Discord/GitHub!");
+                {
+                    await this.Fail($"The sprx file for {this.Pipeline.Accessor.GetType().Name} is missing from this build! " +
+                                    $"Please tell a developer on Discord/GitHub!");
+                    
+                    return;
+                }
 
                 await readStream.CopyToAsync(writeStream, cancellationToken);
                 await writeStream.FlushAsync(cancellationToken);

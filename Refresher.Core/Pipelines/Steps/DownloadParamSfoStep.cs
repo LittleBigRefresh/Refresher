@@ -16,33 +16,38 @@ public class DownloadParamSfoStep : Step
         string gamePath = $"game/{game.TitleId}";
 
         Stream? sfoStream = null;
-        PatchAccessor.Try(() =>
+        PatchAccessor.Try(this, () =>
         {
             string sfoLocation = $"{gamePath}/PARAM.SFO";
 
             if(this.Pipeline.Accessor!.FileExists(sfoLocation)) 
                 sfoStream = this.Pipeline.Accessor.OpenRead(sfoLocation);
         });
+        
+        if(this.Failed)
+            return Task.CompletedTask;
 
         ParamSfo? sfo = null;
         try
         {
             if (sfoStream == null)
             {
-                State.Logger.LogWarning(InfoRetrieval, "The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game. Will try to proceed anyways...");
+                if(game.TitleId != "TEST12345")
+                    State.Logger.LogWarning(InfoRetrieval, "The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game. Refresher will try to proceed anyways.");
+
                 return Task.CompletedTask;
             }
             this.ParseSfoStream(sfoStream, out sfo);
         }
         catch (EndOfStreamException)
         {
-            State.Logger.LogWarning(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO because the file was incomplete.");
+            this.Platform.WarnPrompt($"Couldn't load {game}'s PARAM.SFO because the file was incomplete. Refresher will try to proceed anyways.");
         }
         catch(Exception e)
         {
             game.Name = $"Unknown PARAM.SFO [{game}]";
                 
-            State.Logger.LogWarning(InfoRetrieval, $"Couldn't load {game}'s PARAM.SFO: {e}");
+            this.Platform.WarnPrompt($"Couldn't load {game}'s PARAM.SFO: {e}\n\nRefresher will try to proceed anyways.");
             if (sfo != null)
             {
                 State.Logger.LogDebug(InfoRetrieval, $"PARAM.SFO version:{sfo.Version} dump:");
@@ -53,7 +58,7 @@ public class DownloadParamSfoStep : Step
             }
             else
             {
-                State.Logger.LogWarning(InfoRetrieval, "PARAM.SFO was not read, can't dump");
+                State.Logger.LogWarning(InfoRetrieval, "PARAM.SFO was not read, can't dump to log");
             }
                 
             SentrySdk.CaptureException(e);

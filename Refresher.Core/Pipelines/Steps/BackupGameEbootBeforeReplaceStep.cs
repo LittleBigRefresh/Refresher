@@ -10,7 +10,7 @@ public class BackupGameEbootBeforeReplaceStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        PatchAccessor.Try(() =>
+        PatchAccessor.Try(this, () =>
         {
             string titleId = this.Game.TitleId;
             string usrDir = $"game/{titleId}/USRDIR";

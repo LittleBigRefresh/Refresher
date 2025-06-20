@@ -10,7 +10,7 @@ public class RevertGameEbootFromBackupStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        PatchAccessor.Try(() =>
+        PatchAccessor.Try(this, () =>
         {
             string titleId = this.Game.TitleId;
             string usrDir = $"game/{titleId}/USRDIR";
@@ -20,7 +20,8 @@ public class RevertGameEbootFromBackupStep : Step
 
             if (!this.Pipeline.Accessor!.FileExists(backup))
             {
-                throw new FileNotFoundException("The original backup couldn't be found. Is your game unpatched?");
+                this.Fail("The original backup couldn't be found. Is your game unpatched?");
+                return;
             }
             
             this.Progress = 0.25f;

@@ -1,4 +1,3 @@
-using Android.OS;
 using Android.Util;
 using NotEnoughLogs;
 using NotEnoughLogs.Sinks;
@@ -7,8 +6,6 @@ namespace Refresher.AndroidApp.Logging;
 
 public class AndroidSink : ILoggerSink
 {
-    private readonly Handler _handler = new(Looper.MainLooper!);
-    
     public void Log(LogLevel level, ReadOnlySpan<char> category, ReadOnlySpan<char> content)
     {
         LogPriority priority = level switch
@@ -22,24 +19,7 @@ public class AndroidSink : ILoggerSink
             _ => throw new ArgumentOutOfRangeException(nameof(level), level, null),
         };
         
-        Android.Util.Log.WriteLine(priority, "Refresher." + category.ToString(), content.ToString());
-        string categoryStr = category.ToString();
-        string contentStr = content.ToString();
-        this._handler.Post(() =>
-        {
-            if (priority == LogPriority.Error)
-            {
-                new AlertDialog.Builder(PipelineActivity.Instance)
-                    .SetTitle($"{categoryStr} Error")?
-                    .SetMessage(contentStr)?
-                    .SetNeutralButton("OK", (_, _) => {})?
-                    .Show();
-            }
-            else if(priority == LogPriority.Warn)
-            {
-                Toast.MakeText(PipelineActivity.Instance, contentStr, ToastLength.Short)?.Show();
-            }
-        });
+        Android.Util.Log.WriteLine(priority, $"Refresher.{category}", content.ToString());
     }
 
     public void Log(LogLevel level, ReadOnlySpan<char> category, ReadOnlySpan<char> format, params object[] args)

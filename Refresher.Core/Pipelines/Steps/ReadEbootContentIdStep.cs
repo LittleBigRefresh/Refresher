@@ -23,7 +23,7 @@ public class ReadEbootContentIdStep : Step
         if(contentId != null)
             State.Logger.LogDebug(InfoRetrieval, "Got content ID from the game's EBOOT: {0}", contentId);
         else
-            State.Logger.LogDebug(InfoRetrieval, "Unable to find content ID in the game's EBOOT.");
+            this.Platform.WarnPrompt("Unable to find content ID in the game's EBOOT. Encryption may or may not work.");
         return Task.CompletedTask;
     }
 }

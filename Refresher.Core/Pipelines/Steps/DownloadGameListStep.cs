@@ -55,7 +55,7 @@ public class DownloadGameListStep : Step
 
             if (tries == 0)
             {
-                State.Logger.LogWarning(InfoRetrieval, $"Couldn't get information for '{game.TitleId}' after {maxTries} tries. Giving up.");
+                this.Platform.WarnPrompt($"Couldn't get information for '{game.TitleId}' after {maxTries} tries. Giving up.");
             }
 
             if (isConsole)

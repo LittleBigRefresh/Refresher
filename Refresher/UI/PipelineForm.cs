@@ -10,6 +10,7 @@ using Refresher.Core.Accessors;
 using Refresher.Core.Logging;
 using Refresher.Core.Patching;
 using Refresher.Core.Pipelines;
+using Refresher.Core.Platform;
 using Refresher.Core.Storage;
 using Refresher.Extensions;
 using Refresher.UI.Items;
@@ -17,7 +18,7 @@ using Pipeline = Refresher.Core.Pipelines.Pipeline;
 
 namespace Refresher.UI;
 
-public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline, new()
+public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TPipeline : Pipeline, new()
 {
     private TPipeline? _pipeline;
     private PipelineController? _controller;
@@ -33,10 +34,14 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     private Button? _connectButton;
     private DropDown? _gamesDropDown;
     
+    public new IPlatformInterface Platform { get; }
+    
     private bool _usedAutoDiscover = false;
     
     public PipelineForm() : base(typeof(TPipeline).Name, new Size(700, -1), false)
     {
+        this.Platform = new EtoPlatformInterface(this);
+        
         StackLayout layout;
         this.Content = new Splitter
         {
@@ -122,7 +127,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
     {
         this._pipeline = new TPipeline();
         this._controller = new PipelineController(this._pipeline, Application.Instance.Invoke);
-        this._pipeline.Initialize();
+        this._pipeline.Initialize(this.Platform);
         
         PreviousInputStorage.Read();
         this._formLayout.Rows.Clear();
@@ -278,7 +283,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while downloading games list: {ex}");
+                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while downloading games list: {ex}");
                 SentrySdk.CaptureException(ex);
             }
         });
@@ -423,7 +428,7 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while reverting the game's EBOOT: {ex}");
+                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while reverting the game's EBOOT: {ex}");
             }
         });
     }
@@ -501,8 +506,8 @@ public class PipelineForm<TPipeline> : RefresherForm where TPipeline : Pipeline,
             // automatically scroll to the bottom by highlighting the last item temporarily
             this._messages.SelectedIndex = this._messages.Items.Count - 1;
             this._messages.SelectedIndex = -1;
-
-            if (log.Level <= LogLevel.Error)
+            
+            if (log.Level <= LogLevel.Error && log.Category != nameof(LogType.Platform))
             {
                 MessageBox.Show(log.Content, $"{log.Category} {log.Level.ToString()}", MessageBoxType.Error);
             }

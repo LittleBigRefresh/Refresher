@@ -40,7 +40,7 @@ public class UploadPatchworkConfigurationStep : Step
 
     private async Task UploadConfigValue(string filename, string? value, CancellationToken ct = default)
     {
-        await PatchAccessor.TryAsync(async () =>
+        await PatchAccessor.TryAsync(this, async () =>
         {
             string configPath = "tmp/" + filename;
             

@@ -7,6 +7,7 @@ public class StepInput
     public StepInputType Type { get; init; }
 
     public string Placeholder { get; init; }
+    public bool Required { get; init; }
 
     public Func<string?>? DetermineDefaultValue { get; init; }
     public bool ShouldCauseGameDownloadWhenChanged { get; init; }

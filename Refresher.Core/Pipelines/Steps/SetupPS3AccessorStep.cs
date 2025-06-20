@@ -18,7 +18,7 @@ public class SetupPS3AccessorStep : Step
         string remoteIp = CommonStepInputs.ConsoleIP.GetValueFromPipeline(this.Pipeline);
         State.Logger.LogDebug(PS3, $"Using PS3 IP {remoteIp}");
         
-        PatchAccessor.Try(() =>
+        PatchAccessor.Try(this, () =>
         {
             this.Pipeline.Accessor = new ConsolePatchAccessor(remoteIp);
         });
