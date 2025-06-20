@@ -19,5 +19,5 @@ public abstract class LoggingPlatformInterface : IPlatformInterface
 
     public abstract QuestionResult Ask(string question);
     public virtual void PrepareThread() {}
-    public virtual void StopThread() {}
+    public virtual void PrepareStopThread() {}
 }

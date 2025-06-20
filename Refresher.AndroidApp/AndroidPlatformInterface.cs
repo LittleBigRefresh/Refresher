@@ -74,10 +74,11 @@ public class AndroidPlatformInterface : LoggingPlatformInterface
 
     public override void PrepareThread()
     {
-        Looper.Prepare();
+        if(Looper.MyLooper() == null)
+            Looper.Prepare();
     }
 
-    public override void StopThread()
+    public override void PrepareStopThread()
     {
         Looper.MyLooper()?.QuitSafely();
     }

@@ -88,6 +88,10 @@ public sealed class PipelineController : IAccessesPlatform
             {
                 this.Platform.ErrorPrompt($"Unhandled error while running pipeline {this._pipeline.Name}: {ex}");
             }
+            finally
+            {
+                this.Platform.PrepareStopThread();
+            }
         }, this._cts?.Token ?? CancellationToken.None);
     }
 

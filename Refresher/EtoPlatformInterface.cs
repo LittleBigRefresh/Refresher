@@ -59,6 +59,6 @@ public class EtoPlatformInterface : IPlatformInterface
     public void PrepareThread()
     {}
 
-    public void StopThread()
+    public void PrepareStopThread()
     {}
 }

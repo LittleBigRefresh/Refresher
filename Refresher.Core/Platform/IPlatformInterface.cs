@@ -7,5 +7,5 @@ public interface IPlatformInterface
     public void ErrorPrompt(string prompt);
     public QuestionResult Ask(string question);
     public void PrepareThread();
-    public void StopThread();
+    public void PrepareStopThread();
 }
