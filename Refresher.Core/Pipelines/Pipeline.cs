@@ -169,7 +169,7 @@ public abstract class Pipeline : IAccessesPlatform
                 await step.ExecuteAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
                 this.State = PipelineState.Cancelled;
                 return false;
