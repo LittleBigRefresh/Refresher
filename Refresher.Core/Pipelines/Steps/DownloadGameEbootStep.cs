@@ -14,7 +14,7 @@ public class DownloadGameEbootStep : Step
         string usrDir = $"game/{titleId}/USRDIR";
         
         string ebootPath = Path.Combine(usrDir, "EBOOT.BIN.ORIG"); // Prefer original backup over active copy
-        PatchAccessor.Try(() =>
+        PatchAccessor.Try(this, () =>
         {
             if (this.Pipeline.Accessor!.FileExists(ebootPath)) return;
             // If the backup doesn't exist, use the EBOOT.BIN
@@ -38,11 +38,14 @@ public class DownloadGameEbootStep : Step
         this.Progress = 0.5f;
 
         string downloadedFile = null!;
-        PatchAccessor.Try(() =>
+        PatchAccessor.Try(this, () =>
         { 
             downloadedFile = this.Pipeline.Accessor!.DownloadFile(ebootPath);
             this.Game.DownloadedEbootPath = downloadedFile;
         });
+        
+        if(this.Failed)
+            return Task.CompletedTask;
         
         State.Logger.LogDebug(Accessor, $"Downloaded EBOOT Path: {downloadedFile}");
         if (!File.Exists(downloadedFile))

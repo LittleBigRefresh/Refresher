@@ -16,13 +16,16 @@ public class DownloadParamSfoStep : Step
         string gamePath = $"game/{game.TitleId}";
 
         Stream? sfoStream = null;
-        PatchAccessor.Try(() =>
+        PatchAccessor.Try(this, () =>
         {
             string sfoLocation = $"{gamePath}/PARAM.SFO";
 
             if(this.Pipeline.Accessor!.FileExists(sfoLocation)) 
                 sfoStream = this.Pipeline.Accessor.OpenRead(sfoLocation);
         });
+        
+        if(this.Failed)
+            return Task.CompletedTask;
 
         ParamSfo? sfo = null;
         try

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Refresher.Core.Pipelines;
 
 namespace Refresher.Core.Accessors;
 
@@ -55,44 +56,46 @@ public abstract class PatchAccessor
         return true;
     }
 
-    public static void Try(Action action)
+    public static bool Try(Step step, Action action)
     {
         try
         {
             action();
+            return true;
         }
         catch (TargetInvocationException targetInvocationException)
         {
-            CatchAccessorException(targetInvocationException.InnerException!);
-            throw;
+            CatchAccessorException(step, targetInvocationException.InnerException!);
+            return false;
         }
         catch (Exception ex)
         {
-            CatchAccessorException(ex);
-            throw;
+            CatchAccessorException(step, ex);
+            return false;
         }
     }
     
-    public static async Task TryAsync(Func<Task> action)
+    public static async Task<bool> TryAsync(Step step, Func<Task> action)
     {
         try
         {
             await action();
+            return true;
         }
         catch (TargetInvocationException targetInvocationException)
         {
-            CatchAccessorException(targetInvocationException.InnerException!);
-            throw;
+            CatchAccessorException(step, targetInvocationException.InnerException!);
+            return false;
         }
         catch (Exception ex)
         {
-            CatchAccessorException(ex);
-            throw;
+            CatchAccessorException(step, ex);
+            return false;
         }
     }
 
-    private static void CatchAccessorException(Exception ex)
+    private static void CatchAccessorException(Step step, Exception ex)
     {
-        State.Logger.LogError(Accessor, $"Something went wrong while accessing the filesystem: {ex.GetType().Name}: {ex.Message}");
+        step.Fail($"Something went wrong while accessing the filesystem: {ex.GetType().Name}: {ex.Message}");
     }
 }

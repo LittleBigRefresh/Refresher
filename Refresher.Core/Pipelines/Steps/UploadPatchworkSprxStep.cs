@@ -12,7 +12,7 @@ public class UploadPatchworkSprxStep : Step
     public override float Progress { get; protected set; }
     public override async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await PatchAccessor.TryAsync(async () =>
+        await PatchAccessor.TryAsync(this, async () =>
         {
             const string pluginsFolder = "plugins/";
             const string sprxName = "patchwork.sprx";
@@ -45,7 +45,7 @@ public class UploadPatchworkSprxStep : Step
                 {
                     await this.Fail($"The sprx file for {this.Pipeline.Accessor.GetType().Name} is missing from this build! " +
                                     $"Please tell a developer on Discord/GitHub!");
-
+                    
                     return;
                 }
 
