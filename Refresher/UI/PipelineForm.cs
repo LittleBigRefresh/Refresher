@@ -283,7 +283,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while downloading games list: {ex}");
+                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while downloading games list: {ex}");
                 SentrySdk.CaptureException(ex);
             }
         });
@@ -428,7 +428,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while reverting the game's EBOOT: {ex}");
+                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while reverting the game's EBOOT: {ex}");
             }
         });
     }

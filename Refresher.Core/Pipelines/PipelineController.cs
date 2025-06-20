@@ -81,11 +81,11 @@ public sealed class PipelineController : IAccessesPlatform
         {
             try
             {
-                await this._pipeline.ExecuteAsync(this._cts?.Token ?? default);
+                await this._pipeline.ExecuteAsync(this._cts?.Token ?? CancellationToken.None);
             }
             catch (Exception ex)
             {
-                this.Platform.ErrorPrompt($"Error while running pipeline {this._pipeline.Name}: {ex}");
+                this.Platform.ErrorPrompt($"Unhandled error while running pipeline {this._pipeline.Name}: {ex}");
             }
         }, this._cts?.Token ?? CancellationToken.None);
     }
@@ -115,7 +115,7 @@ public sealed class PipelineController : IAccessesPlatform
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Error while invoking autodiscover: {ex}");
+                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while invoking autodiscover: {ex}");
                 SentrySdk.CaptureException(ex);
             }
             finally
