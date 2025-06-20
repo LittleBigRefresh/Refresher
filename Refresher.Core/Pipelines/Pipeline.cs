@@ -149,6 +149,8 @@ public abstract class Pipeline : IAccessesPlatform
         
             PreviousInputStorage.ApplyFromPipeline(this);
             PreviousInputStorage.Write();
+            
+            this.Platform.InfoPrompt("Patch successful!");
         }
     }
 
