@@ -2,19 +2,20 @@
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text.Json;
+using Refresher.Core.Platform;
 
 namespace Refresher.Core.Verification.AutoDiscover;
 
 public static class AutoDiscoverClient
 {
-    public static async Task<AutoDiscoverResponse?> InvokeAutoDiscoverAsync(string url, CancellationToken cancellationToken = default)
+    public static async Task<AutoDiscoverResponse?> InvokeAutoDiscoverAsync(string url, IPlatformInterface platform, CancellationToken cancellationToken = default)
     {
         url = TryCompleteUrl(url);
         
         State.Logger.LogInfo(LogType.AutoDiscover, $"Invoking autodiscover on URL '{url}'");
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? autodiscoverUri))
         {
-            State.Logger.LogError(LogType.AutoDiscover, "Server URL could not be parsed correctly. AutoDiscover cannot continue.");
+            platform.ErrorPrompt("Server URL could not be parsed correctly. AutoDiscover cannot continue.");
             return null;
         }
         
@@ -23,7 +24,7 @@ public static class AutoDiscoverClient
         {
             using HttpClient client = new();
             client.BaseAddress = autodiscoverUri;
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Refresher/3");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Refresher/" + AutoDiscoverResponse.SupportedVersion);
             
             HttpResponseMessage response = await client.GetAsync("/autodiscover", cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -32,14 +33,14 @@ public static class AutoDiscoverClient
             if (autodiscover == null) throw new InvalidOperationException("autoresponse was null");
             
             if(autodiscover.Version != AutoDiscoverResponse.SupportedVersion)
-                State.Logger.LogWarning(LogType.AutoDiscover, 
-                    $"The server gave a response with version {autodiscover.Version}, but we expected {AutoDiscoverResponse.SupportedVersion}. " +
+                platform.WarnPrompt(
+                    $"The server gave a response with version v{autodiscover.Version}, but we expected v{AutoDiscoverResponse.SupportedVersion}. " +
                     $"We will accept this response, but if things go wrong, try updating Refresher.");
             
-            string text = $"Successfully found a '{autodiscover.ServerBrand}' server at the given URL!\n" +
-                          $"Server Description: {autodiscover.ServerDescription}\n" +
-                          $"Server's recommended patch URL: {autodiscover.Url}\n" +
-                          $"Banner URL: {autodiscover.BannerImageUrl}\n" +
+            string text = $"Successfully found a '{autodiscover.ServerBrand}' server at the given URL!\r\n" +
+                          $"Server Description: {autodiscover.ServerDescription}\r\n" +
+                          $"Server's recommended patch URL: {autodiscover.Url}\r\n" +
+                          $"Banner URL: {autodiscover.BannerImageUrl}\r\n" +
                           $"Custom digest key?: {(autodiscover.UsesCustomDigestKey.GetValueOrDefault() ? "Yes" : "No")}";
             
             State.Logger.LogInfo(LogType.AutoDiscover, text);
@@ -48,53 +49,53 @@ public static class AutoDiscoverClient
         }
         catch (AggregateException aggregate)
         {
-            aggregate.Handle(HandleAutoDiscoverError);
+            aggregate.Handle(inner => HandleAutoDiscoverError(platform, inner));
         }
         catch(Exception e)
         {
-            if (!HandleAutoDiscoverError(e))
+            if (!HandleAutoDiscoverError(platform, e))
             {
                 SentrySdk.CaptureException(e);
-                State.Logger.LogError(LogType.AutoDiscover, $"AutoDiscover failed for an unknown reason: {e}");
+                platform.ErrorPrompt($"AutoDiscover failed for an unknown reason: {e}");
             }
         }
 
         return null;
     }
     
-    private static bool HandleAutoDiscoverError(Exception inner)
+    private static bool HandleAutoDiscoverError(IPlatformInterface platform, Exception inner)
     {
         if (inner is HttpRequestException httpException)
         {
             if (httpException.StatusCode == null)
             {
-                State.Logger.LogError(LogType.AutoDiscover, $"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
+                platform.ErrorPrompt($"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
                 return true;
             }
             
-            State.Logger.LogError(LogType.AutoDiscover, $"AutoDiscover failed, because the server responded with {(int)httpException.StatusCode} {httpException.StatusCode}.");
+            platform.ErrorPrompt($"AutoDiscover failed, because the server responded with {(int)httpException.StatusCode} {httpException.StatusCode}.");
             return true;
         }
         
         if (inner is SocketException)
         {
-            State.Logger.LogError(LogType.AutoDiscover, $"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
+            platform.ErrorPrompt($"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
             return true;
         }
 
         if (inner is JsonException)
         {
-            State.Logger.LogError(LogType.AutoDiscover, "AutoDiscover failed, because the server sent invalid data. There might be an outage; please try again in a few moments.");
+            platform.ErrorPrompt("AutoDiscover failed, because the server sent invalid data. There might be an outage; please try again in a few moments.");
             return true;
         }
 
         if (inner is NotSupportedException)
         {
-            State.Logger.LogError(LogType.AutoDiscover, $"AutoDiscover failed due to something we couldn't support: {inner.Message}");
+            platform.ErrorPrompt($"AutoDiscover failed due to something we couldn't support: {inner.Message}");
             return true;
         }
 
-        if (inner is TaskCanceledException)
+        if (inner is OperationCanceledException)
         {
             State.Logger.LogWarning(LogType.AutoDiscover, "AutoDiscover was cancelled by the user.");
             return true;
@@ -112,12 +113,15 @@ public static class AutoDiscoverClient
         {
             case "r":
             case "refresh":
+            case "bo":
+            case "bonsai":
                 return "https://lbp.littlebigrefresh.com";
             case "l":
             case "local":
                 return "http://localhost:10061";
             case "b":
             case "beacon":
+            case "lighthouse":
                 // technically, beacon doesn't support autodiscover so this is more future-proofing if they ever do for some reason
                 return "https://beacon.lbpunion.com";
             case "refreshed":
@@ -127,7 +131,5 @@ public static class AutoDiscoverClient
                 // prefer HTTPS by default if there's no scheme set.
                 return "https://" + url;
         }
-
-        return url;
     }
 }

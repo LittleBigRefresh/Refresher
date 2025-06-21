@@ -193,7 +193,7 @@ public abstract class Pipeline : IAccessesPlatform
 
     public async Task<AutoDiscoverResponse?> InvokeAutoDiscoverAsync(string url, CancellationToken cancellationToken = default)
     {
-        AutoDiscoverResponse? autoDiscover = await AutoDiscoverClient.InvokeAutoDiscoverAsync(url, cancellationToken);
+        AutoDiscoverResponse? autoDiscover = await AutoDiscoverClient.InvokeAutoDiscoverAsync(url, this.Platform, cancellationToken);
         if(autoDiscover != null)
            this.AutoDiscover = autoDiscover;
 
