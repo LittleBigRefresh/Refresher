@@ -76,6 +76,8 @@ public class AndroidPlatformInterface : LoggingPlatformInterface
 
     public override void OpenUrl(Uri uri)
     {
+        base.OpenUrl(uri);
+
         Intent browser = new(Intent.ActionView, Android.Net.Uri.Parse(uri.ToString()));
         PipelineActivity.Instance.StartActivity(browser);
     }

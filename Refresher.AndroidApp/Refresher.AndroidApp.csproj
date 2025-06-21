@@ -8,8 +8,6 @@
         <ApplicationId>com.littlebigrefresh.refresher</ApplicationId>
         <ApplicationVersion>1</ApplicationVersion>
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-        
-        <AndroidSdkDirectory>X:\SDKs\Android</AndroidSdkDirectory>
     </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="..\Refresher.Core\Refresher.Core.csproj" />

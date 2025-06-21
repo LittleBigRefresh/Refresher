@@ -18,7 +18,11 @@ public abstract class LoggingPlatformInterface : IPlatformInterface
     }
 
     public abstract QuestionResult Ask(string question);
-    public abstract void OpenUrl(Uri uri);
+
+    public virtual void OpenUrl(Uri uri)
+    {
+        State.Logger.LogInfo(LogType.Platform, $"Opening URL {uri}");
+    }
 
     public virtual void PrepareThread() {}
     public virtual void PrepareStopThread() {}

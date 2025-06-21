@@ -7,7 +7,7 @@ using Refresher.UI;
 
 namespace Refresher;
 
-public class EtoPlatformInterface : IPlatformInterface
+public class EtoPlatformInterface : LoggingPlatformInterface
 {
     private readonly RefresherForm _form;
 
@@ -16,34 +16,34 @@ public class EtoPlatformInterface : IPlatformInterface
         this._form = form;
     }
 
-    public void InfoPrompt(string prompt)
+    public override void InfoPrompt(string prompt)
     {
+        base.InfoPrompt(prompt);
         Application.Instance.Invoke(() => 
         {
-            State.Logger.LogInfo(Platform, prompt);
             MessageBox.Show(this._form, prompt, "Refresher");
         });
     }
 
-    public void WarnPrompt(string prompt)
+    public override void WarnPrompt(string prompt)
     {
+        base.WarnPrompt(prompt);
         Application.Instance.Invoke(() => 
         {
-            State.Logger.LogWarning(Platform, prompt);
             MessageBox.Show(this._form, prompt, "Refresher", MessageBoxType.Warning);
         });
     }
 
-    public void ErrorPrompt(string prompt)
+    public override void ErrorPrompt(string prompt)
     {
+        base.ErrorPrompt(prompt);
         Application.Instance.Invoke(() => 
         {
-            State.Logger.LogError(Platform, prompt);
             MessageBox.Show(this._form, prompt, "Refresher", MessageBoxType.Error);
         });
     }
 
-    public QuestionResult Ask(string question)
+    public override QuestionResult Ask(string question)
     {
         State.Logger.LogInfo(Platform, $"Asking user '{question}'...");
         DialogResult result = MessageBox.Show(question, "Refresher", MessageBoxButtons.YesNo, MessageBoxType.Question);
@@ -57,8 +57,9 @@ public class EtoPlatformInterface : IPlatformInterface
         };
     }
 
-    public void OpenUrl(Uri uri)
+    public override void OpenUrl(Uri uri)
     {
+        base.OpenUrl(uri);
         string url = uri.ToString();
         
         try
@@ -82,10 +83,4 @@ public class EtoPlatformInterface : IPlatformInterface
         }
         // based off of https://stackoverflow.com/a/43232486
     }
-
-    public void PrepareThread()
-    {}
-
-    public void PrepareStopThread()
-    {}
 }
