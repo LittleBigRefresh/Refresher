@@ -202,6 +202,10 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 {
                     Application.Instance.Invoke(this.UpdateFormState);
                 }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
                 catch (NullReferenceException)
                 {
                     break;
