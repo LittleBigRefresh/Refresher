@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text.Json;
@@ -20,6 +21,26 @@ public static class AutoDiscoverClient
         }
         
         Debug.Assert(autodiscoverUri != null);
+        
+        if (autodiscoverUri.Host.Contains("lnfinite", StringComparison.InvariantCultureIgnoreCase) ||
+            autodiscoverUri.Host.Contains("infinite", StringComparison.InvariantCultureIgnoreCase))
+        {
+            platform.WarnPrompt("The operators of this server are known to spread misinformation," +
+                                " run outdated software or fall behind on security updates," +
+                                " and generally don't play nice with other LBP communities.\r\n" + 
+                                "It is highly advised you pick another server to play on. There's plenty out there.\r\n\r\n" +
+                                "Refresher will allow you to play on this instance, but please be cautious.");
+
+            QuestionResult result = platform.Ask("Are you sure you still want to play on this instance?");
+            if (result == QuestionResult.No)
+            {
+                platform.InfoPrompt("Got it. As an alternative, you can try:\r\n\r\n" +
+                                    "Bonsai: https://bonsai.lbpbonsai.com\r\n" +
+                                    "Beacon: https://beacon.lbpunion.com\r\n");
+                return null;
+            }
+        }
+        
         try
         {
             using HttpClient client = new();
@@ -70,6 +91,13 @@ public static class AutoDiscoverClient
             if (httpException.StatusCode == null)
             {
                 platform.ErrorPrompt($"AutoDiscover failed, because we couldn't communicate with the server: {inner.Message}");
+                return true;
+            }
+
+            if (httpException.StatusCode == HttpStatusCode.NotFound)
+            {
+                platform.ErrorPrompt("AutoDiscover failed, because the server likely doesn't support it. " +
+                                     "If you're patching an LBP game, this generally means the server you're trying to connect to is outdated.");
                 return true;
             }
             
