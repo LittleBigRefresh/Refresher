@@ -37,11 +37,18 @@ public class DownloadParamSfoStep : Step
 
                 return Task.CompletedTask;
             }
+
             this.ParseSfoStream(sfoStream, out sfo);
         }
         catch (EndOfStreamException)
         {
+            game.Name = $"Unknown PARAM.SFO [{game}]";
             this.Platform.WarnPrompt($"Couldn't load {game}'s PARAM.SFO because the file was incomplete. Refresher will try to proceed anyways.");
+        }
+        catch (KeyNotFoundException e)
+        {
+            game.Name = $"Unknown PARAM.SFO [{game}]";
+            this.Platform.WarnPrompt($"Couldn't load {game}'s PARAM.SFO because the game was missing simple title information. " + e.Message);
         }
         catch(Exception e)
         {
