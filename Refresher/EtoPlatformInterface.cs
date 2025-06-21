@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Eto.Forms;
 using Refresher.Core;
 using Refresher.Core.Platform;
@@ -54,6 +55,32 @@ public class EtoPlatformInterface : IPlatformInterface
             DialogResult.No => QuestionResult.No,
             _ => throw new UnreachableException(),
         };
+    }
+
+    public void OpenUrl(Uri uri)
+    {
+        string url = uri.ToString();
+        
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                Process.Start("xdg-open", url);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start("open", url);
+            else
+                throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
+        }
+        catch (Exception e)
+        {
+            State.Logger.LogError(OSIntegration, e.ToString());
+            MessageBox.Show("We couldn't open your browser due to an error.\n" +
+                            $"You can use this link instead: {url}\n\n" +
+                            $"Exception details: {e.GetType().Name} {e.Message}", MessageBoxType.Error);
+            SentrySdk.CaptureException(e);
+        }
+        // based off of https://stackoverflow.com/a/43232486
     }
 
     public void PrepareThread()

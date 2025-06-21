@@ -399,27 +399,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         }
 
         string url = this._pipeline.GuideLink;
-        
-        try
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                Process.Start("xdg-open", url);
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                Process.Start("open", url);
-            else
-                throw new PlatformNotSupportedException("Cannot open a URL on this platform.");
-        }
-        catch (Exception e)
-        {
-            State.Logger.LogError(OSIntegration, e.ToString());
-            MessageBox.Show("We couldn't open your browser due to an error.\n" +
-                            $"You can use this link instead: {url}\n\n" +
-                            $"Exception details: {e.GetType().Name} {e.Message}", MessageBoxType.Error);
-            SentrySdk.CaptureException(e);
-        }
-        // based off of https://stackoverflow.com/a/43232486
+        this.Platform.OpenUrl(new Uri(url));
     }
     
     private void OnRevertEbootClick(object? sender, EventArgs e)

@@ -1,4 +1,6 @@
-﻿using Android.OS;
+﻿using Android.Content;
+using Android.OS;
+using Android.Provider;
 using Refresher.Core.Platform;
 
 namespace Refresher.AndroidApp;
@@ -70,6 +72,12 @@ public class AndroidPlatformInterface : LoggingPlatformInterface
         latch.WaitOne();
 
         return result;
+    }
+
+    public override void OpenUrl(Uri uri)
+    {
+        Intent browser = new(Intent.ActionView, Android.Net.Uri.Parse(uri.ToString()));
+        PipelineActivity.Instance.StartActivity(browser);
     }
 
     public override void PrepareThread()

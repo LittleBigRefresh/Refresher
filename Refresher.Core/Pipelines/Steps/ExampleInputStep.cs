@@ -17,6 +17,7 @@ public class ExampleInputStep : Step
 
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        this.Platform.OpenUrl(new Uri("https://lbp.lbpbonsai.com"));
         this.Platform.InfoPrompt("Info");
         this.Platform.WarnPrompt("Warn");
         this.Platform.ErrorPrompt("Error");

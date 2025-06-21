@@ -149,8 +149,39 @@ public abstract class Pipeline : IAccessesPlatform
         
             PreviousInputStorage.ApplyFromPipeline(this);
             PreviousInputStorage.Write();
+
+            if (!this.Inputs.TryGetValue("url", out string? url))
+            {
+                this.Platform.InfoPrompt("Patch successful!");
+                return;
+            }
             
-            this.Platform.InfoPrompt("Patch successful!");
+            QuestionResult result = this.Platform.Ask(
+                "Patch successful!\r\n\r\n" +
+                        "Some servers like Bonsai require registering an account to play. " +
+                        "Would you like to open the server's website?");
+
+            if (result == QuestionResult.Yes)
+            {
+                try
+                {
+                    Uri oldUri = new(url);
+                    UriBuilder builder = new()
+                    {
+                        Host = oldUri.Host,
+                        Scheme = "https",
+                        Path = "/register",
+                        Port = 443,
+                    };
+
+                    this.Platform.OpenUrl(builder.Uri);
+                }
+                catch (Exception e)
+                {
+                    GlobalState.Logger.LogWarning(LogType.Platform, "Failed to open server URL: " + e);
+                    this.Platform.WarnPrompt("Sorry, we couldn't open the URL. You can usually reach it by using the same link as the one you gave to Refresher.");
+                }
+            }
         }
     }
 
