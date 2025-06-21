@@ -200,7 +200,7 @@ public abstract class Pipeline : IAccessesPlatform
         return autoDiscover;
     }
 
-    public async Task<List<GameInformation>> DownloadGameListAsync(CancellationToken cancellationToken = default)
+    public async Task<List<GameInformation>?> DownloadGameListAsync(CancellationToken cancellationToken = default)
     {
         if (this.State != PipelineState.NotStarted)
         {
@@ -222,8 +222,14 @@ public abstract class Pipeline : IAccessesPlatform
         
         this.Reset();
 
+        // ReSharper disable once InvertIf
         if (this.GameList == null)
-            throw new Exception("Could not download the list of games.");
+        {
+            if (this.State != PipelineState.Error)
+                this.Fail(null, "Could not download the list of games.");
+
+            return null;
+        }
 
         return this.GameList;
     }
@@ -276,9 +282,9 @@ public abstract class Pipeline : IAccessesPlatform
         this.Reset();
     }
 
-    public void Fail(Step step, string reason)
+    public void Fail(Step? step, string reason)
     {
-        this.Platform.ErrorPrompt($"{step.GetType().Name} failed: {reason}\n\nPatching cannot continue.");
+        this.Platform.ErrorPrompt($"{step?.GetType().Name ?? "Pipeline"} failed: {reason}\n\nPatching cannot continue.");
         this.State = PipelineState.Error;
     }
 }

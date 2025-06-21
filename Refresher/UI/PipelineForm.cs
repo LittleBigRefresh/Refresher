@@ -96,6 +96,9 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
 
     private void UpdateFormState()
     {
+        if (this._controller == null)
+            return;
+        
         // adjust progress bars
         this._progressBar.Value = (int)((this._pipeline?.Progress ?? 0) * 100);
         this._currentProgressBar.Value = (int)(this._pipeline?.CurrentProgress * 100 ?? 0);
@@ -195,7 +198,18 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         {
             while (!this.IsDisposed && Application.Instance != null && !Application.Instance.IsDisposed)
             {
-                Application.Instance.Invoke(this.UpdateFormState);
+                try
+                {
+                    Application.Instance.Invoke(this.UpdateFormState);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (NullReferenceException)
+                {
+                    break;
+                }
                 Thread.Sleep(this._pipeline?.State == PipelineState.Running ? 10 : 250);
             }
         });
@@ -264,12 +278,15 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             {
                 if (this._gamesDropDown != null)
                 {
-                    List<GameInformation> games = await this._pipeline!.DownloadGameListAsync();
-                    await Application.Instance.InvokeAsync(() =>
+                    List<GameInformation>? games = await this._pipeline!.DownloadGameListAsync();
+                    if (games != null)
                     {
-                        this.HandleConnection();
-                        this.HandleGameList(games);
-                    });
+                        await Application.Instance.InvokeAsync(() =>
+                        {
+                            this.HandleConnection();
+                            this.HandleGameList(games);
+                        });
+                    }
                 }
                 else
                 {
@@ -335,7 +352,6 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 catch(Exception e)
                 {
                     State.Logger.LogWarning(InfoRetrieval, $"Failed to set image for {game}: {e}");
-                    SentrySdk.CaptureException(e);
                 }
             }
 
