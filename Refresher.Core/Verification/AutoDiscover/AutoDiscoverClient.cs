@@ -143,7 +143,7 @@ public static class AutoDiscoverClient
             case "refresh":
             case "bo":
             case "bonsai":
-                return "https://lbp.littlebigrefresh.com";
+                return "https://lbp.lbpbonsai.com";
             case "l":
             case "local":
                 return "http://localhost:10061";

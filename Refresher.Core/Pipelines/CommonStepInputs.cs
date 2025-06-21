@@ -10,7 +10,7 @@ public static class CommonStepInputs
     
     public static readonly StepInput ServerUrl = new("url", "Server URL", StepInputType.Url)
     {
-        Placeholder = "https://lbp.littlebigrefresh.com",
+        Placeholder = "http://lbp.lbpbonsai.com/lbp",
         Required = true,
     };
     
