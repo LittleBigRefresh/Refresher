@@ -35,7 +35,7 @@ public static class AutoDiscoverClient
             if (result == QuestionResult.No)
             {
                 platform.InfoPrompt("Got it. As an alternative, you can try:\r\n\r\n" +
-                                    "Bonsai: https://bonsai.lbpbonsai.com\r\n" +
+                                    "Bonsai: https://lbp.lbpbonsai.com\r\n" +
                                     "Beacon: https://beacon.lbpunion.com\r\n");
                 return null;
             }
