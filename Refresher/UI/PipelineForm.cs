@@ -348,7 +348,6 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 catch(Exception e)
                 {
                     State.Logger.LogWarning(InfoRetrieval, $"Failed to set image for {game}: {e}");
-                    SentrySdk.CaptureException(e);
                 }
             }
 
