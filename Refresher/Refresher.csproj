@@ -50,10 +50,14 @@
       <PackageReference Condition="!$(IsWindows) And !$(IsOSX)" Include="Eto.Platform.Gtk" Version="2.9.0" />
       <PackageReference Condition="$(IsOSX)" Include="Eto.Platform.Mac64" Version="2.9.0" />
       <PackageReference Condition="$(IsWindows)" Include="Eto.Platform.Wpf" Version="2.9.0" />
-      <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
       <PackageReference Include="Sentry" Version="4.4.0" />
-      <Content Include="Resources/refresher.icns" Link="refresher.icns" Condition="$(IsOSX)" />
       <PackageReference Include="Velopack" Version="0.0.1298" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\refresher.ico" LogicalName="refresher.ico" />
+        <EmbeddedResource Include="Resources\refresher.png" LogicalName="refresher.png" />
+        <Content Include="Resources/refresher.icns" Link="refresher.icns" Condition="$(IsOSX)" />
     </ItemGroup>
 
     <ItemGroup>
