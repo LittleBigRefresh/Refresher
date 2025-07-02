@@ -54,7 +54,7 @@ public static class State
             options.IsGlobalModeEnabled = true;
 
             // This option will enable Sentry's tracing features. You still need to start transactions and spans.
-            options.EnableTracing = true;
+            options.TracesSampleRate = 1;
 
             options.SendDefaultPii = false; // exclude personally identifiable information
             options.AttachStacktrace = true; // send stack traces for *all* breadcrumbs

@@ -50,7 +50,7 @@
       <PackageReference Condition="!$(IsWindows) And !$(IsOSX)" Include="Eto.Platform.Gtk" Version="2.9.0" />
       <PackageReference Condition="$(IsOSX)" Include="Eto.Platform.Mac64" Version="2.9.0" />
       <PackageReference Condition="$(IsWindows)" Include="Eto.Platform.Wpf" Version="2.9.0" />
-      <PackageReference Include="Sentry" Version="4.4.0" />
+      <PackageReference Include="Sentry" Version="5.11.2" />
       <PackageReference Include="Velopack" Version="0.0.1298" />
     </ItemGroup>
     
