@@ -22,4 +22,5 @@ public enum LogType : byte
     Encrypt,
     Decrypt,
     Platform,
+    RefresherForm,
 }

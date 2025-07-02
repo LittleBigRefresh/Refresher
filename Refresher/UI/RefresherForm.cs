@@ -18,7 +18,15 @@ public abstract class RefresherForm : Form
         // this.AutoSize = true;
         this.Padding = new Padding(10, 10, 10, padBottom ? 10 : 0);
         
-        this.Icon = Icon.FromResource("refresher.ico");
+        try
+        {
+            this.Icon = Icon.FromResource("refresher.ico");
+        }
+        catch (Exception ex)
+        {
+            // Not very important, so this should just be a warning, not an error
+            State.Logger.LogWarning(LogType.RefresherForm, $"Unhandled exception while loading refresher.ico in {this.GetType()}: {ex}");
+        }
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             Menu = new RefresherMenuBar();
