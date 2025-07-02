@@ -22,10 +22,20 @@ public abstract class RefresherForm : Form
         {
             this.Icon = Icon.FromResource("refresher.ico");
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            // Not very important, so this should just be a warning, not an error
+            // Not very important, so these should just be warnings, not errors
             State.Logger.LogWarning(LogType.RefresherForm, $"Unhandled exception while loading refresher.ico in {this.GetType()}: {ex}");
+            
+            // attempt to fall back to png icon
+            try
+            {
+                this.Icon = Icon.FromResource("refresher.png");
+            }
+            catch (Exception ex2)
+            {
+                State.Logger.LogWarning(LogType.RefresherForm, $"Unhandled exception while loading refresher.png in {this.GetType()}: {ex2}");
+            }
         }
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
