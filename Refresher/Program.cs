@@ -1,10 +1,13 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using CommandLine;
 using Eto.Forms;
 using NotEnoughLogs.Sinks;
 using Refresher.CLI;
 using Refresher.Core;
 using Refresher.Core.Logging;
+using Refresher.Core.Pipelines.Lbp;
 using Refresher.UI;
 using Velopack;
 using Velopack.Logging;
@@ -84,7 +87,10 @@ public class Program
             try
             {
                 State.Logger.LogInfo(OSIntegration, "Launching in GUI mode");
-                App.Run(new MainForm());
+
+                Form form = UrlAssociationHandler.IsArgsUrl(args) ? FormFromUrl(args[0]) : new MainForm();
+                
+                App.Run(form);
             }
             catch(Exception ex)
             {
@@ -98,6 +104,50 @@ public class Program
             if(WindowsConsoleHelper.OpenedConsole)
                 WindowsConsoleHelper.ShowEndBlurb();
         }
+    }
+
+    private static Form FormFromUrl(string uriStr)
+    {
+        if (!Uri.TryCreate(uriStr, UriKind.Absolute, out Uri uri))
+            InvalidUrl(uriStr);
+        Debug.Assert(uri != null);
+        Debug.Assert(uri.Scheme == "refresher");
+
+        // refresher://join/ps3?1234
+        string[] urlPath = uri.AbsolutePath.Split('/');
+        if (urlPath.Length != 2)
+            InvalidUrl(uriStr);
+        string key = uri.Query.TrimStart('?');
+
+        string method = uri.Host;
+        string target = urlPath[1];
+        
+        if(string.IsNullOrWhiteSpace(key) && method == "join")
+            InvalidUrl(uriStr);
+
+        // MessageBox.Show($"method:'{method}'\ntarget:'{target}'\nkey:'{key}'");
+
+        AutoApplyInformation info = new();
+        info.JoinKey = key;
+
+        switch (method)
+        {
+            case "join":
+                info.AutomaticallyApply = true;
+                switch (target)
+                {
+                    case "ps3":
+                        return new PipelineForm<PatchworkPS3ConfigPipeline>(info);
+                    case "rpcs3":
+                        return new PipelineForm<PatchworkRPCS3ConfigPipeline>(info);
+                }
+                break;
+            default:
+                InvalidUrl(uriStr);
+                break;
+        }
+
+        throw new UnreachableException();
     }
 
     /// <summary>
@@ -203,5 +253,12 @@ public class Program
                       {ex}
                       """;
         TryShowMessage(msg, gui);
+    }
+    
+    [DoesNotReturn]
+    private static void InvalidUrl(string uriStr)
+    {
+        MessageBox.Show($"Invalid Refresher URL: {uriStr}.\n\nWas it copied or pasted incorrectly?");
+        Environment.Exit(1);
     }
 }

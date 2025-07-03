@@ -17,7 +17,8 @@ public static class UrlAssociationHandler
     {
         if (OperatingSystem.IsWindows())
         {
-            ApplicationPath = Path.Combine(Environment.GetEnvironmentVariable("LocalAppData") ?? throw new UnreachableException(), "Refresher", "current");
+            ApplicationPath = Process.GetCurrentProcess().MainModule?.FileName ?? throw new UnreachableException();
+            // ApplicationPath = Path.Combine(Environment.GetEnvironmentVariable("LocalAppData") ?? throw new UnreachableException(), "Refresher", "current", "Refresher.exe");
         }
     }
 
