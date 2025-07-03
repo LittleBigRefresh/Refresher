@@ -11,6 +11,7 @@ public class LbpPS3PatchPipeline : Pipeline
     public override bool ReplacesEboot => true;
 
     public override string GuideLink => "https://docs.littlebigrefresh.com/ps3";
+    public override string? ShorthandUrlId => "ps3";
 
     public override IEnumerable<string> GameNameFilters => ["littlebigplanet", "lbp"];
 

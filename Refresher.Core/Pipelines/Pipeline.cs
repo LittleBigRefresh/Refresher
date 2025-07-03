@@ -29,6 +29,7 @@ public abstract class Pipeline : IAccessesPlatform
     public AutoDiscoverResponse? AutoDiscover { get; internal set; }
 
     public virtual string? GuideLink => null;
+    public virtual string? ShorthandUrlId => null;
 
     public virtual IEnumerable<string> GameNameFilters => [];
     
