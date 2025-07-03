@@ -102,9 +102,11 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         if(this._shouldTriggerOnConnect || (this._autoApply?.AutomaticallyApply ?? false))
             this.OnConnect(this, EventArgs.Empty);
 
+        if (this._autoApply?.AutomaticallyDiscover ?? false)
+            this.OnAutoDiscoverClick(null, EventArgs.Empty);
+
         if (this._autoApply?.AutomaticallyApply ?? false)
         {
-            this.OnAutoDiscoverClick(null, EventArgs.Empty);
             new Thread(() =>
             {
                 while (!this._usedAutoDiscover || !this._connected)
@@ -165,6 +167,9 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             PreviousInputStorage.StoredInputs.TryGetValue(input.Id, out string? value);
             if (input.Id == CommonStepInputs.LobbyPassword.Id && this._autoApply != null)
                 value = this._autoApply.JoinKey;
+
+            if (input.Id == CommonStepInputs.ServerUrl.Id && this._autoApply != null)
+                value = this._autoApply.ServerUrl;
             
             TableRow row;
             switch (input.Type)

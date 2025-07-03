@@ -117,29 +117,42 @@ public class Program
         string[] urlPath = uri.AbsolutePath.Split('/');
         if (urlPath.Length != 2)
             InvalidUrl(uriStr);
-        string key = uri.Query.TrimStart('?');
+        string value = uri.Query.TrimStart('?');
 
         string method = uri.Host;
         string target = urlPath[1];
         
-        if(string.IsNullOrWhiteSpace(key) && method == "join")
+        if(string.IsNullOrWhiteSpace(value))
             InvalidUrl(uriStr);
 
-        // MessageBox.Show($"method:'{method}'\ntarget:'{target}'\nkey:'{key}'");
+        // MessageBox.Show($"method:'{method}'\ntarget:'{target}'\nvalue:'{value}'");
 
         AutoApplyInformation info = new();
-        info.JoinKey = key;
 
         switch (method)
         {
             case "join":
                 info.AutomaticallyApply = true;
+                info.AutomaticallyDiscover = true;
+                info.JoinKey = value;
                 switch (target)
                 {
                     case "ps3":
                         return new PipelineForm<PatchworkPS3ConfigPipeline>(info);
                     case "rpcs3":
                         return new PipelineForm<PatchworkRPCS3ConfigPipeline>(info);
+                }
+                break;
+            case "patch":
+                info.AutomaticallyApply = false;
+                info.AutomaticallyDiscover = true;
+                info.ServerUrl = value;
+                switch (target)
+                {
+                    case "ps3":
+                        return new PipelineForm<LbpPS3PatchPipeline>(info);
+                    case "rpcs3":
+                        return new PipelineForm<LbpRPCS3PatchPipeline>(info);
                 }
                 break;
             default:
