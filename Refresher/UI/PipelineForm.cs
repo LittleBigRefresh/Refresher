@@ -33,13 +33,22 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
     private readonly TableLayout _formLayout;
     private Button? _connectButton;
     private DropDown? _gamesDropDown;
+
+    private readonly AutoApplyInformation? _autoApply;
     
     public new IPlatformInterface Platform { get; }
     
     private bool _usedAutoDiscover = false;
-    
-    public PipelineForm() : base(typeof(TPipeline).Name, new Size(700, -1), false)
+    private bool _connected = false;
+
+    public PipelineForm() : this(null)
     {
+        
+    }
+    
+    public PipelineForm(AutoApplyInformation? autoApply) : base(typeof(TPipeline).Name, new Size(700, -1), false)
+    {
+        this._autoApply = autoApply;
         this.Platform = new EtoPlatformInterface(this);
         
         StackLayout layout;
@@ -77,21 +86,46 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         
         if (this._pipeline?.ReplacesEboot ?? false)
         {
-            this._revertButton = new Button(this.OnRevertEbootClick) { Text = "Revert EBOOT" };
+            this._revertButton = new Button(this.OnRevertEbootClick) { Text = "Revert Patch" };
             layout.Items.Insert(2, this._revertButton);
         }
         
         if (this._pipeline?.RequiredInputs.Any(i => i == CommonStepInputs.ServerUrl) ?? false)
         {
             this._autoDiscoverButton = new Button(this.OnAutoDiscoverClick) { Text = "AutoDiscover" };
-            layout.Items.Insert(2, this._autoDiscoverButton);
+            layout.Items.Insert(3, this._autoDiscoverButton);
+        }
+        
+        if ((this._pipeline?.RequiredInputs.Any(i => i == CommonStepInputs.LobbyPassword) ?? false) && this._pipeline?.ShorthandUrlId != null)
+        {
+            Button joinKeyButton = new(this.OnCopyJoinKeyClick) { Text = "Copy Join Key URL" };
+            layout.Items.Insert(4, joinKeyButton);
         }
         
         State.Log += this.OnLog;
         this.UpdateFormState();
 
-        if(this._shouldTriggerOnConnect)
+        if(this._shouldTriggerOnConnect || (this._autoApply?.AutomaticallyApply ?? false))
             this.OnConnect(this, EventArgs.Empty);
+
+        if (this._autoApply?.AutomaticallyDiscover ?? false)
+            this.OnAutoDiscoverClick(null, EventArgs.Empty);
+
+        if (this._autoApply?.AutomaticallyApply ?? false)
+        {
+            new Thread(() =>
+            {
+                while (!this._usedAutoDiscover || !this._connected)
+                {
+                    Thread.Sleep(20);
+                }
+
+                Application.Instance.Invoke(() =>
+                {
+                    this.OnButtonClick(null, EventArgs.Empty);
+                });
+            }).Start();
+        }
     }
 
     private void UpdateFormState()
@@ -137,6 +171,11 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         foreach (StepInput input in this._pipeline.RequiredInputs)
         {
             PreviousInputStorage.StoredInputs.TryGetValue(input.Id, out string? value);
+            if (input.Id == CommonStepInputs.LobbyPassword.Id && this._autoApply?.JoinKey != null)
+                value = this._autoApply.JoinKey;
+
+            if (input.Id == CommonStepInputs.ServerUrl.Id && this._autoApply?.ServerUrl != null)
+                value = this._autoApply.ServerUrl;
             
             TableRow row;
             switch (input.Type)
@@ -308,6 +347,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
 
     private void HandleConnection()
     {
+        this._connected = true;
         if (this._connectButton == null) return;
 
         this._connectButton.Enabled = false;
@@ -385,6 +425,27 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             control.Text = autoDiscover.Url;
             control.Enabled = false;
         });
+    }
+    
+    private void OnCopyJoinKeyClick(object? sender, EventArgs e)
+    {
+        if (this._pipeline == null)
+            return;
+        
+        if (this._pipeline.State == PipelineState.Running)
+            return;
+        
+        Debug.Assert(this._pipeline.ShorthandUrlId != null);
+        
+        TextControl control = (TextControl)this._formLayout.Rows
+            .Where(r => r.Cells[0].Control.ToolTip == CommonStepInputs.LobbyPassword.Id)
+            .Select(r => r.Cells[1].Control)
+            .First();
+
+        string key = control.Text;
+
+        Clipboard.Instance.Text = $"refresher://join/{this._pipeline.ShorthandUrlId}?{key}";
+        MessageBox.Show("Copied!", "Success");
     }
     
     private void OnViewGuideClick(object? sender, EventArgs _)

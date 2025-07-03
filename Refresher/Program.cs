@@ -1,10 +1,13 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using CommandLine;
 using Eto.Forms;
 using NotEnoughLogs.Sinks;
 using Refresher.CLI;
 using Refresher.Core;
 using Refresher.Core.Logging;
+using Refresher.Core.Pipelines.Lbp;
 using Refresher.UI;
 using Velopack;
 using Velopack.Logging;
@@ -28,7 +31,10 @@ public class Program
         State.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
         State.InitializeSentry();
         
-        if (args.Length > 0)
+        State.Logger.LogInfo(OSIntegration, $"Refresher launched with args [{string.Join(',', args)}] (count: {args.Length})");
+        bool isCliInvocation = args.Length > 0 && !UrlAssociationHandler.IsArgsUrl(args) && !UrlAssociationHandler.IsArgsTryingToRegisterAssociations(args);
+        
+        if (isCliInvocation)
         {
             State.Logger.LogInfo(OSIntegration, "Launching in CLI mode");
             
@@ -70,10 +76,21 @@ public class Program
             if (OperatingSystem.IsWindows() && (Keyboard.Modifiers & Keys.Shift) != 0)
                 WindowsConsoleHelper.AllocateConsole();
             
+            UrlAssociationHandler.RegisterAssociationIfNotPresent();
+
+            if (UrlAssociationHandler.IsArgsTryingToRegisterAssociations(args))
+            {
+                App.Dispose();
+                return;
+            }
+            
             try
             {
                 State.Logger.LogInfo(OSIntegration, "Launching in GUI mode");
-                App.Run(new MainForm());
+
+                Form form = UrlAssociationHandler.IsArgsUrl(args) ? FormFromUrl(args[0]) : new MainForm();
+                
+                App.Run(form);
             }
             catch(Exception ex)
             {
@@ -87,6 +104,63 @@ public class Program
             if(WindowsConsoleHelper.OpenedConsole)
                 WindowsConsoleHelper.ShowEndBlurb();
         }
+    }
+
+    private static Form FormFromUrl(string uriStr)
+    {
+        if (!Uri.TryCreate(uriStr, UriKind.Absolute, out Uri uri))
+            InvalidUrl(uriStr);
+        Debug.Assert(uri != null);
+        Debug.Assert(uri.Scheme == "refresher");
+
+        // refresher://join/ps3?1234
+        string[] urlPath = uri.AbsolutePath.Split('/');
+        if (urlPath.Length != 2)
+            InvalidUrl(uriStr);
+        string value = uri.Query.TrimStart('?');
+
+        string method = uri.Host;
+        string target = urlPath[1];
+        
+        if(string.IsNullOrWhiteSpace(value))
+            InvalidUrl(uriStr);
+
+        // MessageBox.Show($"method:'{method}'\ntarget:'{target}'\nvalue:'{value}'");
+
+        AutoApplyInformation info = new();
+
+        switch (method)
+        {
+            case "join":
+                info.AutomaticallyApply = true;
+                info.AutomaticallyDiscover = true;
+                info.JoinKey = value;
+                switch (target)
+                {
+                    case "ps3":
+                        return new PipelineForm<PatchworkPS3ConfigPipeline>(info);
+                    case "rpcs3":
+                        return new PipelineForm<PatchworkRPCS3ConfigPipeline>(info);
+                }
+                break;
+            case "patch":
+                info.AutomaticallyApply = false;
+                info.AutomaticallyDiscover = true;
+                info.ServerUrl = value;
+                switch (target)
+                {
+                    case "ps3":
+                        return new PipelineForm<LbpPS3PatchPipeline>(info);
+                    case "rpcs3":
+                        return new PipelineForm<LbpRPCS3PatchPipeline>(info);
+                }
+                break;
+            default:
+                InvalidUrl(uriStr);
+                break;
+        }
+
+        throw new UnreachableException();
     }
 
     /// <summary>
@@ -192,5 +266,12 @@ public class Program
                       {ex}
                       """;
         TryShowMessage(msg, gui);
+    }
+    
+    [DoesNotReturn]
+    private static void InvalidUrl(string uriStr)
+    {
+        MessageBox.Show($"Invalid Refresher URL: {uriStr}.\n\nWas it copied or pasted incorrectly?");
+        Environment.Exit(1);
     }
 }

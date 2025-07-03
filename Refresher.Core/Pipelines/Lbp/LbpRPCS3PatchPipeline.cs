@@ -12,6 +12,7 @@ public class LbpRPCS3PatchPipeline : Pipeline
     public override bool ReplacesEboot => true;
 
     public override string GuideLink => "https://docs.littlebigrefresh.com/rpcs3";
+    public override string? ShorthandUrlId => "rpcs3";
 
     public override IEnumerable<string> GameNameFilters => ["littlebigplanet", "lbp"];
 
