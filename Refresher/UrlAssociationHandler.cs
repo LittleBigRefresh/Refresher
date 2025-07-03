@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using Eto.Forms;
 using Microsoft.Win32;
-using Velopack;
 using Velopack.Locators;
 
 namespace Refresher;
@@ -73,9 +73,16 @@ public static class UrlAssociationHandler
             if (result == DialogResult.No)
                 return false;
 
-            ElevateToRegisterAssociations();
-
-            MessageBox.Show("Successfully registered!", "Refresher", MessageBoxButtons.OK);
+            bool registered = ElevateToRegisterAssociations();
+            if (registered)
+            {
+                MessageBox.Show("Successfully registered!", "Refresher", MessageBoxButtons.OK);
+            }
+            else
+            {
+                MessageBox.Show("Failed to register the URL associations.", "Refresher", MessageBoxButtons.OK, MessageBoxType.Warning);
+            }
+            
             return true;
         }
 
@@ -89,7 +96,7 @@ public static class UrlAssociationHandler
     }
 
     [SupportedOSPlatform("windows")]
-    private static void ElevateToRegisterAssociations()
+    private static bool ElevateToRegisterAssociations()
     {
         ProcessStartInfo info = new(Process.GetCurrentProcess().MainModule?.FileName ?? throw new UnreachableException())
             {
@@ -98,12 +105,25 @@ public static class UrlAssociationHandler
                 Arguments = "--register-associations",
             };
 
-        Process? process = Process.Start(info);
+        Process? process;
+
+        try
+        {
+            process = Process.Start(info);
+        }
+        // The operation was canceled by the user.
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            return false;
+        }
+        
         if (process == null)
             throw new Exception("Process didn't start");
 
         process.WaitForExit();
         if (process.ExitCode != 0)
             throw new Exception("Process exited with code " + process.ExitCode);
+
+        return true;
     }
 }
