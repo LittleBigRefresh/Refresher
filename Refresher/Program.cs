@@ -28,7 +28,10 @@ public class Program
         State.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
         State.InitializeSentry();
         
-        if (args.Length > 0)
+        State.Logger.LogInfo(OSIntegration, $"Refresher launched with args [{string.Join(',', args)}] (count: {args.Length})");
+        bool isCliInvocation = args.Length > 0 && !UrlAssociationHandler.IsArgsUrl(args) && !UrlAssociationHandler.IsArgsTryingToRegisterAssociations(args);
+        
+        if (isCliInvocation)
         {
             State.Logger.LogInfo(OSIntegration, "Launching in CLI mode");
             
@@ -69,6 +72,14 @@ public class Program
             // this will NOT work in rider. it must be run independently or the console will be useless
             if (OperatingSystem.IsWindows() && (Keyboard.Modifiers & Keys.Shift) != 0)
                 WindowsConsoleHelper.AllocateConsole();
+            
+            UrlAssociationHandler.RegisterAssociationIfNotPresent();
+
+            if (UrlAssociationHandler.IsArgsTryingToRegisterAssociations(args))
+            {
+                App.Dispose();
+                return;
+            }
             
             try
             {
