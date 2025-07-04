@@ -443,8 +443,12 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             .First();
 
         string key = control.Text;
+        
+        if((Keyboard.Modifiers & Keys.Shift) != 0 || (Keyboard.Modifiers & Keys.Control) != 0) 
+            Clipboard.Instance.Text = $"refresher://join/{this._pipeline.ShorthandUrlId}?{key}";
+        else
+            Clipboard.Instance.Text = $"https://go.lbpbonsai.com/join/{this._pipeline.ShorthandUrlId}?{key}";
 
-        Clipboard.Instance.Text = $"refresher://join/{this._pipeline.ShorthandUrlId}?{key}";
         MessageBox.Show("Copied!", "Success");
     }
     
