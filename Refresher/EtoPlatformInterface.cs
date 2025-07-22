@@ -45,8 +45,14 @@ public class EtoPlatformInterface : LoggingPlatformInterface
 
     public override QuestionResult Ask(string question)
     {
+        
         State.Logger.LogInfo(Platform, $"Asking user '{question}'...");
-        DialogResult result = MessageBox.Show(question, "Refresher", MessageBoxButtons.YesNo, MessageBoxType.Question);
+        DialogResult result = DialogResult.None;
+        Application.Instance.Invoke(() =>
+        {
+            result = MessageBox.Show(question, "Refresher", MessageBoxButtons.YesNo, MessageBoxType.Question);
+        });
+        
         // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
         State.Logger.LogInfo(Platform, $"User answered {result.ToString()}");
         return result switch
