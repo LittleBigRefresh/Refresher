@@ -1,4 +1,4 @@
-﻿using Refresher.Core.Pipelines.Steps;
+using Refresher.Core.Pipelines.Steps;
 
 namespace Refresher.Core.Pipelines.Lbp;
 
