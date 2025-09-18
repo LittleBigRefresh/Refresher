@@ -1,4 +1,4 @@
-﻿using Refresher.Core.Accessors;
+using Refresher.Core.Accessors;
 using Refresher.Core.Pipelines.Steps;
 
 namespace Refresher.Core.Pipelines.Lbp;
@@ -14,7 +14,7 @@ public class LbpRPCS3PatchPipeline : Pipeline
     public override string GuideLink => "https://docs.littlebigrefresh.com/rpcs3";
     public override string? ShorthandUrlId => "rpcs3";
 
-    public override IEnumerable<string> GameNameFilters => ["littlebigplanet", "lbp", "リトルビッグプラネット"];
+    public override IEnumerable<string> GameNameFilters => ["littlebigplanet", "lbp", "リトルビッグプラネット", "리틀 빅 플래닛"];
 
     protected override List<Type> StepTypes =>
     [
