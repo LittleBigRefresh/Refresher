@@ -27,7 +27,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     
     private byte[]? GetIdps()
     {
-        State.Logger.LogInfo(IDPS, "Getting IDPS from the console...");
+        State.Logger.LogInfo(LogType.IDPS, "Getting IDPS from the console...");
         UriBuilder idpsPs3 = new("http", this._remoteIp, 80, "idps.ps3");
         UriBuilder idpsHex = new("http", this._remoteIp, 80, "dev_hdd0/idps.hex");
         UriBuilder idpsHexUsb = new("http", this._remoteIp, 80, "dev_usb000/idps.hex");
@@ -48,7 +48,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     {
         HttpResponseMessage response;
         
-        State.Logger.LogDebug(IDPS, $"  {stepName} ({uri.AbsolutePath})");
+        State.Logger.LogDebug(LogType.IDPS, $"  {stepName} ({uri.AbsolutePath})");
         try
         {
             response = client.GetAsync(uri).Result;
@@ -62,17 +62,17 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
         {
             if (!HandleIdpsRequestError(e))
             {
-                State.Logger.LogError(IDPS, $"Couldn't fetch the IDPS from the PS3 because of an unknown error: {e}");
+                State.Logger.LogError(LogType.IDPS, $"Couldn't fetch the IDPS from the PS3 because of an unknown error: {e}");
                 SentrySdk.CaptureException(e);
             }
             return null;
         }
-        State.Logger.LogDebug(IDPS, $"    {(int)response.StatusCode} {response.StatusCode} (success: {response.IsSuccessStatusCode})");
+        State.Logger.LogDebug(LogType.IDPS, $"    {(int)response.StatusCode} {response.StatusCode} (success: {response.IsSuccessStatusCode})");
         
         if (!response.IsSuccessStatusCode)
         {
-            State.Logger.LogError(IDPS, $"Couldn't fetch the IDPS from the PS3 because of a bad status code: {response.StatusCode}");
-            State.Logger.LogDebug(IDPS, response.Content.ReadAsStringAsync().Result);
+            State.Logger.LogError(LogType.IDPS, $"Couldn't fetch the IDPS from the PS3 because of a bad status code: {response.StatusCode}");
+            State.Logger.LogDebug(LogType.IDPS, response.Content.ReadAsStringAsync().Result);
             return null;
         }
         
@@ -83,7 +83,7 @@ public class ConsolePatchAccessor : PatchAccessor, IDisposable
     {
         if (inner is HttpRequestException httpException)
         {
-            State.Logger.LogError(IDPS, $"Couldn't fetch the IDPS from the PS3 because we couldn't make the request: {httpException.Message}");
+            State.Logger.LogError(LogType.IDPS, $"Couldn't fetch the IDPS from the PS3 because we couldn't make the request: {httpException.Message}");
             return true;
         }
 

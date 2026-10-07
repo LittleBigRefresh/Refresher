@@ -1,0 +1,95 @@
+using Refresher.Core.Accessors;
+using Refresher.Core.Patching;
+using Refresher.Core.Patching.Pipelines;
+using Refresher.Core.Verification;
+
+namespace Refresher.Core.Patching.Steps.Common;
+
+public class DownloadParamSfoStep : Step
+{
+    public DownloadParamSfoStep(Pipeline pipeline) : base(pipeline)
+    {}
+
+    public override string Name { get; } = "Downloading info about a game";
+    public override float Progress { get; protected set; }
+    public override Task ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        GameInformation game = this.Game;
+        string gamePath = $"game/{game.TitleId}";
+
+        Stream? sfoStream = null;
+        PatchAccessor.Try(this, () =>
+        {
+            string sfoLocation = $"{gamePath}/PARAM.SFO";
+
+            if(this.Pipeline.Accessor!.FileExists(sfoLocation)) 
+                sfoStream = this.Pipeline.Accessor.OpenRead(sfoLocation);
+        });
+        
+        if(this.Failed)
+            return Task.CompletedTask;
+
+        ParamSfo? sfo = null;
+        try
+        {
+            if (sfoStream == null)
+            {
+                if(game.TitleId != "TEST12345")
+                    State.Logger.LogWarning(LogType.InfoRetrieval, "The PARAM.SFO file does not exist. This usually means you haven't installed any updates for your game. Refresher will try to proceed anyways.");
+
+                return Task.CompletedTask;
+            }
+
+            this.ParseSfoStream(sfoStream, out sfo);
+        }
+        catch (EndOfStreamException)
+        {
+            game.Name = $"Unknown PARAM.SFO [{game}]";
+            this.Platform.WarnPrompt($"Couldn't load {game}'s PARAM.SFO because the file was incomplete. Refresher will try to proceed anyways.");
+        }
+        catch (KeyNotFoundException e)
+        {
+            game.Name = $"Unknown PARAM.SFO [{game}]";
+            this.Platform.WarnPrompt($"Couldn't load {game}'s PARAM.SFO because the game was missing simple title information. " + e.Message);
+        }
+        catch(Exception e)
+        {
+            game.Name = $"Unknown PARAM.SFO [{game}]";
+                
+            this.Platform.WarnPrompt($"Couldn't load {game}'s PARAM.SFO: {e}\n\nRefresher will try to proceed anyways.");
+            if (sfo != null)
+            {
+                State.Logger.LogDebug(LogType.InfoRetrieval, $"PARAM.SFO version:{sfo.Version} dump:");
+                foreach ((string? key, object? value) in sfo.Table)
+                {
+                    State.Logger.LogDebug(LogType.InfoRetrieval, $"  '{key}' = '{value}'");
+                }
+            }
+            else
+            {
+                State.Logger.LogWarning(LogType.InfoRetrieval, "PARAM.SFO was not read, can't dump to log");
+            }
+                
+            SentrySdk.CaptureException(e);
+        }
+
+        State.Logger.LogInfo(LogType.InfoRetrieval, "Parsed PARAM.SFO: " + game);
+        return Task.CompletedTask;
+    }
+
+    private void ParseSfoStream(Stream sfoStream, out ParamSfo sfo)
+    {
+        sfo = new ParamSfo(sfoStream);
+        GameInformation info = this.Game;
+
+        info.Version = "01.00";
+        if (sfo.Table.TryGetValue("APP_VER", out object? value))
+        {
+            string? appVersion = value.ToString();
+            if (appVersion != null)
+                info.Version = appVersion;
+        }
+
+        info.Name = sfo.Table["TITLE"].ToString();
+    }
+}

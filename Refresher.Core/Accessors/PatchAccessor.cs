@@ -1,5 +1,6 @@
 using System.Reflection;
-using Refresher.Core.Pipelines;
+using Refresher.Core.Patching.Pipelines;
+using Refresher.Core.Patching.Steps;
 
 namespace Refresher.Core.Accessors;
 
@@ -96,7 +97,7 @@ public abstract class PatchAccessor
 
     private static void CatchAccessorException(Step step, Exception ex)
     {
-        State.Logger.LogError(Accessor, "Filesystem error: " + ex);
+        State.Logger.LogError(LogType.Accessor, "Filesystem error: " + ex);
         step.Fail($"Something went wrong while accessing the filesystem: {ex.GetType().Name}: {ex.Message}");
     }
 }

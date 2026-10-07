@@ -1,7 +1,9 @@
 using Eto.Drawing;
 using Eto.Forms;
-using Refresher.Core.Pipelines;
-using Refresher.Core.Pipelines.Lbp;
+using Refresher.Core.Patching.Pipelines;
+using Refresher.Core.Patching.Pipelines.Lbp;
+using Refresher.Core.Patching.Pipelines.Legacy;
+using Refresher.Core.Patching.Pipelines.Test;
 using Velopack;
 using Velopack.Exceptions;
 using Velopack.Sources;

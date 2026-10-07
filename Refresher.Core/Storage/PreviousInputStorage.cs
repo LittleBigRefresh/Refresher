@@ -1,4 +1,4 @@
-﻿using Refresher.Core.Pipelines;
+﻿using Refresher.Core.Patching.Pipelines;
 
 namespace Refresher.Core.Storage;
 

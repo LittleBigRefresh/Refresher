@@ -153,7 +153,7 @@ public static class AutoDiscoverClient
                 // technically, beacon doesn't support autodiscover so this is more future-proofing if they ever do for some reason
                 return "https://beacon.lbpunion.com";
             case "refreshed":
-                State.Logger.LogError("jvyden", "you're gonna make me cry. it's refresh. not refreshed.");
+                State.Logger.LogError(LogType.AutoDiscover, "jvyden", "you're gonna make me cry. it's refresh. not refreshed.");
                 goto case "refresh";
             default:
                 // prefer HTTPS by default if there's no scheme set.

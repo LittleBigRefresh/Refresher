@@ -141,7 +141,7 @@ public partial class EbootPatcher : IPatcher
         FindLbpkDomains(reader, lbpkPositions, foundItems);
 
         long end = Stopwatch.GetTimestamp();
-        State.Logger.LogDebug(Patcher, $"Detecting patchables took {(end - start) / (double)Stopwatch.Frequency} seconds!");
+        State.Logger.LogDebug(LogType.Patcher, $"Detecting patchables took {(end - start) / (double)Stopwatch.Frequency} seconds!");
         return foundItems;
     }
     
@@ -245,7 +245,7 @@ public partial class EbootPatcher : IPatcher
 
             if (UrlMatch().Matches(str).Count != 0)
             {
-                State.Logger.LogTrace(Patcher, $"Found URL at offset {foundPosition}: '{str}'");
+                State.Logger.LogTrace(LogType.Patcher, $"Found URL at offset {foundPosition}: '{str}'");
                 foundItems.Add(new PatchTargetInfo
                 {
                     Length = len,
@@ -344,7 +344,7 @@ public partial class EbootPatcher : IPatcher
         
         string ppuHash = BitConverter.ToString(hash.Hash!).Replace("-", "").ToLower();
         
-        State.Logger.LogDebug(PPU, $"PPU hash: PPU-{ppuHash}");
+        State.Logger.LogDebug(LogType.PPU, $"PPU hash: PPU-{ppuHash}");
         return ppuHash;
     }
 

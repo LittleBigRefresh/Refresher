@@ -69,7 +69,7 @@ public class CommandLine
         List<Message> messages = ebootPatcher.Verify(options.ServerUrl, options.Digest ?? false).ToList();
 
         //Write the messages to the console
-        foreach (Message message in messages) State.Logger.LogInfo(Verify, $"{message.Level}: {message.Content}");
+        foreach (Message message in messages) State.Logger.LogInfo(LogType.Verify, $"{message.Level}: {message.Content}");
 
         //If there are any errors, exit
         if (messages.Any(m => m.Level == MessageLevel.Error))

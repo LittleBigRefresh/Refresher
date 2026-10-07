@@ -52,7 +52,7 @@ public abstract class RefresherForm : Form
         TForm form = new();
         form.Show();
         
-        State.Logger.LogDebug(OSIntegration, $"Showing child form {form.GetType().Name} '{form.Title}'");
+        State.Logger.LogDebug(LogType.OSIntegration, $"Showing child form {form.GetType().Name} '{form.Title}'");
 
         if (close)
         {
