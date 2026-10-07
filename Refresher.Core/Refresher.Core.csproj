@@ -13,7 +13,7 @@
         <PackageReference Include="NotEnoughLogs" Version="2.0.3" />
         <PackageReference Include="SCEToolSharp" Version="1.2.3" />
         <PackageReference Include="ELFSharp" Version="2.17.3" />
-        <PackageReference Include="Sentry" Version="5.11.2" />
+        <PackageReference Include="Sentry" Version="6.12.0" />
     </ItemGroup>
     
     <ItemGroup>
