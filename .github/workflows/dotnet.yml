@@ -52,17 +52,20 @@ jobs:
       shell: bash
       run: dotnet publish -c Release -r osx-arm64 --self-contained Refresher /p:Version=${VERSION}
       
-    - name: Install Android workload
-      if: matrix.os == 'ubuntu-latest'
-      run: dotnet workload install android
+    # Android builds are temporarily disabled for now until the rewrites (GUI and pipeline) are complete, 
+    # I will deal with Android later.
+
+    #- name: Install Android workload
+    #  if: matrix.os == 'ubuntu-latest'
+    #  run: dotnet workload install android
       
-    - name: Install Android SDK 21
-      if: matrix.os == 'ubuntu-latest'
-      run: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platforms;android-21" "build-tools;21.1.2"
+    #- name: Install Android SDK 21
+    #  if: matrix.os == 'ubuntu-latest'
+    #  run: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platforms;android-21" "build-tools;21.1.2"
       
-    - name: Publish for Android ARM64
-      if: matrix.os == 'ubuntu-latest'
-      run: dotnet publish -c Release -r android-arm64 --self-contained Refresher.AndroidApp /p:AndroidSdkDirectory=${ANDROID_SDK_ROOT} /p:Version=${VERSION}
+    #- name: Publish for Android ARM64
+    #  if: matrix.os == 'ubuntu-latest'
+    #  run: dotnet publish -c Release -r android-arm64 --self-contained Refresher.AndroidApp /p:AndroidSdkDirectory=${ANDROID_SDK_ROOT} /p:Version=${VERSION}
 
     - name: Create macOS universal2 binary
       if: matrix.os == 'macos-latest'
@@ -134,11 +137,11 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           
-    - name: Upload Android ARM64 build
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-          name: "EXPERIMENTAL Refresher for Android ARM64"
-          path: "Refresher.AndroidApp/bin/Release/net9.0-android/android-arm64/publish"
-          if-no-files-found: error
-          retention-days: 30
+    #- name: Upload Android ARM64 build
+    #  if: matrix.os == 'ubuntu-latest'
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #      name: "EXPERIMENTAL Refresher for Android ARM64"
+    #      path: "Refresher.AndroidApp/bin/Release/net9.0-android/android-arm64/publish"
+    #      if-no-files-found: error
+    #      retention-days: 30
