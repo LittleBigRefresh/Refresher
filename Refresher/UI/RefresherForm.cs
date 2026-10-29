@@ -25,7 +25,7 @@ public abstract class RefresherForm : Form
         catch(Exception ex)
         {
             // Not very important, so these should just be warnings, not errors
-            State.Logger.LogWarning(LogType.RefresherForm, $"Unhandled exception while loading refresher.ico in {this.GetType()}: {ex}");
+            RefresherState.Logger.LogWarning(LogType.RefresherForm, $"Unhandled exception while loading refresher.ico in {this.GetType()}: {ex}");
             
             // attempt to fall back to png icon
             try
@@ -34,7 +34,7 @@ public abstract class RefresherForm : Form
             }
             catch (Exception ex2)
             {
-                State.Logger.LogWarning(LogType.RefresherForm, $"Unhandled exception while loading refresher.png in {this.GetType()}: {ex2}");
+                RefresherState.Logger.LogWarning(LogType.RefresherForm, $"Unhandled exception while loading refresher.png in {this.GetType()}: {ex2}");
             }
         }
         
@@ -52,7 +52,7 @@ public abstract class RefresherForm : Form
         TForm form = new();
         form.Show();
         
-        State.Logger.LogDebug(LogType.OSIntegration, $"Showing child form {form.GetType().Name} '{form.Title}'");
+        RefresherState.Logger.LogDebug(LogType.OSIntegration, $"Showing child form {form.GetType().Name} '{form.Title}'");
 
         if (close)
         {

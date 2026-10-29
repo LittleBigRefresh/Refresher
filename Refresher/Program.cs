@@ -31,12 +31,12 @@ public class Program
         State.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
         State.InitializeSentry();
         
-        State.Logger.LogInfo(LogType.OSIntegration, $"Refresher launched with args [{string.Join(',', args)}] (count: {args.Length})");
+        RefresherState.Logger.LogInfo(LogType.OSIntegration, $"Refresher launched with args [{string.Join(',', args)}] (count: {args.Length})");
         bool isCliInvocation = args.Length > 0 && !UrlAssociationHandler.IsArgsUrl(args) && !UrlAssociationHandler.IsArgsTryingToRegisterAssociations(args);
         
         if (isCliInvocation)
         {
-            State.Logger.LogInfo(LogType.OSIntegration, "Launching in CLI mode");
+            RefresherState.Logger.LogInfo(LogType.OSIntegration, "Launching in CLI mode");
             
             AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
             {
@@ -86,7 +86,7 @@ public class Program
             
             try
             {
-                State.Logger.LogInfo(LogType.OSIntegration, "Launching in GUI mode");
+                RefresherState.Logger.LogInfo(LogType.OSIntegration, "Launching in GUI mode");
 
                 Form form = UrlAssociationHandler.IsArgsUrl(args) ? FormFromUrl(args[0]) : new MainForm();
                 
@@ -181,6 +181,9 @@ public class Program
             }
             case TypeInitializationException { TypeName: "SCEToolSharp.LibSceToolSharp" }:
             {
+                // TODO in the near future this will no longer affect LBP RPCS3 patching, and other new patch methods,
+                // so instead of closing Refresher, we should just prevent the user from using the legacy patch methods & LBP PS3 method 
+                // (reconfigure also doesn't need this, so don't disable that).
                 const string msg = """
                                    libscetool, a critical component of Refresher, failed to initialize.
                                    Please ensure you are using the latest version of Refresher, and that you've picked the correct version for your architecture.

@@ -6,7 +6,6 @@ using Refresher.Core.Patching.Steps.Common;
 using Refresher.Core.Platform;
 using Refresher.Core.Storage;
 using Refresher.Core.Verification.AutoDiscover;
-using GlobalState = Refresher.Core.State;
 
 namespace Refresher.Core.Patching.Pipelines;
 
@@ -137,14 +136,14 @@ public abstract class Pipeline : IAccessesPlatform
             GlobalState.Logger.LogTrace(LogType.Pipeline, $"  '{key}' = '{value}'");
         }
 
-        GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} started.");
+        RefresherState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} started.");
         this.State = PipelineState.Running;
 
         bool success = await this.RunListOfSteps(this._steps, cancellationToken);
 
         if (success)
         {
-            GlobalState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
+            RefresherState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} finished!");
             this.State = PipelineState.Finished;
         
             PreviousInputStorage.ApplyFromPipeline(this);
@@ -178,7 +177,7 @@ public abstract class Pipeline : IAccessesPlatform
                 }
                 catch (Exception e)
                 {
-                    GlobalState.Logger.LogWarning(LogType.Platform, "Failed to open server URL: " + e);
+                    RefresherState.Logger.LogWarning(LogType.Platform, "Failed to open server URL: " + e);
                     this.Platform.WarnPrompt("Sorry, we couldn't open the URL. You can usually reach it by using the same link as the one you gave to Refresher.");
                 }
             }
@@ -191,7 +190,7 @@ public abstract class Pipeline : IAccessesPlatform
         byte i = 1;
         foreach (Step step in steps)
         {
-            GlobalState.Logger.LogInfo(LogType.Pipeline, $"Executing {step.GetType().Name}... ({i}/{steps.Count})");
+            RefresherState.Logger.LogInfo(LogType.Pipeline, $"Executing {step.GetType().Name}... ({i}/{steps.Count})");
             this._currentStepIndex = i;
             this._currentStep = step;
 

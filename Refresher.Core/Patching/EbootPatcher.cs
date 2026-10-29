@@ -141,7 +141,7 @@ public partial class EbootPatcher : IPatcher
         FindLbpkDomains(reader, lbpkPositions, foundItems);
 
         long end = Stopwatch.GetTimestamp();
-        State.Logger.LogDebug(LogType.Patcher, $"Detecting patchables took {(end - start) / (double)Stopwatch.Frequency} seconds!");
+        RefresherState.Logger.LogDebug(LogType.Patcher, $"Detecting patchables took {(end - start) / (double)Stopwatch.Frequency} seconds!");
         return foundItems;
     }
     
@@ -245,7 +245,7 @@ public partial class EbootPatcher : IPatcher
 
             if (UrlMatch().Matches(str).Count != 0)
             {
-                State.Logger.LogTrace(LogType.Patcher, $"Found URL at offset {foundPosition}: '{str}'");
+                RefresherState.Logger.LogTrace(LogType.Patcher, $"Found URL at offset {foundPosition}: '{str}'");
                 foundItems.Add(new PatchTargetInfo
                 {
                     Length = len,
@@ -344,7 +344,7 @@ public partial class EbootPatcher : IPatcher
         
         string ppuHash = BitConverter.ToString(hash.Hash!).Replace("-", "").ToLower();
         
-        State.Logger.LogDebug(LogType.PPU, $"PPU hash: PPU-{ppuHash}");
+        RefresherState.Logger.LogDebug(LogType.PPU, $"PPU hash: PPU-{ppuHash}");
         return ppuHash;
     }
 
@@ -359,7 +359,7 @@ public partial class EbootPatcher : IPatcher
 
         this.Stream.Position = 0;
 
-        State.Logger.LogInfo(LogType.Verify, $"Verifying EBOOT against URL: {url}");
+        RefresherState.Logger.LogInfo(LogType.Verify, $"Verifying EBOOT against URL: {url}");
         // Check url
         if (url.EndsWith('/'))
             messages.Add(new Message(MessageLevel.Error,
@@ -373,7 +373,7 @@ public partial class EbootPatcher : IPatcher
         {
             Class output = ELFReader.CheckELFType(this.Stream);
 
-            State.Logger.LogDebug(LogType.Verify, $"ELF class: {output}");
+            RefresherState.Logger.LogDebug(LogType.Verify, $"ELF class: {output}");
             if (output == Class.NotELF)
             {
                 messages.Add(new Message(MessageLevel.Error, "EBOOT is not a valid ELF file."));

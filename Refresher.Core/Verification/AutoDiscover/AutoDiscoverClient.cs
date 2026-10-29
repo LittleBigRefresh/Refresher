@@ -13,7 +13,7 @@ public static class AutoDiscoverClient
     {
         url = TryCompleteUrl(url);
         
-        State.Logger.LogInfo(LogType.AutoDiscover, $"Invoking autodiscover on URL '{url}'");
+        RefresherState.Logger.LogInfo(LogType.AutoDiscover, $"Invoking autodiscover on URL '{url}'");
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? autodiscoverUri))
         {
             platform.ErrorPrompt("Server URL could not be parsed correctly. AutoDiscover cannot continue.");
@@ -64,7 +64,7 @@ public static class AutoDiscoverClient
                           $"Banner URL: {autodiscover.BannerImageUrl}\r\n" +
                           $"Custom digest key?: {(autodiscover.UsesCustomDigestKey.GetValueOrDefault() ? "Yes" : "No")}";
             
-            State.Logger.LogInfo(LogType.AutoDiscover, text);
+            RefresherState.Logger.LogInfo(LogType.AutoDiscover, text);
 
             return autodiscover;
         }
@@ -125,7 +125,7 @@ public static class AutoDiscoverClient
 
         if (inner is OperationCanceledException)
         {
-            State.Logger.LogWarning(LogType.AutoDiscover, "AutoDiscover was cancelled by the user.");
+            RefresherState.Logger.LogWarning(LogType.AutoDiscover, "AutoDiscover was cancelled by the user.");
             return true;
         }
         
@@ -150,10 +150,9 @@ public static class AutoDiscoverClient
             case "b":
             case "beacon":
             case "lighthouse":
-                // technically, beacon doesn't support autodiscover so this is more future-proofing if they ever do for some reason
                 return "https://beacon.lbpunion.com";
             case "refreshed":
-                State.Logger.LogError(LogType.AutoDiscover, "jvyden", "you're gonna make me cry. it's refresh. not refreshed.");
+                RefresherState.Logger.LogError(LogType.AutoDiscover, "jvyden", "you're gonna make me cry. it's refresh. not refreshed.");
                 goto case "refresh";
             default:
                 // prefer HTTPS by default if there's no scheme set.
