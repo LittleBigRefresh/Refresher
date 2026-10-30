@@ -1,3 +1,5 @@
+using Refresher.Core.Helpers;
+
 namespace Refresher.Core.Patching.Steps;
 
 public static class CommonStepInputs
@@ -19,7 +21,7 @@ public static class CommonStepInputs
         // provide an example to Windows users.
         // don't bother with other platforms because they should be automatic
         Placeholder = @$"C:\Users\{Environment.UserName}\RPCS3\dev_hdd0",
-        DetermineDefaultValue = DetermineDefaultRpcs3Path,
+        DetermineDefaultValue = PathHelper.GetDefaultRPCS3DevHdd0Path,
         ShouldCauseGameDownloadWhenChanged = true,
         Required = true,
     };
@@ -46,20 +48,4 @@ public static class CommonStepInputs
         Placeholder = @"C:\path\to\EBOOT.elf",
         Required = true,
     };
-    
-    // TODO: Cache the last used location for easier entry
-    private static string? DetermineDefaultRpcs3Path()
-    {
-        // RPCS3 builds for Windows are portable, so we can't determine this automatically
-        if (OperatingSystem.IsWindows())
-            return null;
-
-        // ~/.config/rpcs3/dev_hdd0
-        string folder = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "rpcs3", "dev_hdd0");
-
-        if (Directory.Exists(folder))
-            return folder;
-        
-        return null;
-    }
 }
