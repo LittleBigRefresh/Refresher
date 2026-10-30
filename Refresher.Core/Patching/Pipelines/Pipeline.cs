@@ -130,10 +130,10 @@ public abstract class Pipeline : IAccessesPlatform
         }
         
         if(this.Inputs.Count != 0)
-            GlobalState.Logger.LogTrace(LogType.Pipeline, "Pipeline inputs:");
+            RefresherState.Logger.LogTrace(LogType.Pipeline, "Pipeline inputs:");
         foreach ((string? key, string? value) in this.Inputs)
         {
-            GlobalState.Logger.LogTrace(LogType.Pipeline, $"  '{key}' = '{value}'");
+            RefresherState.Logger.LogTrace(LogType.Pipeline, $"  '{key}' = '{value}'");
         }
 
         RefresherState.Logger.LogInfo(LogType.Pipeline, $"Pipeline {this.GetType().Name} started.");

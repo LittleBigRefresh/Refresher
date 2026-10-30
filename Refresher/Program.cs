@@ -28,8 +28,8 @@ public class Program
             .SetLogger(new ConsoleVelopackLogger())
             .Run();
         
-        State.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
-        State.InitializeSentry();
+        RefresherState.InitializeLogger([new ConsoleSink(), new EventSink(), new SentryBreadcrumbSink()]);
+        RefresherState.InitializeSentry();
         
         RefresherState.Logger.LogInfo(LogType.OSIntegration, $"Refresher launched with args [{string.Join(',', args)}] (count: {args.Length})");
         bool isCliInvocation = args.Length > 0 && !UrlAssociationHandler.IsArgsUrl(args) && !UrlAssociationHandler.IsArgsTryingToRegisterAssociations(args);
