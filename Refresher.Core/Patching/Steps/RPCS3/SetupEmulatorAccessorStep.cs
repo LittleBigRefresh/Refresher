@@ -26,7 +26,7 @@ public class SetupEmulatorAccessorStep : Step
                 "Please use the real file path. " +
                 "(it usually starts with C:\\ or some other drive letter)");
         
-        State.Logger.LogDebug(LogType.RPCS3, $"Using RPCS3 path {path}");
+        RefresherState.Logger.LogDebug(LogType.RPCS3, $"Using RPCS3 path {path}");
         this.Pipeline.Accessor = new EmulatorPatchAccessor(path);
 
         return Task.CompletedTask;

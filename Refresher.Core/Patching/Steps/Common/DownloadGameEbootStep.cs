@@ -21,7 +21,7 @@ public class DownloadGameEbootStep : Step
             if (this.Pipeline.Accessor!.FileExists(ebootPath)) return;
             // If the backup doesn't exist, use the EBOOT.BIN
             
-            State.Logger.LogInfo(LogType.Accessor, "Couldn't find an original backup of the EBOOT, using active copy. This is not an error.");
+            RefresherState.Logger.LogInfo(LogType.Accessor, "Couldn't find an original backup of the EBOOT, using active copy. This is not an error.");
             ebootPath = Path.Combine(usrDir, "EBOOT.BIN");
             
             this.Progress = 0.25f;
@@ -49,7 +49,7 @@ public class DownloadGameEbootStep : Step
         if(this.Failed)
             return Task.CompletedTask;
         
-        State.Logger.LogDebug(LogType.Accessor, $"Downloaded EBOOT Path: {downloadedFile}");
+        RefresherState.Logger.LogDebug(LogType.Accessor, $"Downloaded EBOOT Path: {downloadedFile}");
         if (!File.Exists(downloadedFile))
         {
             return this.Fail("Could not find the EBOOT we downloaded. This is likely a bug. Patching cannot continue.");

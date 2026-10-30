@@ -6,7 +6,7 @@ using Refresher.Core.Logging;
 
 namespace Refresher.Core;
 
-public static class State
+public static class RefresherState
 {
     public static Logger Logger { get; private set; } = null!;
 

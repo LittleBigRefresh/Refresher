@@ -49,12 +49,12 @@ public class FakeEncryptGameEbootStep : Step
     public override float Progress { get; protected set; }
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        State.Logger.LogDebug(LogType.Encrypt, "Loading ELF to memory...");
+        RefresherState.Logger.LogDebug(LogType.Encrypt, "Loading ELF to memory...");
         byte[] elfData = File.ReadAllBytes(this.Game.DecryptedEbootPath);
 
         Elf64Ehdr elfHeader = MemoryMarshal.Read<Elf64Ehdr>(elfData);
 
-        State.Logger.LogDebug(LogType.Encrypt, "Calculating offsets...");
+        RefresherState.Logger.LogDebug(LogType.Encrypt, "Calculating offsets...");
 
         SceHeader sceHeader = new();
         SelfHeader selfHeader = new();
@@ -82,7 +82,7 @@ public class FakeEncryptGameEbootStep : Step
 
         ulong shdrOffset = Swap64(elfHeader.e_shoff) + Swap64(sceHeader.head_len);
 
-        State.Logger.LogDebug(LogType.Encrypt, "Calculating segments ...");
+        RefresherState.Logger.LogDebug(LogType.Encrypt, "Calculating segments ...");
         SegmentInfo[] segments = new SegmentInfo[phdrCount];
 
         for (int i = 0; i < phdrCount; i++)
@@ -124,12 +124,12 @@ public class FakeEncryptGameEbootStep : Step
         controlInfo.digest1 = new byte[20];
         controlInfo.digest2 = new byte[20];
 
-        State.Logger.LogDebug(LogType.Encrypt, "Calculating hashes...");
+        RefresherState.Logger.LogDebug(LogType.Encrypt, "Calculating hashes...");
         byte[] hardcodedSha = [0x62, 0x7c, 0xb1, 0x80, 0x8a, 0xb9, 0x38, 0xe3, 0x2c, 0x8c, 0x09, 0x17, 0x08, 0x72, 0x6a, 0x57, 0x9e, 0x25, 0x86, 0xe4];
         Buffer.BlockCopy(hardcodedSha, 0, controlInfo.digest1, 0, 20);
         controlInfo.digest2 = SHA1.HashData(elfData);
 
-        State.Logger.LogDebug(LogType.Encrypt, "FSELF built, writing...");
+        RefresherState.Logger.LogDebug(LogType.Encrypt, "FSELF built, writing...");
         string outputPath = this.Game.EncryptedEbootPath = Path.GetTempFileName();
         using FileStream output = File.Open(outputPath, FileMode.Create);
         WriteStruct(output, sceHeader);

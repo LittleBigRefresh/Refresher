@@ -25,7 +25,7 @@ public class ExampleInputStep : Step
         QuestionResult result = this.Platform.Ask("Question");
         this.Platform.InfoPrompt(result.ToString());
         
-        State.Logger.LogInfo(LogType.Pipeline, $"Input was set to '{this.Inputs[0].GetValueFromPipeline(this.Pipeline)}'");
+        RefresherState.Logger.LogInfo(LogType.Pipeline, $"Input was set to '{this.Inputs[0].GetValueFromPipeline(this.Pipeline)}'");
         return Task.CompletedTask;
     }
 }

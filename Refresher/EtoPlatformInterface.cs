@@ -46,7 +46,7 @@ public class EtoPlatformInterface : LoggingPlatformInterface
     public override QuestionResult Ask(string question)
     {
         
-        State.Logger.LogInfo(LogType.Platform, $"Asking user '{question}'...");
+        RefresherState.Logger.LogInfo(LogType.Platform, $"Asking user '{question}'...");
         DialogResult result = DialogResult.None;
         Application.Instance.Invoke(() =>
         {
@@ -54,7 +54,7 @@ public class EtoPlatformInterface : LoggingPlatformInterface
         });
         
         // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-        State.Logger.LogInfo(LogType.Platform, $"User answered {result.ToString()}");
+        RefresherState.Logger.LogInfo(LogType.Platform, $"User answered {result.ToString()}");
         return result switch
         {
             DialogResult.Yes => QuestionResult.Yes,
@@ -81,7 +81,7 @@ public class EtoPlatformInterface : LoggingPlatformInterface
         }
         catch (Exception e)
         {
-            State.Logger.LogError(LogType.OSIntegration, e.ToString());
+            RefresherState.Logger.LogError(LogType.OSIntegration, e.ToString());
             MessageBox.Show("We couldn't open your browser due to an error.\n" +
                             $"You can use this link instead: {url}\n\n" +
                             $"Exception details: {e.GetType().Name} {e.Message}", MessageBoxType.Error);

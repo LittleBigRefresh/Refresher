@@ -18,7 +18,7 @@ public class SetupPS3AccessorStep : Step
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         string remoteIp = CommonStepInputs.ConsoleIP.GetValueFromPipeline(this.Pipeline);
-        State.Logger.LogDebug(LogType.PS3, $"Using PS3 IP {remoteIp}");
+        RefresherState.Logger.LogDebug(LogType.PS3, $"Using PS3 IP {remoteIp}");
         
         PatchAccessor.Try(this, () =>
         {

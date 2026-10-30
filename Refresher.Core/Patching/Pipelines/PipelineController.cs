@@ -120,7 +120,7 @@ public sealed class PipelineController : IAccessesPlatform
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while invoking autodiscover: {ex}");
+                RefresherState.Logger.LogError(LogType.Pipeline, $"Unhandled error while invoking autodiscover: {ex}");
                 SentrySdk.CaptureException(ex);
             }
             finally

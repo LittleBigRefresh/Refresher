@@ -7,7 +7,7 @@ public class EventSink : ILoggerSink
 {
     public void Log(LogLevel level, ReadOnlySpan<char> category, ReadOnlySpan<char> content)
     {
-        State.InvokeOnLog(level, category, content);
+        RefresherState.InvokeOnLog(level, category, content);
     }
 
     public void Log(LogLevel level, ReadOnlySpan<char> category, ReadOnlySpan<char> format, params object[] args)

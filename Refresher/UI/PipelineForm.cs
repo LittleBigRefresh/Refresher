@@ -102,7 +102,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             layout.Items.Insert(4, joinKeyButton);
         }
         
-        State.Log += this.OnLog;
+        RefresherState.Log += this.OnLog;
         this.UpdateFormState();
 
         if(this._shouldTriggerOnConnect || (this._autoApply?.AutomaticallyApply ?? false))
@@ -335,11 +335,11 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             }
             catch (DirectoryNotFoundException)
             {
-                State.Logger.LogError(LogType.Accessor, "The games folder doesn't exist at that path. Please ensure you entered the right path/IP.");
+                RefresherState.Logger.LogError(LogType.Accessor, "The games folder doesn't exist at that path. Please ensure you entered the right path/IP.");
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while downloading games list: {ex}");
+                RefresherState.Logger.LogError(LogType.Pipeline, $"Unhandled error while downloading games list: {ex}");
                 SentrySdk.CaptureException(ex);
             }
         });
@@ -391,7 +391,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 }
                 catch(Exception e)
                 {
-                    State.Logger.LogWarning(LogType.InfoRetrieval, $"Failed to set image for {game}: {e}");
+                    RefresherState.Logger.LogWarning(LogType.InfoRetrieval, $"Failed to set image for {game}: {e}");
                 }
             }
 
@@ -489,7 +489,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
             }
             catch (Exception ex)
             {
-                State.Logger.LogError(LogType.Pipeline, $"Unhandled error while reverting the game's EBOOT: {ex}");
+                RefresherState.Logger.LogError(LogType.Pipeline, $"Unhandled error while reverting the game's EBOOT: {ex}");
             }
         });
     }
