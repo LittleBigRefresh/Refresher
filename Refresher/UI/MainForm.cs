@@ -1,9 +1,7 @@
 using Eto.Drawing;
 using Eto.Forms;
 using Refresher.Core.Patching.Pipelines;
-using Refresher.Core.Patching.Pipelines.Lbp;
-using Refresher.Core.Patching.Pipelines.Legacy;
-using Refresher.Core.Patching.Pipelines.Test;
+using Refresher.UI.PatchForms;
 using Velopack;
 using Velopack.Exceptions;
 using Velopack.Sources;
@@ -40,23 +38,21 @@ public class MainForm : RefresherForm
         ([
             new Label { Text = "Welcome to Refresher! Please pick a patching method to continue." },
             this._updateStatusLabel = new Label(),
+
+            new Label(), // line break
+
             new Label { Text = "LittleBigPlanet:" },
-            this.PipelineButton<LbpPS3PatchPipeline>("Patch LBP1/2/3 for PS3"),
-            this.PipelineButton<PatchworkPS3ConfigPipeline>("Reconfigure Patch for PS3"),
-            this.PipelineButton<LbpRPCS3PatchPipeline>("Patch LBP1/2/3 for RPCS3"),
-            this.PipelineButton<PatchworkRPCS3ConfigPipeline>("Reconfigure Patch for RPCS3"),
+            new Button((_, _) => this.ShowChild<LbpPS3PatchForm>()) { Text = "Patch Unpatched LBP1/2/3 on PS3" },
+            new Button((_, _) => this.ShowChild<LbpPS3ReconfigureForm>()) { Text = "Reconfigure Patched LBPs on PS3" },
+            new Button((_, _) => this.ShowChild<LbpRPCS3PatchForm>()) { Text = "Patch Unpatched LBP1/2/3 on RPCS3" },
+            new Button((_, _) => this.ShowChild<LbpRPCS3ReconfigureForm>()) { Text = "Reconfigure Patched LBPs on RPCS3" },
 
-            new Label { Text = "General (for non-LBP games):" },
-            this.PipelineButton<RPCS3PatchPipeline>("Patch any RPCS3 game"),
-            this.PipelineButton<PS3PatchPipeline>("Patch any PS3 game"),
+            new Label(), // line break
 
-            new Label { Text = "Advanced (for experts):" },
-            this.PipelineButton<ElfToElfPatchPipeline>(".elf->.elf Patch"),
-
-            #if DEBUG
-            new Label { Text = "Debugging options:" },
-            this.PipelineButton<ExamplePipeline>("Example Pipeline"),
-            #endif
+            new Label { Text = "Legacy options:" },
+            new Button((_, _) => this.ShowChild<LegacyPS3PatchForm>()) { Text = "Patch non-LBP PS3 game" },
+            new Button((_, _) => this.ShowChild<LegacyRPCS3PatchForm>()) { Text = "Patch non-LBP RPCS3 game" },
+            new Button((_, _) => this.ShowChild<LegacyElfPatchForm>()) { Text = ".elf->.elf Patch" },
         ]);
 
         layout.Spacing = 5;
@@ -127,10 +123,5 @@ public class MainForm : RefresherForm
                 MessageBox.Show($"Failed to install updates: {ex}", "Refresher", MessageBoxType.Error);
             }
         });
-    }
-
-    private Button PipelineButton<TPipeline>(string name) where TPipeline : Pipeline, new()
-    {
-        return new Button((_, _) => this.ShowChild<PipelineForm<TPipeline>>()) { Text = name };
     }
 }

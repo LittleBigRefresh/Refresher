@@ -18,7 +18,12 @@ public class ValidateGameStep : Step
 
     public override Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        string titleId = CommonStepInputs.TitleId.GetValueFromPipeline(this.Pipeline).Trim();
+        string? titleId = CommonStepInputs.TitleId.GetValueFromPipeline(this.Pipeline)?.Trim();
+        if (string.IsNullOrWhiteSpace(titleId))
+        {
+            return this.Fail($"You didn't select a game!");
+        }
+
         string gamePath = $"game/{titleId}";
 
         // sanity check. UI will not allow this to happen, but CLI will

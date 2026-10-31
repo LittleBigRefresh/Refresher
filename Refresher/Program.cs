@@ -7,8 +7,8 @@ using NotEnoughLogs.Sinks;
 using Refresher.CLI;
 using Refresher.Core;
 using Refresher.Core.Logging;
-using Refresher.Core.Patching.Pipelines.Lbp;
 using Refresher.UI;
+using Refresher.UI.PatchForms;
 using Velopack;
 using Velopack.Logging;
 
@@ -138,9 +138,9 @@ public class Program
                 switch (target)
                 {
                     case "ps3":
-                        return new PipelineForm<PatchworkPS3ConfigPipeline>(info);
+                        return new LbpPS3ReconfigureForm(info);
                     case "rpcs3":
-                        return new PipelineForm<PatchworkRPCS3ConfigPipeline>(info);
+                        return new LbpRPCS3ReconfigureForm(info);
                 }
                 break;
             case "patch":
@@ -150,9 +150,9 @@ public class Program
                 switch (target)
                 {
                     case "ps3":
-                        return new PipelineForm<LbpPS3PatchPipeline>(info);
+                        return new LbpPS3PatchForm(info);
                     case "rpcs3":
-                        return new PipelineForm<LbpRPCS3PatchPipeline>(info);
+                        return new LbpRPCS3PatchForm(info);
                 }
                 break;
             default:

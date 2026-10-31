@@ -307,7 +307,9 @@ public abstract class Pipeline : IAccessesPlatform
         
         this.State = PipelineState.Running;
         
-        await this.RunListOfSteps(stepTypes, cancellationToken);
+        bool success = await this.RunListOfSteps(stepTypes, cancellationToken);
+        if (success) this.Platform.InfoPrompt("The EBOOT was successfully reverted to the original copy.");
+        // the step in particular will open an error prompt itself if not successful, so no else case here
         
         this.Reset();
     }

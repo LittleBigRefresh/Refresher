@@ -1,238 +1,65 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
-using Eto;
 using Eto.Drawing;
 using Eto.Forms;
 using NotEnoughLogs;
 using Refresher.Core;
-using Refresher.Core.Accessors;
 using Refresher.Core.Logging;
 using Refresher.Core.Patching;
 using Refresher.Core.Patching.Pipelines;
-using Refresher.Core.Patching.Steps;
 using Refresher.Core.Platform;
 using Refresher.Core.Storage;
-using Refresher.Extensions;
 using Refresher.UI.Items;
 
 namespace Refresher.UI;
 
-public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TPipeline : Pipeline, new()
+public abstract class PipelineForm : RefresherForm, IAccessesPlatform
 {
-    private TPipeline? _pipeline;
-    private PipelineController? _controller;
+    // TODO replace with PipelineController once we move the hardcoded steps from the base Pipeline class (e.g. AutoDiscover, eboot revert),
+    // and once we make PipelineController (and superclasses of it) manage all the pipelines we need per form
+    protected abstract Type PipelineType { get; }
+    protected Pipeline Pipeline { get; }
+    protected PipelineController? Controller { get; }
 
-    private readonly Button _button;
-    private readonly Button? _revertButton;
-    private readonly Button? _autoDiscoverButton;
-    private readonly ProgressBar _currentProgressBar;
-    private readonly ProgressBar _progressBar;
-    private readonly ListBox _messages;
+    protected Button? PatchButton { get; set; }
+    protected Button? RevertPatchButton { get; set; }
+    protected Button? AutoDiscoverButton => this.ServerUrlInput?.AutoDiscoverButton;
+    protected PatchProgressBars ProgressBars { get; set; } = new();
+    protected PatchLogDisplay LogDisplay { get; set; } = new();
     
-    private readonly TableLayout _formLayout;
-    private Button? _connectButton;
-    private DropDown? _gamesDropDown;
+    protected TableLayout FormLayout { get; set; } = new();
+    protected virtual Button? ConnectButton => null;
+    protected GameListDropdown? GamesDropDown { get; set; }
 
-    private readonly AutoApplyInformation? _autoApply;
+    // We need references to these so we can easily access their values when filling them into the pipeline,
+    // or incase we need to change the value (e.g. AutoDiscover)
+    protected ServerUrlInput? ServerUrlInput { get; set; }
+    protected JoinKeyInput? JoinKeyInput { get; set; }
+
+    protected AutoApplyInformation? AutoApply { get; set; }
+    public new IPlatformInterface Platform { get; set; }
     
-    public new IPlatformInterface Platform { get; }
-    
-    private bool _usedAutoDiscover = false;
-    private bool _connected = false;
+    protected bool UsedAutoDiscover { get; set; } = false;
+    protected bool IsConnectedToTarget { get; set; } = false;
 
     public PipelineForm() : this(null)
     {
         
     }
     
-    public PipelineForm(AutoApplyInformation? autoApply) : base(typeof(TPipeline).Name, new Size(700, -1), false)
+    public PipelineForm(AutoApplyInformation? autoApply) : base("Patch", new Size(700, 700), false)
     {
-        this._autoApply = autoApply;
+        this.AutoApply = autoApply;
         this.Platform = new EtoPlatformInterface(this);
-        
-        StackLayout layout;
-        this.Content = new Splitter
-        {
-            Orientation = Orientation.Vertical,
-            FixedPanel = SplitterFixedPanel.Panel1,
-            Panel1 = this._formLayout = new TableLayout
-            {
-                Spacing = new Size(5, 5),
-                Padding = new Padding(0, 0, 0, 10),
-            },
-            Panel2 = layout = new StackLayout([
-                new StackLayoutItem(this._messages = new ListBox
-                {
-                    Height = -1,
-                }, VerticalAlignment.Top, true),
-                this._button = new Button(this.OnButtonClick) { Text = "Patch!" },
-                new Button(this.OnViewGuideClick) { Text = "View Guide" },
-                new Button(this.OnCopyLogClick) { Text = "Copy Log (for support)" },
-                this._currentProgressBar = new ProgressBar(),
-                this._progressBar = new ProgressBar(),
-            ])
-            {
-                Padding = new Padding(0, 10, 0, 10),
-                Spacing = 5,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch,
-                VerticalContentAlignment = VerticalAlignment.Stretch,
-                Size = new Size(-1, -1),
-            },
-        };
-        
-        this.InitializePipeline();
-        this.InitializeFormStateUpdater();
-        
-        if (this._pipeline?.ReplacesEboot ?? false)
-        {
-            this._revertButton = new Button(this.OnRevertEbootClick) { Text = "Revert Patch" };
-            layout.Items.Insert(2, this._revertButton);
-        }
-        
-        if (this._pipeline?.RequiredInputs.Any(i => i == CommonStepInputs.ServerUrl) ?? false)
-        {
-            this._autoDiscoverButton = new Button(this.OnAutoDiscoverClick) { Text = "AutoDiscover" };
-            layout.Items.Insert(3, this._autoDiscoverButton);
-        }
-        
-        if ((this._pipeline?.RequiredInputs.Any(i => i == CommonStepInputs.LobbyPassword) ?? false) && this._pipeline?.ShorthandUrlId != null)
-        {
-            Button joinKeyButton = new(this.OnCopyJoinKeyClick) { Text = "Copy Join Key URL" };
-            layout.Items.Insert(4, joinKeyButton);
-        }
-        
-        RefresherState.Log += this.OnLog;
-        this.UpdateFormState();
 
-        if(this._shouldTriggerOnConnect || (this._autoApply?.AutomaticallyApply ?? false))
-            this.OnConnect(this, EventArgs.Empty);
+        this.Pipeline = (Pipeline)Activator.CreateInstance(this.PipelineType)!;
+        this.Pipeline.Initialize(this.Platform);
 
-        if (this._autoApply?.AutomaticallyDiscover ?? false)
-            this.OnAutoDiscoverClick(null, EventArgs.Empty);
-
-        if (this._autoApply?.AutomaticallyApply ?? false)
-        {
-            new Thread(() =>
-            {
-                while (!this._usedAutoDiscover || !this._connected)
-                {
-                    Thread.Sleep(20);
-                }
-
-                Application.Instance.Invoke(() =>
-                {
-                    this.OnButtonClick(null, EventArgs.Empty);
-                });
-            }).Start();
-        }
-    }
-
-    private void UpdateFormState()
-    {
-        if (this._controller == null)
-            return;
-        
-        // adjust progress bars
-        this._progressBar.Value = (int)((this._pipeline?.Progress ?? 0) * 100);
-        this._currentProgressBar.Value = (int)(this._pipeline?.CurrentProgress * 100 ?? 0);
-        this._progressBar.ToolTip = this._pipeline?.State.ToString() ?? "Uninitialized";
-
-        bool enableControls = this._controller.EnableControls;
-        
-        // highlight progress bars while patching
-        this._currentProgressBar.Enabled = !enableControls;
-        this._progressBar.Enabled = !enableControls;
-        
-        // disable other things
-        this._formLayout.Enabled = enableControls;
-        if(this._autoDiscoverButton != null)
-            this._autoDiscoverButton.Enabled = enableControls && this._pipeline?.AutoDiscover == null;
-        if(this._revertButton != null)
-            this._revertButton.Enabled = enableControls;
-
-        // set text of autodiscover button
-        if (this._autoDiscoverButton != null)
-            this._autoDiscoverButton.Text = this._controller.AutoDiscoverButtonText;
-
-        this._button.Text = this._controller.MainButtonText;
-    }
-
-    private bool _shouldTriggerOnConnect = false;
-
-    private void InitializePipeline()
-    {
-        this._pipeline = new TPipeline();
-        this._controller = new PipelineController(this._pipeline, Application.Instance.Invoke);
-        this._pipeline.Initialize(this.Platform);
+        this.Controller = new(this.Pipeline, Application.Instance.Invoke);
+        this.UpdateSubtitle(this.Pipeline.Name);
         
         PreviousInputStorage.Read();
-        this._formLayout.Rows.Clear();
-        foreach (StepInput input in this._pipeline.RequiredInputs)
-        {
-            PreviousInputStorage.StoredInputs.TryGetValue(input.Id, out string? value);
-            if (input.Id == CommonStepInputs.LobbyPassword.Id && this._autoApply?.JoinKey != null)
-                value = this._autoApply.JoinKey;
 
-            if (input.Id == CommonStepInputs.ServerUrl.Id && this._autoApply?.ServerUrl != null)
-                value = this._autoApply.ServerUrl;
-            
-            TableRow row;
-            switch (input.Type)
-            {
-                case StepInputType.Game:
-                    row = AddField<DropDown>(input, value);
-                    this._gamesDropDown = row.Cells[1].Control as DropDown;
-                    this._gamesDropDown!.Enabled = false;
-                    this._gamesDropDown.Height = 56;
-                    break;
-                case StepInputType.Url:
-                case StepInputType.Text:
-                    row = AddField<TextBox>(input, value);
-                    break;
-                case StepInputType.Directory:
-                case StepInputType.OpenFile:
-                case StepInputType.SaveFile:
-                    row = AddField<FilePicker>(input, value);
-                    if (input.ShouldCauseGameDownloadWhenChanged)
-                    {
-                        (row.Cells[1].Control as FilePicker)!.FilePathChanged += this.OnConnect;
-                        this._shouldTriggerOnConnect = value != null;
-                    }
-                    break;
-                case StepInputType.ConsoleIp:
-                    row = AddField<TextBox>(input, value, this._connectButton = new Button(this.OnConnect) { Text = "Connect" });
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            this._formLayout.Rows.Add(row);
-        }
-
-        this.UpdateSubtitle(this._pipeline.Name);
-        this.UpdateFormState();
-    }
-
-    private void AddFormInputsToPipeline()
-    {
-        this._pipeline?.Reset();
-        
-        foreach (TableRow row in this._formLayout.Rows)
-        {
-            string id = row.Cells[0].Control.ToolTip;
-            Control? valueControl = row.Cells[1].Control;
-            if (valueControl is DynamicLayout layout)
-                valueControl = ((DynamicControl)layout.Rows.First().Last()).Control;
-            
-            string value = valueControl.GetUserInput();
-            
-            this._pipeline!.Inputs.Add(id, value);
-        }
-    }
-
-    private void InitializeFormStateUpdater()
-    {
         Thread progressThread = new(() =>
         {
             while (!this.IsDisposed && Application.Instance != null && !Application.Instance.IsDisposed)
@@ -249,75 +76,119 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 {
                     break;
                 }
-                Thread.Sleep(this._pipeline?.State == PipelineState.Running ? 10 : 250);
+                Thread.Sleep(this.Pipeline?.State == PipelineState.Running ? 10 : 250);
             }
         });
         
         progressThread.Start();
-    }
-
-    private void OnButtonClick(object? sender, EventArgs e)
-    {
-        if (this._pipeline == null)
-            return;
-
-        if (this._pipeline.State == PipelineState.Running)
-        {
-            this._controller?.CancelPipeline();
-            return;
-        }
         
-        if (this._pipeline.State is PipelineState.Cancelled or PipelineState.Error or PipelineState.Finished)
-        {
-            this._pipeline.Reset();
-        }
-        
-        if (!this._usedAutoDiscover && this._autoDiscoverButton != null)
-        {
-            DialogResult result = MessageBox.Show("You haven't used AutoDiscover. Would you like to try to run it now?", "AutoDiscover",
-                MessageBoxButtons.YesNoCancel, MessageBoxType.Question);
-            
-            // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
-            switch (result)
-            {
-                case DialogResult.Yes:
-                    this.OnAutoDiscoverClick(this, EventArgs.Empty);
-                    return;
-                case DialogResult.No:
-                    MessageBox.Show("Okay, AutoDiscover won't be used. If you have issues with this patch, try using it next time.\n" +
-                                    "You can also try clicking 'Revert EBOOT' before patching to undo any server-specific patches that may cause issues.\n\n" +
-                                    "Click OK to proceed with patching.", "AutoDiscover", MessageBoxType.Warning);
-                    break;
-                case DialogResult.Cancel:
-                    return;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        this.AddFormInputsToPipeline();
-
-        this._controller?.MainButtonClick();
+        RefresherState.Log += this.OnLog;
         this.UpdateFormState();
+
+        if(this._shouldTriggerOnConnect || (this.AutoApply?.AutomaticallyApply ?? false))
+            this.OnConnect(this, EventArgs.Empty);
+
+        if (this.AutoApply?.AutomaticallyDiscover ?? false)
+            this.OnAutoDiscoverClick(null, EventArgs.Empty);
+
+        if (this.AutoApply?.AutomaticallyApply ?? false)
+        {
+            new Thread(() =>
+            {
+                while (!this.UsedAutoDiscover || !this.IsConnectedToTarget)
+                {
+                    Thread.Sleep(20);
+                }
+
+                Application.Instance.Invoke(() =>
+                {
+                    this.OnPatchButtonClick(null, EventArgs.Empty);
+                });
+            }).Start();
+        }
     }
-    
-    private void OnConnect(object? sender, EventArgs e)
+
+    protected virtual void UpdateFormState()
     {
-        if (this._pipeline == null)
+        if (this.Controller == null)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Controller is null, not updating form state");
             return;
+        }
         
-        if (this._pipeline.State == PipelineState.Running)
+        bool enableControls = this.Controller.EnableControls;
+
+        if (this.ProgressBars != null)
+        {
+            // adjust progress bars
+            this.ProgressBars.PipelineProgressBar.Value = (int)((this.Pipeline?.Progress ?? 0) * 100);
+            this.ProgressBars.StepProgressBar.Value = (int)(this.Pipeline?.CurrentProgress * 100 ?? 0);
+            this.ProgressBars.PipelineProgressBar.ToolTip = this.Pipeline?.State.ToString() ?? "Uninitialized";
+
+            // highlight progress bars while patching
+            this.ProgressBars.StepProgressBar.Enabled = !enableControls;
+            this.ProgressBars.PipelineProgressBar.Enabled = !enableControls;
+        }
+
+        // disable other things
+        this.FormLayout.Enabled = enableControls;
+
+        if(this.AutoDiscoverButton != null)
+        {
+            this.AutoDiscoverButton.Enabled = enableControls && this.Pipeline?.AutoDiscover == null;
+            this.AutoDiscoverButton.Text = this.Controller.AutoDiscoverButtonText;
+        }
+            
+        if(this.RevertPatchButton != null)
+        {
+            this.RevertPatchButton.Enabled = enableControls;
+        }
+        
+        if(this.PatchButton != null)
+        {
+            this.PatchButton.Text = this.Controller.MainButtonText;
+        }
+    }
+
+    protected bool _shouldTriggerOnConnect = false;
+
+    private void AddFormInputsToPipelineInternal()
+    {
+        if (this.Pipeline == null || this.Pipeline.State == PipelineState.Running)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is null or currently running, cancelling adding inputs to pipeline");
             return;
-        
+        }
+
+        this.Pipeline.Reset();
         this.AddFormInputsToPipeline();
+    }
+
+    protected abstract void AddFormInputsToPipeline();
+    
+    protected virtual void OnConnect(object? sender, EventArgs e)
+    {
+        if (this.Pipeline == null)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is null, cancelling platform connection");
+            return;
+        }
+        
+        if (this.Pipeline.State == PipelineState.Running)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is currently running, cancelling platform connection");
+            return;
+        }
+        
+        this.AddFormInputsToPipelineInternal();
         
         Task.Run(async () =>
         {
             try
             {
-                if (this._gamesDropDown != null)
+                if (this.GamesDropDown != null)
                 {
-                    List<GameInformation>? games = await this._pipeline!.DownloadGameListAsync();
+                    List<GameInformation>? games = await this.Pipeline!.DownloadGameListAsync();
                     if (games != null)
                     {
                         await Application.Instance.InvokeAsync(() =>
@@ -329,10 +200,11 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 }
                 else
                 {
-                    await this._pipeline.ConnectAsync();
+                    await this.Pipeline.ConnectAsync();
                     await Application.Instance.InvokeAsync(this.HandleConnection);
                 }
             }
+            // TODO these exceptions should be caught and shown as warning by whatever step is responsible for this
             catch (DirectoryNotFoundException)
             {
                 RefresherState.Logger.LogError(LogType.Accessor, "The games folder doesn't exist at that path. Please ensure you entered the right path/IP.");
@@ -345,20 +217,20 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         });
     }
 
-    private void HandleConnection()
+    protected void HandleConnection()
     {
-        this._connected = true;
-        if (this._connectButton == null) return;
+        this.IsConnectedToTarget = true;
+        if (this.ConnectButton == null) return;
 
-        this._connectButton.Enabled = false;
-        this._connectButton.Text = "Connected!";
+        this.ConnectButton.Enabled = false;
+        this.ConnectButton.Text = "Connected!";
     }
 
-    private void HandleGameList(List<GameInformation> games)
+    protected void HandleGameList(List<GameInformation> games)
     {
-        Debug.Assert(this._gamesDropDown != null);
+        Debug.Assert(this.GamesDropDown != null);
 
-        this._gamesDropDown.Items.Clear();
+        this.GamesDropDown.Dropdown.Items.Clear();
         
         foreach (GameInformation game in games)
         {
@@ -367,6 +239,7 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 Text = $"{game.Name} [{game.TitleId} {game.Version}]",
                 Version = game.Version ?? "00.00",
                 TitleId = game.TitleId,
+                Key = game.TitleId,
             };
 
             if (GameCacheStorage.IconExistsInCache(game.TitleId))
@@ -395,97 +268,82 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
                 }
             }
 
-            this._gamesDropDown.Items.Add(item);
+            this.GamesDropDown.Dropdown.Items.Add(item);
         }
 
-        this._gamesDropDown.Enabled = true;
+        this.GamesDropDown.Dropdown.Enabled = true;
     }
 
-    private void OnAutoDiscoverClick(object? sender, EventArgs e)
+    protected virtual void OnPatchButtonClick(object? sender, EventArgs e)
     {
-        if (this._pipeline == null)
-            return;
-        
-        if (this._pipeline.State == PipelineState.Running)
-            return;
-        
-        TextControl control = (TextControl)this._formLayout.Rows
-            .Where(r => r.Cells[0].Control.ToolTip == CommonStepInputs.ServerUrl.Id)
-            .Select(r => r.Cells[1].Control)
-            .First();
-
-        string url = control.Text;
-        this._controller?.AutoDiscoverButtonClick(url, autoDiscover =>
+        if (this.Pipeline == null || this.ServerUrlInput == null)
         {
-            this._usedAutoDiscover = true;
-
-            Debug.Assert(this._autoDiscoverButton != null);
-            this._autoDiscoverButton.Enabled = false;
-
-            control.Text = autoDiscover.Url;
-            control.Enabled = false;
-        });
-    }
-    
-    private void OnCopyJoinKeyClick(object? sender, EventArgs e)
-    {
-        if (this._pipeline == null)
-            return;
-        
-        if (this._pipeline.State == PipelineState.Running)
-            return;
-        
-        Debug.Assert(this._pipeline.ShorthandUrlId != null);
-        
-        TextControl control = (TextControl)this._formLayout.Rows
-            .Where(r => r.Cells[0].Control.ToolTip == CommonStepInputs.LobbyPassword.Id)
-            .Select(r => r.Cells[1].Control)
-            .First();
-
-        string key = control.Text;
-        
-        if((Keyboard.Modifiers & Keys.Shift) != 0 || (Keyboard.Modifiers & Keys.Control) != 0) 
-            Clipboard.Instance.Text = $"refresher://join/{this._pipeline.ShorthandUrlId}?{key}";
-        else
-            Clipboard.Instance.Text = $"https://go.lbpbonsai.com/join/{this._pipeline.ShorthandUrlId}?{key}";
-
-        MessageBox.Show("Copied!", "Success");
-    }
-    
-    private void OnViewGuideClick(object? sender, EventArgs _)
-    {
-        if (this._pipeline == null)
-            return;
-
-        if (this._pipeline.GuideLink == null)
-        {
-            MessageBox.Show("No guide exists for this patch method yet, so stay tuned!", MessageBoxType.Warning);
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline or URL input is null, cancelling patch execution");
             return;
         }
+        
+        if (this.Pipeline.State == PipelineState.Running)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is currently running, cancelling patch execution");
+            return;
+        }
+        
+        if (this.Pipeline.State is PipelineState.Cancelled or PipelineState.Error or PipelineState.Finished)
+        {
+            RefresherState.Logger.LogDebug(LogType.PatchForm, $"Resetting pipeline before execution because state is {this.Pipeline.State}");
+            this.Pipeline.Reset();
+        }
+        
+        if (!this.UsedAutoDiscover && this.AutoDiscoverButton != null)
+        {
+            DialogResult result = MessageBox.Show("You haven't used AutoDiscover. Would you like to try to run it now?", "AutoDiscover",
+                MessageBoxButtons.YesNoCancel, MessageBoxType.Question);
+            
+            // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+            switch (result)
+            {
+                case DialogResult.Yes:
+                    this.OnAutoDiscoverClick(this, EventArgs.Empty);
+                    return;
+                case DialogResult.No:
+                    MessageBox.Show("Okay, AutoDiscover won't be used. If you have issues with this patch, try using it next time.\n" +
+                                    "You can also try clicking 'Revert EBOOT' before patching to undo any server-specific patches that may cause issues.\n\n" +
+                                    "Click OK to proceed with patching.", "AutoDiscover", MessageBoxType.Warning);
+                    break;
+                case DialogResult.Cancel:
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
 
-        string url = this._pipeline.GuideLink;
-        this.Platform.OpenUrl(new Uri(url));
+        this.AddFormInputsToPipelineInternal();
+
+        this.Controller?.MainButtonClick();
+        this.UpdateFormState();
     }
     
-    private void OnRevertEbootClick(object? sender, EventArgs e)
+    protected virtual void OnRevertPatchClick(object? sender, EventArgs e)
     {
-        if (this._pipeline == null)
+        if (this.Pipeline == null || this.ServerUrlInput == null)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline or URL input is null, cancelling patch revert");
             return;
+        }
         
-        if (this._pipeline.State == PipelineState.Running)
+        if (this.Pipeline.State == PipelineState.Running)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is currently running, cancelling patch revert");
             return;
+        }
         
-        this.AddFormInputsToPipeline();
+        this.AddFormInputsToPipelineInternal();
         
         Task.Run(async () =>
         {
             try
             {
-                await this._pipeline!.RevertGameEbootAsync();
-                await Application.Instance.InvokeAsync(() =>
-                {
-                    MessageBox.Show("The EBOOT was successfully reverted to the original copy.", "Success!");
-                });
+                await this.Pipeline!.RevertGameEbootAsync();
             }
             catch (Exception ex)
             {
@@ -494,10 +352,84 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         });
     }
 
-    private void OnCopyLogClick(object? sender, EventArgs e)
+    protected void OnAutoDiscoverClick(object? sender, EventArgs e)
+    {
+        if (this.Pipeline == null || this.ServerUrlInput == null)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline or URL input is null, cancelling AutoDiscover");
+            return;
+        }
+        
+        if (this.Pipeline.State == PipelineState.Running)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is currently running, cancelling AutoDiscover");
+            return;
+        }
+        
+        TextControl control = this.ServerUrlInput.Input;
+
+        string url = control.Text;
+        this.Controller?.AutoDiscoverButtonClick(url, autoDiscover =>
+        {
+            this.UsedAutoDiscover = true;
+
+            Debug.Assert(this.AutoDiscoverButton != null);
+            this.AutoDiscoverButton.Enabled = false;
+
+            control.Text = autoDiscover.Url;
+            control.Enabled = false; // TODO allow to re-enable
+        });
+    }
+    
+    protected void OnCopyJoinKeyClick(object? sender, EventArgs e)
+    {
+        if (this.Pipeline == null || this.JoinKeyInput == null)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline or join key input is null, cancelling join key URL copy");
+            return;
+        }
+        
+        if (this.Pipeline.State == PipelineState.Running)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is currently running, cancelling join key URL copy");
+            return;
+        }
+        
+        Debug.Assert(this.Pipeline.ShorthandUrlId != null);
+        
+        TextControl control = this.JoinKeyInput.Input;
+        string key = control.Text;
+        
+        if((Keyboard.Modifiers & Keys.Shift) != 0 || (Keyboard.Modifiers & Keys.Control) != 0) 
+            Clipboard.Instance.Text = $"refresher://join/{this.Pipeline.ShorthandUrlId}?{key}";
+        else
+            Clipboard.Instance.Text = $"https://go.lbpbonsai.com/join/{this.Pipeline.ShorthandUrlId}?{key}";
+
+        MessageBox.Show("Copied!", "Success");
+    }
+    
+    protected void OnViewGuideClick(object? sender, EventArgs _)
+    {
+        if (this.Pipeline == null)
+        {
+            RefresherState.Logger.LogWarning(LogType.PatchForm, $"Pipeline is null, cancelling guide open");
+            return;
+        }
+
+        if (this.Pipeline.GuideLink == null)
+        {
+            MessageBox.Show("No guide exists for this patch method yet, so stay tuned!", MessageBoxType.Warning);
+            return;
+        }
+
+        string url = this.Pipeline.GuideLink;
+        this.Platform.OpenUrl(new Uri(url));
+    }
+
+    protected void OnCopyLogClick(object? sender, EventArgs e)
     {
         StringBuilder log = new();
-        foreach (IListItem item in this._messages.Items)
+        foreach (IListItem item in this.LogDisplay.Display.Items)
         {
             log.AppendLine(item.Text);
         }
@@ -506,67 +438,21 @@ public class PipelineForm<TPipeline> : RefresherForm, IAccessesPlatform where TP
         MessageBox.Show("The log was successfully copied to the clipboard.", "Success");
     }
     
-    private static TableRow AddField<TControl>(StepInput input, string? value = null, Button? button = null) where TControl : Control, new()
-    {
-        Label label = new()
-        {
-            Text = input.Name + ':',
-            VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = input.Id,
-        };
-
-        Control control = new TControl();
-        TextBox? textBox = control as TextBox;
-
-        string? newValue = input.DetermineDefaultValue?.Invoke();
-        newValue ??= value;
-
-        if (textBox != null)
-        {
-            textBox.Text = newValue;
-            textBox.PlaceholderText = input.Placeholder;
-        }
-        else if (control is FilePicker filePicker)
-        {
-            filePicker.FilePath = newValue;
-
-            // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-            filePicker.FileAction = input.Type switch
-            {
-                StepInputType.Directory => FileAction.SelectFolder,
-                StepInputType.OpenFile => FileAction.OpenFile,
-                StepInputType.SaveFile => FileAction.SaveFile,
-                _ => throw new ArgumentOutOfRangeException(),
-            };
-        }
-
-        if (button != null)
-        {
-            DynamicLayout buttonLayout = new();
-            buttonLayout.AddRow(button, control);
-            buttonLayout.Spacing = new Size(5, 0);
-            
-            return new TableRow(label, buttonLayout);
-        }
-
-        return new TableRow(label, control);
-    }
-    
-    private void OnLog(RefresherLog log)
+    protected void OnLog(RefresherLog log)
     {
         Application.Instance.Invoke(() =>
         {
             // somehow getting hit on sentry?
             // id REFRESHER-88
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            if (this._messages == null)
+            if (this.LogDisplay == null)
                 return;
             
-            this._messages.Items.Add($"[{log.Level}] [{log.Category}] {log.Content}");
+            this.LogDisplay.Display.Items.Add($"[{log.Level}] [{log.Category}] {log.Content}");
         
             // automatically scroll to the bottom by highlighting the last item temporarily
-            this._messages.SelectedIndex = this._messages.Items.Count - 1;
-            this._messages.SelectedIndex = -1;
+            this.LogDisplay.Display.SelectedIndex = this.LogDisplay.Display.Items.Count - 1;
+            this.LogDisplay.Display.SelectedIndex = -1;
             
             if (log.Level <= LogLevel.Error && log.Category != nameof(LogType.Platform))
             {
